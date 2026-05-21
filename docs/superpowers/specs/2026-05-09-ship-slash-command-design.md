@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED NEXT STEP: invoke `superpowers:writing-plans` to turn this spec into an implementation plan. **Do not implement in this repo (`claude-extensions`).** The /ship command is a personal tool that lives in `~/.claude/`; the plan should be created and executed in the user's personal-tools workspace, not here.
 
+> **For readers:** A reader-facing one-page summary is rendered at the dashboard's `/docs/ship-pattern` route and lives at `docs/ship-pattern.md`. Read that first if you want the 8-stage chain and where-to-start without the full design.
+
 **Goal:** Codify Theo's recurring shipping pattern as a personal `/ship` slash command at `~/.claude/commands/ship.md`. The command chains test → verify-agent → simplify → code-review → commit → push+PR → Jira-update, with sensible halt rules and silent skips when optional tooling is absent.
 
 **Why now:** The dashboard's `/self-assessment` flagged `automation/ship-command` (Boris tip 5) as the highest-weighted unsatisfied next-action, and `/insights` recently reported the same closeout sequence repeating across nearly every feature_implementation session. Codifying it eliminates the redundant_polling and forgotten-step friction the report called out.
