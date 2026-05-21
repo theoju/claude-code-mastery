@@ -502,23 +502,49 @@ function unavailable(reason) {
   return { score: null, evidence: [], gaps: [], gapReason: reason };
 }
 
+// Platform-Setup-only-by-nature scorers: always unavailable, but the universe
+// contract still applies. Returns a function with __universe annotated so the
+// audit test in score.test.mjs passes uniformly across all EXECUTION_SCORERS.
+function noTelemetry() {
+  const fn = () => unavailable(GAP_REASONS.NO_TELEMETRY_FOR_DIMENSION);
+  fn.__universe = "all_sessions";
+  return fn;
+}
+
 function pct(n) {
   return Math.round(n * 100) / 100;
 }
 
 // Wraps an execution scorer with the standard insights/transcripts/sessions
 // gates so each scorer body only deals with the math, not data availability.
+// `universe` is mandatory and selects which denominator the session gate uses:
+//   - "interactive_only": s.insights.interactiveSessionsAnalyzed
+//   - "all_sessions":     s.insights.sessionsAnalyzed
+// The choice is recorded on the wrapped function as `__universe` so tests
+// (and the methodology page) can audit the contract.
 function withGates(opts, fn) {
-  return (s) => {
+  const universe = opts.universe;
+  if (universe !== "interactive_only" && universe !== "all_sessions") {
+    throw new Error(
+      `withGates: universe must be 'interactive_only' or 'all_sessions', got ${universe}`,
+    );
+  }
+  const wrapped = (s) => {
     if (!s.insights) return unavailable(GAP_REASONS.NO_INSIGHTS);
     if (opts.transcripts && !s.insights.transcriptsScanned) {
       return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
     }
-    if (opts.requireSessions !== false && s.insights.sessionsAnalyzed === 0) {
+    const denom =
+      universe === "interactive_only"
+        ? s.insights.interactiveSessionsAnalyzed
+        : s.insights.sessionsAnalyzed;
+    if (opts.requireSessions !== false && !denom) {
       return unavailable(GAP_REASONS.NO_SESSIONS);
     }
     return fn(s);
   };
+  wrapped.__universe = universe;
+  return wrapped;
 }
 
 // Coefficients calibrated so a typical "good" practice rate maps to ~70-90 and
@@ -588,7 +614,7 @@ export const EXECUTION_SCORERS = {
     },
   ),
 
-  verification: withGates({}, (s) => {
+  verification: withGates({ universe: "all_sessions" }, (s) => {
     const { frictionCounts, sessionsAnalyzed } = s.insights;
     const buggy = frictionCounts.buggy_code || 0;
     const wrong = frictionCounts.wrong_approach || 0;
@@ -610,53 +636,58 @@ export const EXECUTION_SCORERS = {
     return { score, evidence, gaps, gapReason: null };
   }),
 
-  parallel: withGates({}, (s) => {
+  parallel: withGates({ universe: "interactive_only" }, (s) => {
     const {
       subagentSessionCount,
       worktreeUsageSessionCount,
-      sessionsAnalyzed,
+      interactiveSessionsAnalyzed,
       transcriptsScanned,
     } = s.insights;
-    const subagentRatio = subagentSessionCount / sessionsAnalyzed;
+    const subagentRatio = subagentSessionCount / interactiveSessionsAnalyzed;
     let score = subagentRatio * COEFFS.parallelSubagentWeight;
     const evidence = [
-      `Subagent dispatch: ${subagentSessionCount}/${sessionsAnalyzed} sessions (${pct(subagentRatio * 100)}%)`,
+      `Subagent dispatch: ${subagentSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(subagentRatio * 100)}%)`,
     ];
     const gaps = [];
     if (transcriptsScanned) {
-      const wtRatio = worktreeUsageSessionCount / sessionsAnalyzed;
+      const wtRatio = worktreeUsageSessionCount / interactiveSessionsAnalyzed;
       score += wtRatio * COEFFS.parallelWorktreeBonus;
       evidence.push(
-        `Worktree isolation: ${worktreeUsageSessionCount}/${sessionsAnalyzed} (${pct(wtRatio * 100)}%)`,
+        `Worktree isolation: ${worktreeUsageSessionCount}/${interactiveSessionsAnalyzed} (${pct(wtRatio * 100)}%)`,
       );
     }
     if (subagentRatio < 0.2)
       gaps.push(
-        "Subagent dispatch in fewer than 20% of sessions — Boris tip 1",
+        "Subagent dispatch in fewer than 20% of interactive sessions — Boris tip 1",
       );
     return { score: clamp(Math.round(score)), evidence, gaps, gapReason: null };
   }),
 
   // requireSessions: false — gates internally on multiTaskSessionCount instead.
-  planning: withGates({ transcripts: true, requireSessions: false }, (s) => {
-    const { planModeSessionCount, multiTaskSessionCount } = s.insights;
-    if (multiTaskSessionCount === 0)
-      return unavailable(GAP_REASONS.NO_MULTI_TASK);
-    const ratio = planModeSessionCount / multiTaskSessionCount;
-    const score = clamp(Math.round(ratio * COEFFS.planningRatioWeight));
-    const evidence = [
-      `Plan mode: ${planModeSessionCount}/${multiTaskSessionCount} multi-task sessions (${pct(ratio * 100)}%)`,
-    ];
-    const gaps = [];
-    if (ratio < 0.5)
-      gaps.push(
-        "Plan mode in fewer than half of multi-task sessions — Boris tip 65",
-      );
-    return { score, evidence, gaps, gapReason: null };
-  }),
+  // Universe is interactive_only: multiTaskSessionCount is already restricted to
+  // the interactive subset by insights-signals.
+  planning: withGates(
+    { transcripts: true, requireSessions: false, universe: "interactive_only" },
+    (s) => {
+      const { planModeSessionCount, multiTaskSessionCount } = s.insights;
+      if (multiTaskSessionCount === 0)
+        return unavailable(GAP_REASONS.NO_MULTI_TASK);
+      const ratio = planModeSessionCount / multiTaskSessionCount;
+      const score = clamp(Math.round(ratio * COEFFS.planningRatioWeight));
+      const evidence = [
+        `Plan mode: ${planModeSessionCount}/${multiTaskSessionCount} multi-task sessions (${pct(ratio * 100)}%)`,
+      ];
+      const gaps = [];
+      if (ratio < 0.5)
+        gaps.push(
+          "Plan mode in fewer than half of multi-task sessions — Boris tip 65",
+        );
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
 
-  automation: withGates({}, (s) => {
-    const { hookFireCount, sessionsAnalyzed, subagentSessionCount } =
+  automation: withGates({ universe: "interactive_only" }, (s) => {
+    const { hookFireCount, interactiveSessionsAnalyzed, subagentSessionCount } =
       s.insights;
     // Null hookFireCount means ~/.claude/hook-fires.jsonl was absent — Claude
     // Code does not emit this telemetry by default. Distinguish from a real
@@ -665,12 +696,13 @@ export const EXECUTION_SCORERS = {
     if (hookFireCount === null)
       return unavailable(GAP_REASONS.NO_HOOK_FIRE_DATA);
     let score = Math.round(
-      (hookFireCount / sessionsAnalyzed) * COEFFS.automationHookWeight,
+      (hookFireCount / interactiveSessionsAnalyzed) *
+        COEFFS.automationHookWeight,
     );
     if (s.personalAgents.length > 0 && subagentSessionCount > 0)
       score += COEFFS.automationOwnAgentBonus;
     const evidence = [
-      `Hook fires: ${hookFireCount} across ${sessionsAnalyzed} sessions`,
+      `Hook fires: ${hookFireCount} across ${interactiveSessionsAnalyzed} interactive sessions`,
     ];
     const gaps = [];
     if (hookFireCount === 0)
@@ -678,106 +710,115 @@ export const EXECUTION_SCORERS = {
     return { score: clamp(score), evidence, gaps, gapReason: null };
   }),
 
-  integrations: withGates({ requireSessions: false }, (s) => {
-    const toolInvocationsByPlugin = s.insights.toolInvocationsByPlugin || {};
-    const pluginsUsed = Object.keys(toolInvocationsByPlugin).length;
-    const pluginsInstalled = s.plugins.length;
-    if (pluginsInstalled === 0) return unavailable(GAP_REASONS.NO_PLUGINS);
-    const { sessionsAnalyzed } = s.insights;
-    if (sessionsAnalyzed === 0) return unavailable(GAP_REASONS.NO_SESSIONS);
-    // Volume per session, not coverage. Specialty plugins (terraform, postman,
-    // figma, supabase) only fire in their context — penalizing the user for
-    // having installed them is geometrically wrong. Heavy contextual use of a
-    // few plugins is the engaged pattern; rate against a calibration target
-    // of 2 calls/session caps it linearly to 100.
-    const totalPluginCalls = Object.values(toolInvocationsByPlugin).reduce(
-      (sum, n) => sum + (typeof n === "number" ? n : 0),
-      0,
-    );
-    const callsPerSession = totalPluginCalls / sessionsAnalyzed;
-    const score = clamp(
-      Math.round(
-        Math.min(
-          callsPerSession / COEFFS.integrationsTargetCallsPerSession,
-          1,
-        ) * 100,
-      ),
-    );
-    const evidence = [
-      `Plugin tool calls: ${totalPluginCalls} across ${sessionsAnalyzed} sessions (${pct(callsPerSession)} per session, target ${COEFFS.integrationsTargetCallsPerSession})`,
-      `${pluginsUsed}/${pluginsInstalled} installed plugins fired calls in window`,
-    ];
-    const gaps = [];
-    if (
-      pluginsInstalled - pluginsUsed >
-      COEFFS.integrationsCoverageGapThreshold
-    ) {
-      gaps.push(
-        `${pluginsInstalled - pluginsUsed} plugins installed but idle in window — review whether some are deadweight (informational; doesn't reduce score)`,
+  integrations: withGates(
+    { requireSessions: false, universe: "all_sessions" },
+    (s) => {
+      const toolInvocationsByPlugin = s.insights.toolInvocationsByPlugin || {};
+      const pluginsUsed = Object.keys(toolInvocationsByPlugin).length;
+      const pluginsInstalled = s.plugins.length;
+      if (pluginsInstalled === 0) return unavailable(GAP_REASONS.NO_PLUGINS);
+      const { sessionsAnalyzed } = s.insights;
+      if (sessionsAnalyzed === 0) return unavailable(GAP_REASONS.NO_SESSIONS);
+      // Volume per session, not coverage. Specialty plugins (terraform, postman,
+      // figma, supabase) only fire in their context — penalizing the user for
+      // having installed them is geometrically wrong. Heavy contextual use of a
+      // few plugins is the engaged pattern; rate against a calibration target
+      // of 2 calls/session caps it linearly to 100.
+      const totalPluginCalls = Object.values(toolInvocationsByPlugin).reduce(
+        (sum, n) => sum + (typeof n === "number" ? n : 0),
+        0,
       );
-    }
-    return { score, evidence, gaps, gapReason: null };
-  }),
+      const callsPerSession = totalPluginCalls / sessionsAnalyzed;
+      const score = clamp(
+        Math.round(
+          Math.min(
+            callsPerSession / COEFFS.integrationsTargetCallsPerSession,
+            1,
+          ) * 100,
+        ),
+      );
+      const evidence = [
+        `Plugin tool calls: ${totalPluginCalls} across ${sessionsAnalyzed} sessions (${pct(callsPerSession)} per session, target ${COEFFS.integrationsTargetCallsPerSession})`,
+        `${pluginsUsed}/${pluginsInstalled} installed plugins fired calls in window`,
+      ];
+      const gaps = [];
+      if (
+        pluginsInstalled - pluginsUsed >
+        COEFFS.integrationsCoverageGapThreshold
+      ) {
+        gaps.push(
+          `${pluginsInstalled - pluginsUsed} plugins installed but idle in window — review whether some are deadweight (informational; doesn't reduce score)`,
+        );
+      }
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
 
   // Scheduled & remote work fires rarely (cron creation is one-time; remote
   // pings are sporadic). Volume-per-session would wash the signal out — most
   // users have ~0.005 invocations/session even when actively using these
   // features. Use presence-and-intensity: 1 invocation in window = 50, ≥3 = 100.
-  scheduled: withGates({ requireSessions: false }, (s) => {
-    const { scheduledInvocationsTotal, sessionsAnalyzed } = s.insights;
-    if (sessionsAnalyzed === 0) return unavailable(GAP_REASONS.NO_SESSIONS);
-    if (scheduledInvocationsTotal === 0) {
+  scheduled: withGates(
+    { requireSessions: false, universe: "all_sessions" },
+    (s) => {
+      const { scheduledInvocationsTotal, sessionsAnalyzed } = s.insights;
+      if (sessionsAnalyzed === 0) return unavailable(GAP_REASONS.NO_SESSIONS);
+      if (scheduledInvocationsTotal === 0) {
+        return {
+          score: 0,
+          evidence: [
+            `No scheduled-tool invocations in ${sessionsAnalyzed} sessions`,
+          ],
+          gaps: [
+            "No CronCreate/CronDelete/CronList/ScheduleWakeup invocations — recurring/autonomous workflows dormant",
+          ],
+          gapReason: null,
+        };
+      }
+      const score = clamp(
+        Math.round(50 + Math.min(scheduledInvocationsTotal - 1, 2) * 25),
+      );
       return {
-        score: 0,
+        score,
         evidence: [
-          `No scheduled-tool invocations in ${sessionsAnalyzed} sessions`,
+          `Scheduled-tool invocations: ${scheduledInvocationsTotal} (CronCreate/CronDelete/CronList/ScheduleWakeup) across ${sessionsAnalyzed} sessions`,
         ],
-        gaps: [
-          "No CronCreate/CronDelete/CronList/ScheduleWakeup invocations — recurring/autonomous workflows dormant",
-        ],
+        gaps: [],
         gapReason: null,
       };
-    }
-    const score = clamp(
-      Math.round(50 + Math.min(scheduledInvocationsTotal - 1, 2) * 25),
-    );
-    return {
-      score,
-      evidence: [
-        `Scheduled-tool invocations: ${scheduledInvocationsTotal} (CronCreate/CronDelete/CronList/ScheduleWakeup) across ${sessionsAnalyzed} sessions`,
-      ],
-      gaps: [],
-      gapReason: null,
-    };
-  }),
+    },
+  ),
 
-  remote: withGates({ requireSessions: false }, (s) => {
-    const { remoteInvocationsTotal, sessionsAnalyzed } = s.insights;
-    if (sessionsAnalyzed === 0) return unavailable(GAP_REASONS.NO_SESSIONS);
-    if (remoteInvocationsTotal === 0) {
+  remote: withGates(
+    { requireSessions: false, universe: "all_sessions" },
+    (s) => {
+      const { remoteInvocationsTotal, sessionsAnalyzed } = s.insights;
+      if (sessionsAnalyzed === 0) return unavailable(GAP_REASONS.NO_SESSIONS);
+      if (remoteInvocationsTotal === 0) {
+        return {
+          score: 0,
+          evidence: [
+            `No remote-tool invocations in ${sessionsAnalyzed} sessions`,
+          ],
+          gaps: [
+            "No RemoteTrigger/PushNotification/SendMessage invocations — mobile/remote workflows dormant",
+          ],
+          gapReason: null,
+        };
+      }
+      const score = clamp(
+        Math.round(50 + Math.min(remoteInvocationsTotal - 1, 2) * 25),
+      );
       return {
-        score: 0,
+        score,
         evidence: [
-          `No remote-tool invocations in ${sessionsAnalyzed} sessions`,
+          `Remote-tool invocations: ${remoteInvocationsTotal} (RemoteTrigger/PushNotification/SendMessage) across ${sessionsAnalyzed} sessions`,
         ],
-        gaps: [
-          "No RemoteTrigger/PushNotification/SendMessage invocations — mobile/remote workflows dormant",
-        ],
+        gaps: [],
         gapReason: null,
       };
-    }
-    const score = clamp(
-      Math.round(50 + Math.min(remoteInvocationsTotal - 1, 2) * 25),
-    );
-    return {
-      score,
-      evidence: [
-        `Remote-tool invocations: ${remoteInvocationsTotal} (RemoteTrigger/PushNotification/SendMessage) across ${sessionsAnalyzed} sessions`,
-      ],
-      gaps: [],
-      gapReason: null,
-    };
-  }),
+    },
+  ),
 
   // Platform-Setup-only-by-nature dimensions. /insights data does not carry the
   // relevant signal: model/effort are never written to session-meta;
@@ -785,36 +826,42 @@ export const EXECUTION_SCORERS = {
   // customization (statusline, keybindings, themes) is pure client config.
   // Surface the rationale per dimension so users see "unmeasured because X"
   // instead of a blank radar vertex that looks identical to a forgotten scorer.
-  "model-effort": () => unavailable(GAP_REASONS.NO_TELEMETRY_FOR_DIMENSION),
-  memory: () => unavailable(GAP_REASONS.NO_TELEMETRY_FOR_DIMENSION),
-  customization: () => unavailable(GAP_REASONS.NO_TELEMETRY_FOR_DIMENSION),
+  // Universe is inert here (these always return unavailable) but the contract
+  // still requires a declared value — "all_sessions" because there is no
+  // per-session denominator math regardless.
+  "model-effort": noTelemetry(),
+  memory: noTelemetry(),
+  customization: noTelemetry(),
 
   // Linear ratio of sessions emitting the `★ Insight ` banner — the rendered
   // signature of the explanatory-output-style plugin. Platform Setup already credits
   // plugin installation (signals.mjs hasPlugin check); this scorer credits
   // actual use. Honest caveat: if the plugin's banner string changes upstream,
   // this scorer goes silent (returns 0). Documented in methodology.
-  learning: withGates({ transcripts: true }, (s) => {
-    const {
-      learningModeSessionCount,
-      learningModeMatchesTotal,
-      sessionsAnalyzed,
-    } = s.insights;
-    if (learningModeSessionCount == null)
-      return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
-    const ratio = learningModeSessionCount / sessionsAnalyzed;
-    const score = clamp(Math.round(ratio * 100));
-    const evidence = [
-      `Explanatory-mode active in ${learningModeSessionCount}/${sessionsAnalyzed} sessions (${pct(ratio * 100)}%) — ${learningModeMatchesTotal} ★ Insight banners total`,
-    ];
-    const gaps = [];
-    if (ratio < 0.3) {
-      gaps.push(
-        "Explanatory mode active in <30% of sessions — try /output-style explanatory for learning work",
-      );
-    }
-    return { score, evidence, gaps, gapReason: null };
-  }),
+  learning: withGates(
+    { transcripts: true, universe: "interactive_only" },
+    (s) => {
+      const {
+        learningModeSessionCount,
+        learningModeMatchesTotal,
+        interactiveSessionsAnalyzed,
+      } = s.insights;
+      if (learningModeSessionCount == null)
+        return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
+      const ratio = learningModeSessionCount / interactiveSessionsAnalyzed;
+      const score = clamp(Math.round(ratio * 100));
+      const evidence = [
+        `Explanatory-mode active in ${learningModeSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(ratio * 100)}%) — ${learningModeMatchesTotal} ★ Insight banners total`,
+      ];
+      const gaps = [];
+      if (ratio < 0.3) {
+        gaps.push(
+          "Explanatory mode active in <30% of interactive sessions — try /output-style explanatory for learning work",
+        );
+      }
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
 };
 
 // Per-dim score is normalized to its target so hitting target = 100. Both

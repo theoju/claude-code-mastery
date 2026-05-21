@@ -648,6 +648,14 @@ describe("EXECUTION_SCORERS", () => {
     );
   });
 
+  it("every scorer declares a universe option (interactive_only or all_sessions)", () => {
+    for (const [name, scorer] of Object.entries(EXECUTION_SCORERS)) {
+      expect(scorer.__universe, `${name} must declare universe`).toMatch(
+        /^(interactive_only|all_sessions)$/,
+      );
+    }
+  });
+
   describe("learning", () => {
     it("returns NO_TRANSCRIPTS when transcripts not scanned", () => {
       const r = EXECUTION_SCORERS.learning(
