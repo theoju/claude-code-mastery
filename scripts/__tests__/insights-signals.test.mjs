@@ -149,12 +149,45 @@ describe("gatherInsightsSignals", () => {
     writeFacet(dir, "s1", { session_type: "multi_task" });
     writeFacet(dir, "s2", { session_type: "multi_task" });
     writeFacet(dir, "s3", { session_type: "single_task" });
+    writeTranscript(dir, "proj-a", "s1", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    writeTranscript(dir, "proj-a", "s2", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    writeTranscript(dir, "proj-a", "s3", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
     const r = await gatherInsightsSignals({
       claudeHome: dir,
       now: NOW,
       lookbackDays: 30,
     });
     expect(r.multiTaskSessionCount).toBe(2);
+  });
+
+  it("multiTaskSessionCount excludes non-interactive sessions", async () => {
+    // Regression: multiTaskSessionCount must respect the interactive_cli
+    // universe gate. SDK-orchestrated sessions (entrypoint sdk-cli) can
+    // also be tagged multi_task in facets, but they don't reflect user
+    // adoption of multi-task planning — counting them dilutes the
+    // planning scorer's denominator.
+    writeMeta(dir, "s-int", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "s-sdk", { start_time: TWENTY_DAYS_AGO });
+    writeFacet(dir, "s-int", { session_type: "multi_task" });
+    writeFacet(dir, "s-sdk", { session_type: "multi_task" });
+    writeTranscript(dir, "-Users-x-Projects-app", "s-int", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    writeTranscript(dir, "-Users-x-Projects-routine", "s-sdk", [
+      { type: "user", entrypoint: "sdk-cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+    });
+    expect(r.multiTaskSessionCount).toBe(1);
   });
 
   it("aggregates scheduled and remote tool invocations from tool_counts", async () => {
@@ -294,18 +327,29 @@ describe("gatherInsightsSignals", () => {
     writeMeta(dir, "no-mode", { start_time: TWENTY_DAYS_AGO });
 
     writeTranscript(dir, "proj-a", "auto-only", [
-      { type: "user", permissionMode: "auto", timestamp: TWENTY_DAYS_AGO },
+      {
+        type: "user",
+        entrypoint: "cli",
+        permissionMode: "auto",
+        timestamp: TWENTY_DAYS_AGO,
+      },
       { type: "user", permissionMode: "auto", timestamp: TWENTY_DAYS_AGO },
     ]);
     writeTranscript(dir, "proj-a", "bypass-only", [
       {
         type: "user",
+        entrypoint: "cli",
         permissionMode: "bypassPermissions",
         timestamp: TWENTY_DAYS_AGO,
       },
     ]);
     writeTranscript(dir, "proj-b", "mixed", [
-      { type: "user", permissionMode: "auto", timestamp: TWENTY_DAYS_AGO },
+      {
+        type: "user",
+        entrypoint: "cli",
+        permissionMode: "auto",
+        timestamp: TWENTY_DAYS_AGO,
+      },
       { type: "user", permissionMode: "plan", timestamp: TWENTY_DAYS_AGO },
       {
         type: "user",
@@ -314,7 +358,7 @@ describe("gatherInsightsSignals", () => {
       },
     ]);
     writeTranscript(dir, "proj-b", "no-mode", [
-      { type: "user", timestamp: TWENTY_DAYS_AGO },
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
     ]);
 
     const r = await gatherInsightsSignals({
@@ -335,6 +379,7 @@ describe("gatherInsightsSignals", () => {
     writeMeta(dir, "user-quote", { start_time: TWENTY_DAYS_AGO });
     // Two assistant turns in this session contain the banner -> session counts once.
     writeTranscript(dir, "proj-a", "active", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
       {
         type: "assistant",
         message: { content: "★ Insight ───\nfoo\n───" },
@@ -348,6 +393,7 @@ describe("gatherInsightsSignals", () => {
     ]);
     // No banners.
     writeTranscript(dir, "proj-a", "quiet", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
       {
         type: "assistant",
         message: { content: "regular reply" },
@@ -358,6 +404,7 @@ describe("gatherInsightsSignals", () => {
     writeTranscript(dir, "proj-b", "user-quote", [
       {
         type: "user",
+        entrypoint: "cli",
         message: { content: "what is ★ Insight ?" },
         timestamp: TWENTY_DAYS_AGO,
       },
@@ -379,6 +426,7 @@ describe("gatherInsightsSignals", () => {
     writeTranscript(dir, "proj-a", "skill-plan", [
       {
         type: "user",
+        entrypoint: "cli",
         message: {
           content: "<command-name>/superpowers:writing-plans</command-name>",
         },
@@ -399,6 +447,7 @@ describe("gatherInsightsSignals", () => {
     writeTranscript(dir, "proj-a", "skill-learn", [
       {
         type: "user",
+        entrypoint: "cli",
         message: { content: "<command-name>/thariq-skills</command-name>" },
         timestamp: TWENTY_DAYS_AGO,
       },
@@ -419,6 +468,7 @@ describe("gatherInsightsSignals", () => {
     writeTranscript(dir, "proj-a", "both", [
       {
         type: "user",
+        entrypoint: "cli",
         message: { content: "<command-name>/thariq-skills</command-name>" },
         timestamp: TWENTY_DAYS_AGO,
       },
@@ -456,10 +506,15 @@ describe("gatherInsightsSignals", () => {
     writeMeta(dir, "no-wt", { start_time: TWENTY_DAYS_AGO });
     writeTranscript(dir, "proj-a", "wt-session", [
       { type: "worktree-state", worktreeSession: { worktreeName: "x" } },
-      { type: "user", permissionMode: "auto", timestamp: TWENTY_DAYS_AGO },
+      {
+        type: "user",
+        entrypoint: "cli",
+        permissionMode: "auto",
+        timestamp: TWENTY_DAYS_AGO,
+      },
     ]);
     writeTranscript(dir, "proj-b", "no-wt", [
-      { type: "user", timestamp: TWENTY_DAYS_AGO },
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
     ]);
     const r = await gatherInsightsSignals({
       claudeHome: dir,
@@ -483,6 +538,58 @@ describe("gatherInsightsSignals", () => {
     });
     expect(r.sessionsAnalyzed).toBe(1);
     expect(r.subagentSessionCount).toBe(1);
+  });
+
+  it("classifies in-window sessions by kind and emits sessionsByKind", async () => {
+    writeMeta(dir, "s-int-1", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "s-sdk-1", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "s-obs-1", { start_time: TWENTY_DAYS_AGO });
+    // interactive_cli: entrypoint "cli"
+    writeTranscript(dir, "-Users-x-Projects-app", "s-int-1", [
+      { type: "user", entrypoint: "cli", permissionMode: "auto" },
+    ]);
+    // sdk_orchestrated: entrypoint "sdk-cli" in non-observer dir
+    writeTranscript(dir, "-Users-x-Projects-routine", "s-sdk-1", [
+      { type: "user", entrypoint: "sdk-cli", permissionMode: "default" },
+    ]);
+    // observer: entrypoint "sdk-cli" in observer-sessions dir
+    writeTranscript(dir, "-Users-x--claude-mem-observer-sessions", "s-obs-1", [
+      { type: "user", entrypoint: "sdk-cli", permissionMode: "default" },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      lookbackDays: 30,
+      now: NOW,
+      includeTranscripts: true,
+    });
+    expect(r.sessionsAnalyzed).toBe(3);
+    expect(r.interactiveSessionsAnalyzed).toBe(1);
+    expect(r.sessionsByKind).toEqual({
+      interactive_cli: 1,
+      sdk_orchestrated: 1,
+      observer: 1,
+      subagent: 0,
+      unknown: 0,
+    });
+  });
+
+  it("autoModeSessionCount excludes sdk-cli sessions even if their transcript records permissionMode auto", async () => {
+    writeMeta(dir, "s-int-1", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "s-sdk-1", { start_time: TWENTY_DAYS_AGO });
+    writeTranscript(dir, "-Users-x-Projects-app", "s-int-1", [
+      { type: "user", entrypoint: "cli", permissionMode: "auto" },
+    ]);
+    writeTranscript(dir, "-Users-x-Projects-routine", "s-sdk-1", [
+      { type: "user", entrypoint: "sdk-cli", permissionMode: "auto" },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+    expect(r.interactiveSessionsAnalyzed).toBe(1);
+    expect(r.autoModeSessionCount).toBe(1);
   });
 
   it("survives malformed JSON files without throwing", async () => {

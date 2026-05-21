@@ -129,6 +129,11 @@
     "path": "projects/*/*.jsonl scan",
     "description": "Count of sessions where the first assistant turn after ExitPlanMode is a tool_use call (Boris tip 65: delegation over guidance)."
   },
+  "sessionsByKind": {
+    "source": "transcripts",
+    "path": "~/.claude/projects/**/*.jsonl → first 5 lines, entrypoint field",
+    "description": "Classifies in-window sessions as interactive_cli, sdk_orchestrated, observer, or subagent. Posture scorers (auto mode, plan mode, learning) divide by interactive_cli only — SDK and observer sessions don't honor user-level settings and would dilute the ratio."
+  },
   "shipVerifyStageRecent": {
     "source": "transcripts",
     "path": "projects/*/*.jsonl scan for /ship verify-agent fires",

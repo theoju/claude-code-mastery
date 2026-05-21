@@ -436,3 +436,41 @@ export async function scanTranscriptModes(path) {
   }
   return { modes, hasWorktreeState, skills, learningModeMatches };
 }
+
+// Classify a session by transcript-file inspection. Cheap: only reads
+// the first ~5 lines until a recognized signal is found.
+//
+// Posture scorers (permissions, plan, learning) must restrict their
+// universe to "interactive_cli" — SDK/observer/subagent sessions don't
+// honor user-level settings and would silently dilute the ratio.
+export async function classifySessionKind(path) {
+  if (path.includes("/subagents/agent-")) return "subagent";
+
+  const rl = createInterface({
+    input: createReadStream(path, { encoding: "utf8" }),
+  });
+  let scanned = 0;
+  try {
+    for await (const raw of rl) {
+      if (++scanned > 5) break;
+      if (!raw) continue;
+      let entry;
+      try {
+        entry = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+      const ep = entry.entrypoint;
+      if (typeof ep !== "string") continue;
+      if (ep === "cli" || ep === "claude-desktop") return "interactive_cli";
+      if (ep === "sdk-cli") {
+        return path.includes("observer-sessions")
+          ? "observer"
+          : "sdk_orchestrated";
+      }
+    }
+  } finally {
+    rl.close();
+  }
+  return "unknown";
+}

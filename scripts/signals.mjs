@@ -754,6 +754,11 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
       // Verbatim string; null when settings.outputStyle is absent.
       outputStyle:
         typeof settings.outputStyle === "string" ? settings.outputStyle : null,
+      // Diagnostic only; never scored. Surfaces the cross-axis gap on the dashboard.
+      permissionsDefaultMode:
+        typeof settings.permissions?.defaultMode === "string"
+          ? settings.permissions.defaultMode
+          : null,
     },
     personalAgents,
     personalCommands,

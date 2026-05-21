@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import {
   buildTranscriptIndex,
+  classifySessionKind,
   cutoffFromLookback,
   loadFacetsMap,
   loadSessionMeta,
@@ -88,6 +89,23 @@ export async function gatherInsightsSignals({
   ]);
   const inWindow = allMeta.filter((m) => withinWindow(m.start_time, cutoff));
 
+  const transcriptIndex = await buildTranscriptIndex(claudeHome);
+  const sessionsByKind = {
+    interactive_cli: 0,
+    sdk_orchestrated: 0,
+    observer: 0,
+    subagent: 0,
+    unknown: 0,
+  };
+  const kindBySession = new Map();
+  for (const m of inWindow) {
+    const tpath = transcriptIndex.get(m.session_id);
+    const kind = tpath ? await classifySessionKind(tpath) : "unknown";
+    kindBySession.set(m.session_id, kind);
+    sessionsByKind[kind] += 1;
+  }
+  const interactiveSessionsAnalyzed = sessionsByKind.interactive_cli;
+
   let subagentSessionCount = 0;
   let mcpSessionCount = 0;
   let multiTaskSessionCount = 0;
@@ -122,7 +140,12 @@ export async function gatherInsightsSignals({
 
     const facet = facets.get(m.session_id);
     if (facet) {
-      if (facet.session_type === "multi_task") multiTaskSessionCount += 1;
+      if (
+        facet.session_type === "multi_task" &&
+        kindBySession.get(m.session_id) === "interactive_cli"
+      ) {
+        multiTaskSessionCount += 1;
+      }
       if (facet.outcome)
         outcomeCounts[facet.outcome] = (outcomeCounts[facet.outcome] || 0) + 1;
       const fc = facet.friction_counts || {};
@@ -139,6 +162,8 @@ export async function gatherInsightsSignals({
     capturedAt: now,
     lookbackDays,
     sessionsAnalyzed: inWindow.length,
+    sessionsByKind,
+    interactiveSessionsAnalyzed,
     subagentSessionCount,
     mcpSessionCount,
     multiTaskSessionCount,
@@ -164,7 +189,6 @@ export async function gatherInsightsSignals({
   };
 
   if (includeTranscripts) {
-    const transcriptIndex = await buildTranscriptIndex(claudeHome);
     let autoModeSessionCount = 0;
     let bypassPermissionsSessionCount = 0;
     let planModeSessionCount = 0;
@@ -176,19 +200,29 @@ export async function gatherInsightsSignals({
       if (!path) continue;
       const { modes, hasWorktreeState, learningModeMatches } =
         await scanTranscriptModes(path);
-      if (modes.has("auto")) autoModeSessionCount += 1;
-      if (modes.has("bypassPermissions")) bypassPermissionsSessionCount += 1;
-      // Union: native permissionMode === "plan" OR a planning-equivalent
-      // skill invocation. Both routes are surfaced via modes.has("plan")
-      // from scanTranscriptModes — see PLANNING_SKILL_COMMANDS there.
-      if (modes.has("plan")) planModeSessionCount += 1;
-      if (hasWorktreeState) worktreeUsageSessionCount += 1;
-      // Union: ★ Insight banners OR a learning-skill invocation. One
-      // increment per session even if both fire (matchesTotal stays
-      // banner-only — it measures banner occurrences, not session
-      // adoption, and the skill signal carries no occurrence semantics).
-      if (learningModeMatches > 0 || modes.has("learning"))
-        learningModeSessionCount += 1;
+      // Posture counters describe user adoption — they must only count
+      // sessions whose kind is "interactive_cli". SDK/observer/subagent
+      // sessions can record permissionMode but don't reflect user choice
+      // (the SDK injects modes for its own orchestration). Volume metrics
+      // like learningModeMatchesTotal stay broad: they measure banner
+      // occurrences, not session-level adoption.
+      const isInteractive =
+        kindBySession.get(m.session_id) === "interactive_cli";
+      if (isInteractive) {
+        if (modes.has("auto")) autoModeSessionCount += 1;
+        if (modes.has("bypassPermissions")) bypassPermissionsSessionCount += 1;
+        // Union: native permissionMode === "plan" OR a planning-equivalent
+        // skill invocation. Both routes are surfaced via modes.has("plan")
+        // from scanTranscriptModes — see PLANNING_SKILL_COMMANDS there.
+        if (modes.has("plan")) planModeSessionCount += 1;
+        if (hasWorktreeState) worktreeUsageSessionCount += 1;
+        // Union: ★ Insight banners OR a learning-skill invocation. One
+        // increment per session even if both fire (matchesTotal stays
+        // banner-only — it measures banner occurrences, not session
+        // adoption, and the skill signal carries no occurrence semantics).
+        if (learningModeMatches > 0 || modes.has("learning"))
+          learningModeSessionCount += 1;
+      }
       learningModeMatchesTotal += learningModeMatches;
     }
     result.transcriptsScanned = true;

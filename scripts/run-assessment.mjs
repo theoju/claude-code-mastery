@@ -161,6 +161,8 @@ export function buildSignalsSummary(signals) {
     // Verbatim — predicates use the `=v|w` literal-match operator (e.g.
     // `outputStyle=Explanatory|Learning`).
     outputStyle: signals.settings.outputStyle ?? null,
+    // Diagnostic only; never used by any predicate. Preserves the two-axis rule.
+    permissionsDefaultMode: signals.settings.permissionsDefaultMode ?? null,
   };
 }
 
