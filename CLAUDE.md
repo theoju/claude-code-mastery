@@ -177,6 +177,9 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   project — don't spin up a second project for sub-areas. The
   Atlassian MCP server (`atlassian:*` tools) is the canonical
   integration surface.
+- For the reference example of Jira-touching automation, see
+  `docs/ship-pattern.md` Stage 7 — the `/ship` command transitions
+  the linked ticket and posts the PR link as the close-of-loop step.
 
 ## Privacy
 
