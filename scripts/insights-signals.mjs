@@ -194,19 +194,28 @@ export async function gatherInsightsSignals({
       if (!path) continue;
       const { modes, hasWorktreeState, learningModeMatches } =
         await scanTranscriptModes(path);
-      if (modes.has("auto")) autoModeSessionCount += 1;
-      if (modes.has("bypassPermissions")) bypassPermissionsSessionCount += 1;
-      // Union: native permissionMode === "plan" OR a planning-equivalent
-      // skill invocation. Both routes are surfaced via modes.has("plan")
-      // from scanTranscriptModes — see PLANNING_SKILL_COMMANDS there.
-      if (modes.has("plan")) planModeSessionCount += 1;
-      if (hasWorktreeState) worktreeUsageSessionCount += 1;
-      // Union: ★ Insight banners OR a learning-skill invocation. One
-      // increment per session even if both fire (matchesTotal stays
-      // banner-only — it measures banner occurrences, not session
-      // adoption, and the skill signal carries no occurrence semantics).
-      if (learningModeMatches > 0 || modes.has("learning"))
-        learningModeSessionCount += 1;
+      // Posture counters describe user adoption — they must only count
+      // sessions whose kind is "interactive_cli". SDK/observer/subagent
+      // sessions can record permissionMode but don't reflect user choice
+      // (the SDK injects modes for its own orchestration). Volume metrics
+      // like learningModeMatchesTotal stay broad: they measure banner
+      // occurrences, not session-level adoption.
+      const isInteractive = m._kind === "interactive_cli";
+      if (isInteractive) {
+        if (modes.has("auto")) autoModeSessionCount += 1;
+        if (modes.has("bypassPermissions")) bypassPermissionsSessionCount += 1;
+        // Union: native permissionMode === "plan" OR a planning-equivalent
+        // skill invocation. Both routes are surfaced via modes.has("plan")
+        // from scanTranscriptModes — see PLANNING_SKILL_COMMANDS there.
+        if (modes.has("plan")) planModeSessionCount += 1;
+        if (hasWorktreeState) worktreeUsageSessionCount += 1;
+        // Union: ★ Insight banners OR a learning-skill invocation. One
+        // increment per session even if both fire (matchesTotal stays
+        // banner-only — it measures banner occurrences, not session
+        // adoption, and the skill signal carries no occurrence semantics).
+        if (learningModeMatches > 0 || modes.has("learning"))
+          learningModeSessionCount += 1;
+      }
       learningModeMatchesTotal += learningModeMatches;
     }
     result.transcriptsScanned = true;
