@@ -83,4 +83,26 @@ describe("plans-audit", () => {
     expect(audit.items[0].prOrSha).toBe("9cc07c5");
     expect(audit.items[0].ageLabel).toBe("11 days ago");
   });
+
+  it("sorts oldest first across multiple plans", async () => {
+    const audit = await auditPlans({
+      plansDir: "/fake/plans",
+      readdir: async () => ["one.md", "two.md", "three.md"],
+      gitLog: async ({ path }) => {
+        if (path.endsWith("one.md"))
+          return [{ sha: "a1", ts: tsDaysAgo(5), subject: "x (#1)" }];
+        if (path.endsWith("two.md"))
+          return [{ sha: "b2", ts: tsDaysAgo(10), subject: "y (#2)" }];
+        if (path.endsWith("three.md"))
+          return [{ sha: "c3", ts: tsDaysAgo(1), subject: "z (#3)" }];
+        return [];
+      },
+      now: () => NOW,
+    });
+    expect(audit.items.map((i) => i.filename)).toEqual([
+      "two.md",
+      "one.md",
+      "three.md",
+    ]);
+  });
 });
