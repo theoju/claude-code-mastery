@@ -24,6 +24,7 @@ import {
   CRITERIA,
   expandHome,
 } from "./claude-md-audit.mjs";
+import { auditPlans, formatAuditReport } from "./plans-audit.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DATA_DIR = join(ROOT, "app", "data");
@@ -276,6 +277,7 @@ async function main() {
     }),
   );
   const claudeMdRuns = cmTargets.length ? await auditAll(cmTargets) : [];
+  const plansAudit = await auditPlans();
 
   const assessment = {
     ...scored,
@@ -401,6 +403,7 @@ async function main() {
         }
       }
     }
+    lines.push("", formatAuditReport(plansAudit));
     console.log(lines.join("\n"));
   }
 
