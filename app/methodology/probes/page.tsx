@@ -111,7 +111,18 @@ export default function ProbesPage() {
   const assessment = loadJson<{
     capturedAt?: string;
     signalsSummary: Record<string, unknown>;
+    insights?: {
+      sessionsByKind?: {
+        interactive_cli: number;
+        sdk_orchestrated: number;
+        observer: number;
+        subagent: number;
+        unknown: number;
+      };
+      interactiveSessionsAnalyzed?: number;
+    } | null;
   }>("assessment.json");
+  const insights = assessment.insights ?? null;
   const catalogRaw =
     loadJson<Record<string, CatalogEntry | object>>("probe-catalog.json");
   const catalog: Record<string, CatalogEntry> = Object.fromEntries(
@@ -217,6 +228,56 @@ export default function ProbesPage() {
           </span>
         </Stat>
       </div>
+
+      {insights?.sessionsByKind && (
+        <section aria-labelledby="kinds-heading" className="mb-14">
+          <div className="flex items-baseline gap-3 mb-2 border-b border-[color:var(--color-line)] pb-2">
+            <span className="text-[color:var(--color-mute)] mono text-xs">
+              §
+            </span>
+            <h2
+              id="kinds-heading"
+              className="text-base font-semibold tracking-tight"
+            >
+              Session kinds in window
+            </h2>
+            <span className="ml-auto mono text-xs text-[color:var(--color-mute)]">
+              {insights.interactiveSessionsAnalyzed ??
+                insights.sessionsByKind.interactive_cli}
+              {" / "}
+              {Object.values(insights.sessionsByKind).reduce(
+                (a, b) => a + b,
+                0,
+              )}
+              {" interactive"}
+            </span>
+          </div>
+          <p className="text-xs text-[color:var(--color-mute)] mb-4 leading-relaxed max-w-3xl">
+            Posture scorers (auto mode, plan mode, learning) divide by{" "}
+            <span className="mono text-[color:var(--color-text)]">
+              interactive_cli
+            </span>{" "}
+            only. Volume scorers (integrations, scheduled, remote) divide by all
+            sessions. Surfacing the census here makes future telemetry drift
+            self-diagnosable.
+          </p>
+          <dl className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {Object.entries(insights.sessionsByKind).map(([kind, count]) => (
+              <div
+                key={kind}
+                className="bg-[color:var(--color-card,rgba(255,255,255,0.02))] border border-[color:var(--color-line)] rounded-sm px-3 py-2"
+              >
+                <dt className="mono text-[10px] uppercase tracking-[0.12em] text-[color:var(--color-mute)] mb-1">
+                  {kind}
+                </dt>
+                <dd className="mono text-2xl font-semibold tracking-tight">
+                  {count}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       {orderedSources.map((source) => {
         const rows = groups.get(source);

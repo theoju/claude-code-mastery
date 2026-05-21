@@ -133,6 +133,19 @@ export interface ClaudeMdReport {
   runs: ClaudeMdRun[];
 }
 
+export interface Insights {
+  sessionsAnalyzed?: number;
+  sessionsByKind?: {
+    interactive_cli: number;
+    sdk_orchestrated: number;
+    observer: number;
+    subagent: number;
+    unknown: number;
+  };
+  interactiveSessionsAnalyzed?: number;
+  [key: string]: unknown;
+}
+
 export interface Assessment {
   capturedAt: string;
   overall: number;
@@ -141,7 +154,7 @@ export interface Assessment {
   user: string | null;
   dimensions: Dimension[];
   signalsSummary: Record<string, unknown>;
-  insights: Record<string, unknown> | null;
+  insights: Insights | null;
   claudeMd: ClaudeMdReport | null;
 }
 
@@ -303,7 +316,7 @@ export async function loadAssessment(): Promise<Assessment> {
     scores: ScoredDimension[];
     trends: Record<string, Trend>;
     signalsSummary: Record<string, unknown>;
-    insights?: Record<string, unknown> | null;
+    insights?: Insights | null;
     claudeMd?: ClaudeMdReport | null;
   }>(ASSESSMENT_PATH);
 
