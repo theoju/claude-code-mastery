@@ -436,3 +436,19 @@ export async function scanTranscriptModes(path) {
   }
   return { modes, hasWorktreeState, skills, learningModeMatches };
 }
+
+// Classify a session by transcript-file inspection. Cheap: only reads the
+// first ~5 lines until a recognized signal is found. Returns one of:
+//   "interactive_cli"  — real user session (cli or claude-desktop entrypoint)
+//   "sdk_orchestrated" — programmatic SDK invocation
+//   "observer"         — claude-mem background observer (sdk-cli + observer dir)
+//   "subagent"         — Agent-tool subagent transcript (path-keyed)
+//   "unknown"          — no decisive signal in scanned header
+//
+// Posture scorers (permissions, plan, learning) must restrict their universe
+// to "interactive_cli" — SDK/observer/subagent sessions don't honor user-level
+// settings and would silently dilute the ratio.
+export async function classifySessionKind(path) {
+  if (path.includes("/subagents/agent-")) return "subagent";
+  return "unknown";
+}

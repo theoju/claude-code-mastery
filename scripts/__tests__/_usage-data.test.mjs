@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -9,6 +10,7 @@ import {
   loadFacetsMap,
   buildTranscriptIndex,
   scanTranscriptModes,
+  classifySessionKind,
 } from "../_usage-data.mjs";
 
 let tmpHome;
@@ -358,5 +360,16 @@ describe("scanTranscriptModes", () => {
     writeFileSync(path, lines.join("\n"));
     const r = await scanTranscriptModes(path);
     expect(r.modes.has("plan")).toBe(true);
+  });
+});
+
+describe("classifySessionKind", () => {
+  it("classifies a transcript under .../subagents/agent-*.jsonl as subagent", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const subDir = join(dir, "abc-session", "subagents");
+    await mkdir(subDir, { recursive: true });
+    const path = join(subDir, "agent-deadbeef.jsonl");
+    await writeFile(path, "");
+    expect(await classifySessionKind(path)).toBe("subagent");
   });
 });
