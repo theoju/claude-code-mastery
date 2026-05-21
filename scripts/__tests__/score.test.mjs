@@ -333,6 +333,26 @@ describe("EXECUTION_SCORERS", () => {
       expect(bad.score).toBeLessThan(r.score);
       expect(bad.gaps.join(" ")).toMatch(/bypassPermissions/);
     });
+    it("denominator excludes sdk-orchestrated sessions (regression: observer dilution)", () => {
+      const insights = makeInsights({
+        transcriptsScanned: true,
+        sessionsAnalyzed: 400,
+        interactiveSessionsAnalyzed: 50,
+        sessionsByKind: {
+          interactive_cli: 50,
+          sdk_orchestrated: 0,
+          observer: 350,
+          subagent: 0,
+          unknown: 0,
+        },
+        autoModeSessionCount: 45,
+        bypassPermissionsSessionCount: 0,
+      });
+      const result = EXECUTION_SCORERS.permissions({ insights });
+      // 45/50 = 90% → high score, NOT 45/400 = 11% → near-zero score
+      expect(result.score).toBeGreaterThan(80);
+      expect(result.evidence[0]).toMatch(/45\/50/);
+    });
     it("uses soft 1.2× asymmetry — majority-auto users with some bypass don't score zero", () => {
       // A user at 50% auto + 25% bypass scored 0 under the old 2× asymmetry.
       // The new 1.2× ratio surfaces the trend honestly: still well below the

@@ -549,37 +549,44 @@ const COEFFS = {
 };
 
 export const EXECUTION_SCORERS = {
-  permissions: withGates({ transcripts: true }, (s) => {
-    const {
-      autoModeSessionCount,
-      bypassPermissionsSessionCount,
-      sessionsAnalyzed,
-    } = s.insights;
-    // transcriptsScanned implies these are numbers upstream — guard anyway so a
-    // future ingest path that sets the flag without filling counts can't quietly
-    // produce score: 0 with "null/100" evidence.
-    if (autoModeSessionCount == null || bypassPermissionsSessionCount == null) {
-      return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
-    }
-    const autoRatio = autoModeSessionCount / sessionsAnalyzed;
-    const bypassRatio = bypassPermissionsSessionCount / sessionsAnalyzed;
-    const score = clamp(
-      Math.round(
-        autoRatio * COEFFS.permissionsAutoWeight -
-          bypassRatio * COEFFS.permissionsBypassPenalty,
-      ),
-    );
-    const evidence = [
-      `Auto mode: ${autoModeSessionCount}/${sessionsAnalyzed} sessions (${pct(autoRatio * 100)}%)`,
-    ];
-    const gaps = [];
-    if (bypassPermissionsSessionCount > 0) {
-      gaps.push(
-        `bypassPermissions: ${bypassPermissionsSessionCount}/${sessionsAnalyzed} sessions — auto mode preferred`,
+  permissions: withGates(
+    { transcripts: true, universe: "interactive_only" },
+    (s) => {
+      const {
+        autoModeSessionCount,
+        bypassPermissionsSessionCount,
+        interactiveSessionsAnalyzed,
+      } = s.insights;
+      if (
+        autoModeSessionCount == null ||
+        bypassPermissionsSessionCount == null
+      ) {
+        return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
+      }
+      if (!interactiveSessionsAnalyzed) {
+        return unavailable(GAP_REASONS.NO_SESSIONS);
+      }
+      const autoRatio = autoModeSessionCount / interactiveSessionsAnalyzed;
+      const bypassRatio =
+        bypassPermissionsSessionCount / interactiveSessionsAnalyzed;
+      const score = clamp(
+        Math.round(
+          autoRatio * COEFFS.permissionsAutoWeight -
+            bypassRatio * COEFFS.permissionsBypassPenalty,
+        ),
       );
-    }
-    return { score, evidence, gaps, gapReason: null };
-  }),
+      const evidence = [
+        `Auto mode: ${autoModeSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(autoRatio * 100)}%)`,
+      ];
+      const gaps = [];
+      if (bypassPermissionsSessionCount > 0) {
+        gaps.push(
+          `bypassPermissions: ${bypassPermissionsSessionCount}/${interactiveSessionsAnalyzed} sessions — auto mode preferred`,
+        );
+      }
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
 
   verification: withGates({}, (s) => {
     const { frictionCounts, sessionsAnalyzed } = s.insights;
