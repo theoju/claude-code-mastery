@@ -66,4 +66,21 @@ describe("plans-audit", () => {
     expect(audit.count).toBe(1);
     expect(audit.items[0].filename).toBe("live.md");
   });
+
+  it("falls back to short SHA when subject lacks (#NN)", async () => {
+    const audit = await auditPlans({
+      plansDir: "/fake/plans",
+      readdir: async () => ["direct.md"],
+      gitLog: async () => [
+        {
+          sha: "9cc07c5f1234567890",
+          ts: tsDaysAgo(11),
+          subject: "direct-to-main commit no PR",
+        },
+      ],
+      now: () => NOW,
+    });
+    expect(audit.items[0].prOrSha).toBe("9cc07c5");
+    expect(audit.items[0].ageLabel).toBe("11 days ago");
+  });
 });
