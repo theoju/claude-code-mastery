@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import {
   buildTranscriptIndex,
+  classifySessionKind,
   cutoffFromLookback,
   loadFacetsMap,
   loadSessionMeta,
@@ -88,6 +89,22 @@ export async function gatherInsightsSignals({
   ]);
   const inWindow = allMeta.filter((m) => withinWindow(m.start_time, cutoff));
 
+  const transcriptIndex = await buildTranscriptIndex(claudeHome);
+  const sessionsByKind = {
+    interactive_cli: 0,
+    sdk_orchestrated: 0,
+    observer: 0,
+    subagent: 0,
+    unknown: 0,
+  };
+  for (const m of inWindow) {
+    const tpath = transcriptIndex.get(m.session_id);
+    const kind = tpath ? await classifySessionKind(tpath) : "unknown";
+    m._kind = kind;
+    sessionsByKind[kind] += 1;
+  }
+  const interactiveSessionsAnalyzed = sessionsByKind.interactive_cli;
+
   let subagentSessionCount = 0;
   let mcpSessionCount = 0;
   let multiTaskSessionCount = 0;
@@ -139,6 +156,8 @@ export async function gatherInsightsSignals({
     capturedAt: now,
     lookbackDays,
     sessionsAnalyzed: inWindow.length,
+    sessionsByKind,
+    interactiveSessionsAnalyzed,
     subagentSessionCount,
     mcpSessionCount,
     multiTaskSessionCount,
@@ -164,7 +183,6 @@ export async function gatherInsightsSignals({
   };
 
   if (includeTranscripts) {
-    const transcriptIndex = await buildTranscriptIndex(claudeHome);
     let autoModeSessionCount = 0;
     let bypassPermissionsSessionCount = 0;
     let planModeSessionCount = 0;

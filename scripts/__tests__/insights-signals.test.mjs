@@ -485,6 +485,39 @@ describe("gatherInsightsSignals", () => {
     expect(r.subagentSessionCount).toBe(1);
   });
 
+  it("classifies in-window sessions by kind and emits sessionsByKind", async () => {
+    writeMeta(dir, "s-int-1", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "s-sdk-1", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "s-obs-1", { start_time: TWENTY_DAYS_AGO });
+    // interactive_cli: entrypoint "cli"
+    writeTranscript(dir, "-Users-x-Projects-app", "s-int-1", [
+      { type: "user", entrypoint: "cli", permissionMode: "auto" },
+    ]);
+    // sdk_orchestrated: entrypoint "sdk-cli" in non-observer dir
+    writeTranscript(dir, "-Users-x-Projects-routine", "s-sdk-1", [
+      { type: "user", entrypoint: "sdk-cli", permissionMode: "default" },
+    ]);
+    // observer: entrypoint "sdk-cli" in observer-sessions dir
+    writeTranscript(dir, "-Users-x--claude-mem-observer-sessions", "s-obs-1", [
+      { type: "user", entrypoint: "sdk-cli", permissionMode: "default" },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      lookbackDays: 30,
+      now: NOW,
+      includeTranscripts: true,
+    });
+    expect(r.sessionsAnalyzed).toBe(3);
+    expect(r.interactiveSessionsAnalyzed).toBe(1);
+    expect(r.sessionsByKind).toEqual({
+      interactive_cli: 1,
+      sdk_orchestrated: 1,
+      observer: 1,
+      subagent: 0,
+      unknown: 0,
+    });
+  });
+
   it("survives malformed JSON files without throwing", async () => {
     mkdirSync(join(dir, "usage-data", "session-meta"), { recursive: true });
     mkdirSync(join(dir, "usage-data", "facets"), { recursive: true });
