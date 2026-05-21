@@ -27,4 +27,26 @@ describe("plans-audit", () => {
     });
     expect(audit.count).toBe(0);
   });
+
+  it("includes a landed plan with PR-tagged squash subject", async () => {
+    const audit = await auditPlans({
+      plansDir: "/fake/plans",
+      readdir: async () => ["2026-05-19-feature.md"],
+      gitLog: async () => [
+        {
+          sha: "abc1234567890abcdef",
+          ts: tsDaysAgo(2),
+          subject: "feat: new thing (#42)",
+        },
+      ],
+      now: () => NOW,
+    });
+    expect(audit.count).toBe(1);
+    expect(audit.items[0]).toMatchObject({
+      filename: "2026-05-19-feature.md",
+      prOrSha: "#42",
+      ageDays: 2,
+      ageLabel: "2 days ago",
+    });
+  });
 });
