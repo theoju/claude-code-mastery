@@ -372,4 +372,71 @@ describe("classifySessionKind", () => {
     await writeFile(path, "");
     expect(await classifySessionKind(path)).toBe("subagent");
   });
+
+  it("classifies a transcript with entrypoint=cli as interactive_cli", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    await writeFile(
+      path,
+      JSON.stringify({
+        type: "user",
+        entrypoint: "cli",
+        userType: "external",
+      }) + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("interactive_cli");
+  });
+
+  it("classifies entrypoint=claude-desktop as interactive_cli", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    await writeFile(
+      path,
+      JSON.stringify({ type: "user", entrypoint: "claude-desktop" }) + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("interactive_cli");
+  });
+
+  it("classifies entrypoint=sdk-cli in observer-sessions dir as observer", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const projectDir = join(dir, "-Users-theo--claude-mem-observer-sessions");
+    await mkdir(projectDir, { recursive: true });
+    const path = join(projectDir, "session.jsonl");
+    await writeFile(
+      path,
+      JSON.stringify({ type: "user", entrypoint: "sdk-cli" }) + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("observer");
+  });
+
+  it("classifies entrypoint=sdk-cli outside observer dir as sdk_orchestrated", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const projectDir = join(dir, "-Users-theo-Projects-engineering-docs-agent");
+    await mkdir(projectDir, { recursive: true });
+    const path = join(projectDir, "session.jsonl");
+    await writeFile(
+      path,
+      JSON.stringify({ type: "user", entrypoint: "sdk-cli" }) + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("sdk_orchestrated");
+  });
+
+  it("returns 'unknown' when no entrypoint is found within first 5 lines", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    await writeFile(
+      path,
+      Array.from({ length: 5 }, (_, i) =>
+        JSON.stringify({ type: "noise", n: i }),
+      ).join("\n") + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("unknown");
+  });
+
+  it("returns 'unknown' for an empty file", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    await writeFile(path, "");
+    expect(await classifySessionKind(path)).toBe("unknown");
+  });
 });
