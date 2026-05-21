@@ -86,11 +86,19 @@ export default function MethodologyPage() {
             <span className="mono">autoRatio × 100 − bypassRatio × 120</span>.
             Soft 1.2× asymmetry: auto is preferred, but occasional bypass
             doesn&apos;t crush a mostly-auto workflow.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: interactive sessions only (excludes SDK and observer
+              sessions).
+            </span>
           </li>
           <li>
             <strong>Parallel Execution &amp; Subagents</strong> — subagent
             dispatch ratio (weighted 2×) plus worktree usage when transcripts
             are opted in.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: interactive sessions only (excludes SDK and observer
+              sessions).
+            </span>
           </li>
           <li>
             <strong>Planning &amp; Delegation</strong> — plan-mode adoption
@@ -101,6 +109,10 @@ export default function MethodologyPage() {
             <span className="mono">superpowers:brainstorming</span>) — skill
             invocations are scanned from transcripts so a planning skill counts
             the same as the toggle.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: interactive sessions only (excludes SDK and observer
+              sessions).
+            </span>
           </li>
           <li>
             <strong>Integrations</strong> —{" "}
@@ -110,12 +122,18 @@ export default function MethodologyPage() {
             . Volume-per-session, not coverage. Specialty plugins that only fire
             in their context aren&apos;t penalized; idle plugins surface as
             informational evidence instead of dragging the score.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: all in-window sessions (volume metric).
+            </span>
           </li>
           <li>
             <strong>Verification</strong> —{" "}
             <span className="mono">100 × exp(−missRate × 8)</span>. Smooth
             exponential decay over friction events (buggy_code + wrong_approach)
             per session. Never goes negative; a 15% miss rate ≈ 30, 30% ≈ 9.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: all in-window sessions (volume metric).
+            </span>
           </li>
           <li>
             <strong>Automation &amp; Hooks</strong> — hook fires per session
@@ -123,6 +141,10 @@ export default function MethodologyPage() {
             <em>unmeasured</em> when{" "}
             <span className="mono">~/.claude/hook-fires.jsonl</span> is absent
             (Claude Code does not emit this telemetry by default).
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: interactive sessions only (excludes SDK and observer
+              sessions).
+            </span>
           </li>
           <li>
             <strong>Scheduled &amp; Autonomous Workflows</strong> —
@@ -130,11 +152,17 @@ export default function MethodologyPage() {
             ScheduleWakeup invocations. 1 invocation in window = 50, ≥3 = 100.
             Volume-per-session would wash the signal out — these tools fire too
             rarely.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: all in-window sessions (volume metric).
+            </span>
           </li>
           <li>
             <strong>Remote &amp; Mobile</strong> — same presence-and-intensity
             curve over RemoteTrigger / PushNotification / SendMessage
             invocations.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: all in-window sessions (volume metric).
+            </span>
           </li>
           <li>
             <strong>Learning &amp; Explanatory Mode</strong> —{" "}
@@ -149,6 +177,10 @@ export default function MethodologyPage() {
             match depends on the plugin&apos;s banner string, so a future plugin
             upgrade could regress one half of the signal — the skill-invocation
             half remains stable.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: interactive sessions only (excludes SDK and observer
+              sessions).
+            </span>
           </li>
         </ul>
       </Section>
