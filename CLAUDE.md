@@ -68,7 +68,7 @@ app/
 ## Tests
 
 ```bash
-npx vitest run            # 494 tests, ~5s
+npx vitest run            # 520 tests, ~5s
 ```
 
 If a test fails after a scoring change, update the fixture in
@@ -128,6 +128,17 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
 - `--delete-branch` doesn't always work cleanly (inside or outside a
   worktree) — `gh` deletes the remote branch but the local remote-tracking
   ref persists. Run `git fetch --prune` after the merge to clear it.
+- **`gh pr merge --delete-branch` from inside a worktree fails mid-cleanup
+  when `main` is checked out in the parent repo** (`fatal: 'main' is
+already checked out at …`). The GitHub-side merge still succeeds — only
+  the local cleanup half-completes, leaving the remote branch alive and
+  local main un-fast-forwarded. Recovery from the **main checkout**:
+  `gh pr view <N> --json state,mergeCommit` (confirm MERGED) →
+  `git push origin --delete <branch>` → `git fetch --prune` →
+  `git merge --ff-only origin/main` → `git worktree remove <path>` →
+  `git branch -d <branch>`. Prefer running `gh pr merge` from the main
+  checkout in the first place when the feature lives in a worktree
+  (PR #62 cycle).
 - Sourcing `.env.local` for local runs: `scripts/run-assessment.mjs` reads
   `process.env.SLACK_WEBHOOK_URL` directly and does not auto-load
   `.env.local`. The LaunchAgent gets it via `EnvironmentVariables` in the
@@ -189,6 +200,15 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
 - For the reference example of Jira-touching automation, see
   `docs/ship-pattern.md` Stage 7 — the `/ship` command transitions
   the linked ticket and posts the PR link as the close-of-loop step.
+- **Auto-mode authorization for Jira writes is scoped per action,
+  not per session.** Re-authenticating the Atlassian MCP server (or
+  approving one comment) does NOT extend to subsequent writes — each
+  `createJiraIssue`, `addCommentToJiraIssue`, and `transitionJiraIssue`
+  needs its own user direction. CCE-13 (PR #62): the comment landed
+  after explicit re-auth, but the immediate follow-up
+  `transitionJiraIssue` was classifier-blocked under the same auth.
+  When chaining Jira writes, ask for explicit confirmation per write
+  or batch them into a single user-approved step.
 
 ## Privacy
 
