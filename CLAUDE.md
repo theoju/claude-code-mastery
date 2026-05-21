@@ -94,6 +94,15 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   original PR 9 plan assumed an `outputStyle` field that doesn't exist; a
   60-transcript survey killed it before the code was wrong. Use the same
   approach for any new Execution scorer.
+- **Verify denominator semantics for every ratio scorer.** A scorer
+  measuring user posture (permissions, plan mode, learning) must restrict
+  its denominator to sessions whose posture is actually settable by the
+  user — `interactive_cli`. Don't count `sdk_orchestrated`, `observer`, or
+  `subagent` sessions in posture ratios; they run with the SDK's defaults
+  and silently dilute the numerator. Volume scorers (integrations,
+  scheduled, remote) can use the broad `all_sessions` universe. Universe
+  is declared on `withGates({ universe: … })` in `scripts/score.mjs` and
+  enforced at construction time.
 - **Never collapse the two axes on any rendering surface.** Platform Setup
   and Execution scores must each be presented separately on the dashboard,
   the methodology page, the console printer (`run-assessment.mjs`), and the
