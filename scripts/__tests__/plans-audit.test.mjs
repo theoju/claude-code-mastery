@@ -49,4 +49,21 @@ describe("plans-audit", () => {
       ageLabel: "2 days ago",
     });
   });
+
+  it("skips directory entries (e.g., archived/ subdir is not recursed)", async () => {
+    const audit = await auditPlans({
+      plansDir: "/fake/plans",
+      readdir: async () => ["archived", "live.md"],
+      gitLog: async () => [
+        {
+          sha: "deadbeefdeadbeef",
+          ts: tsDaysAgo(3),
+          subject: "live plan (#1)",
+        },
+      ],
+      now: () => NOW,
+    });
+    expect(audit.count).toBe(1);
+    expect(audit.items[0].filename).toBe("live.md");
+  });
 });
