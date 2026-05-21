@@ -161,10 +161,7 @@ export function buildSignalsSummary(signals) {
     // Verbatim — predicates use the `=v|w` literal-match operator (e.g.
     // `outputStyle=Explanatory|Learning`).
     outputStyle: signals.settings.outputStyle ?? null,
-    // settings.permissions.defaultMode — verbatim string ("auto" |
-    // "default" | "plan" | "bypassPermissions") or null. Surfaced for the
-    // dashboard cross-axis sanity hint only; not consumed by any
-    // predicate. Keeps the two-axis rule intact.
+    // Diagnostic only; never used by any predicate. Preserves the two-axis rule.
     permissionsDefaultMode: signals.settings.permissionsDefaultMode ?? null,
   };
 }

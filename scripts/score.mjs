@@ -502,9 +502,8 @@ function unavailable(reason) {
   return { score: null, evidence: [], gaps: [], gapReason: reason };
 }
 
-// Platform-Setup-only-by-nature scorers: always unavailable, but the universe
-// contract still applies. Returns a function with __universe annotated so the
-// audit test in score.test.mjs passes uniformly across all EXECUTION_SCORERS.
+// Platform-Setup-only scorers: always unavailable, but the universe
+// contract still applies. Universe value is inert here.
 function noTelemetry() {
   const fn = () => unavailable(GAP_REASONS.NO_TELEMETRY_FOR_DIMENSION);
   fn.__universe = "all_sessions";
@@ -588,9 +587,6 @@ export const EXECUTION_SCORERS = {
         bypassPermissionsSessionCount == null
       ) {
         return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
-      }
-      if (!interactiveSessionsAnalyzed) {
-        return unavailable(GAP_REASONS.NO_SESSIONS);
       }
       const autoRatio = autoModeSessionCount / interactiveSessionsAnalyzed;
       const bypassRatio =

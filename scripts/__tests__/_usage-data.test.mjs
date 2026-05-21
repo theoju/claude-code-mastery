@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -365,18 +364,18 @@ describe("scanTranscriptModes", () => {
 
 describe("classifySessionKind", () => {
   it("classifies a transcript under .../subagents/agent-*.jsonl as subagent", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const subDir = join(dir, "abc-session", "subagents");
-    await mkdir(subDir, { recursive: true });
+    mkdirSync(subDir, { recursive: true });
     const path = join(subDir, "agent-deadbeef.jsonl");
-    await writeFile(path, "");
+    writeFileSync(path, "");
     expect(await classifySessionKind(path)).toBe("subagent");
   });
 
   it("classifies a transcript with entrypoint=cli as interactive_cli", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const path = join(dir, "session.jsonl");
-    await writeFile(
+    writeFileSync(
       path,
       JSON.stringify({
         type: "user",
@@ -388,9 +387,9 @@ describe("classifySessionKind", () => {
   });
 
   it("classifies entrypoint=claude-desktop as interactive_cli", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const path = join(dir, "session.jsonl");
-    await writeFile(
+    writeFileSync(
       path,
       JSON.stringify({ type: "user", entrypoint: "claude-desktop" }) + "\n",
     );
@@ -398,11 +397,11 @@ describe("classifySessionKind", () => {
   });
 
   it("classifies entrypoint=sdk-cli in observer-sessions dir as observer", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const projectDir = join(dir, "-Users-theo--claude-mem-observer-sessions");
-    await mkdir(projectDir, { recursive: true });
+    mkdirSync(projectDir, { recursive: true });
     const path = join(projectDir, "session.jsonl");
-    await writeFile(
+    writeFileSync(
       path,
       JSON.stringify({ type: "user", entrypoint: "sdk-cli" }) + "\n",
     );
@@ -410,11 +409,11 @@ describe("classifySessionKind", () => {
   });
 
   it("classifies entrypoint=sdk-cli outside observer dir as sdk_orchestrated", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const projectDir = join(dir, "-Users-theo-Projects-engineering-docs-agent");
-    await mkdir(projectDir, { recursive: true });
+    mkdirSync(projectDir, { recursive: true });
     const path = join(projectDir, "session.jsonl");
-    await writeFile(
+    writeFileSync(
       path,
       JSON.stringify({ type: "user", entrypoint: "sdk-cli" }) + "\n",
     );
@@ -422,9 +421,9 @@ describe("classifySessionKind", () => {
   });
 
   it("returns 'unknown' when no entrypoint is found within first 5 lines", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const path = join(dir, "session.jsonl");
-    await writeFile(
+    writeFileSync(
       path,
       Array.from({ length: 5 }, (_, i) =>
         JSON.stringify({ type: "noise", n: i }),
@@ -434,9 +433,9 @@ describe("classifySessionKind", () => {
   });
 
   it("returns 'unknown' for an empty file", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "kind-"));
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const path = join(dir, "session.jsonl");
-    await writeFile(path, "");
+    writeFileSync(path, "");
     expect(await classifySessionKind(path)).toBe("unknown");
   });
 });

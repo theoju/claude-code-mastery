@@ -754,10 +754,7 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
       // Verbatim string; null when settings.outputStyle is absent.
       outputStyle:
         typeof settings.outputStyle === "string" ? settings.outputStyle : null,
-      // settings.permissions.defaultMode — null when absent. Used purely as
-      // a diagnostic signal on the dashboard (cross-axis sanity hint): if
-      // setup says auto but Execution permissions are low, surface the
-      // disconnect. Never used in scoring; the two axes stay independent.
+      // Diagnostic only; never scored. Surfaces the cross-axis gap on the dashboard.
       permissionsDefaultMode:
         typeof settings.permissions?.defaultMode === "string"
           ? settings.permissions.defaultMode

@@ -97,10 +97,11 @@ export async function gatherInsightsSignals({
     subagent: 0,
     unknown: 0,
   };
+  const kindBySession = new Map();
   for (const m of inWindow) {
     const tpath = transcriptIndex.get(m.session_id);
     const kind = tpath ? await classifySessionKind(tpath) : "unknown";
-    m._kind = kind;
+    kindBySession.set(m.session_id, kind);
     sessionsByKind[kind] += 1;
   }
   const interactiveSessionsAnalyzed = sessionsByKind.interactive_cli;
@@ -141,7 +142,7 @@ export async function gatherInsightsSignals({
     if (facet) {
       if (
         facet.session_type === "multi_task" &&
-        m._kind === "interactive_cli"
+        kindBySession.get(m.session_id) === "interactive_cli"
       ) {
         multiTaskSessionCount += 1;
       }
@@ -205,7 +206,8 @@ export async function gatherInsightsSignals({
       // (the SDK injects modes for its own orchestration). Volume metrics
       // like learningModeMatchesTotal stay broad: they measure banner
       // occurrences, not session-level adoption.
-      const isInteractive = m._kind === "interactive_cli";
+      const isInteractive =
+        kindBySession.get(m.session_id) === "interactive_cli";
       if (isInteractive) {
         if (modes.has("auto")) autoModeSessionCount += 1;
         if (modes.has("bypassPermissions")) bypassPermissionsSessionCount += 1;

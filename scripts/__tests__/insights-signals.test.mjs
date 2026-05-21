@@ -149,8 +149,6 @@ describe("gatherInsightsSignals", () => {
     writeFacet(dir, "s1", { session_type: "multi_task" });
     writeFacet(dir, "s2", { session_type: "multi_task" });
     writeFacet(dir, "s3", { session_type: "single_task" });
-    // multiTaskSessionCount is gated on interactive_cli kind — give each
-    // session an interactive transcript so it survives the gate.
     writeTranscript(dir, "proj-a", "s1", [
       { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
     ]);

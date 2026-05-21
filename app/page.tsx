@@ -40,12 +40,8 @@ export default async function Page() {
       ? null
       : assessment.overall - assessment.executionOverall;
   const executionMeasured = dims.filter((d) => d.executionScore != null).length;
-  // Cross-axis sanity hint (diagnostic only, never scored). When Platform
-  // Setup declares `permissions.defaultMode: "auto"` but Execution measures
-  // a low permissions score, the two axes disagree — usually because the
-  // interactive-only denominator (Task 6) filtered out the user's actual
-  // sessions, or because interactive sessions aren't running in auto. The
-  // axes themselves stay independent; this banner just surfaces the gap.
+  // Surface the gap when Setup says auto but Execution measures otherwise —
+  // diagnostic only, never scored; preserves the two-axis independence rule.
   const platformDefaultMode =
     (assessment.signalsSummary as { permissionsDefaultMode?: string | null })
       ?.permissionsDefaultMode ?? null;
