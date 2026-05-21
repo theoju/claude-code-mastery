@@ -40,6 +40,21 @@ export default async function Page() {
       ? null
       : assessment.overall - assessment.executionOverall;
   const executionMeasured = dims.filter((d) => d.executionScore != null).length;
+  // Cross-axis sanity hint (diagnostic only, never scored). When Platform
+  // Setup declares `permissions.defaultMode: "auto"` but Execution measures
+  // a low permissions score, the two axes disagree — usually because the
+  // interactive-only denominator (Task 6) filtered out the user's actual
+  // sessions, or because interactive sessions aren't running in auto. The
+  // axes themselves stay independent; this banner just surfaces the gap.
+  const platformDefaultMode =
+    (assessment.signalsSummary as { permissionsDefaultMode?: string | null })
+      ?.permissionsDefaultMode ?? null;
+  const permissionsDim = dims.find((d) => d.id === "permissions");
+  const executionPermissionsScore = permissionsDim?.executionScore ?? null;
+  const showAutoModeMystery =
+    platformDefaultMode === "auto" &&
+    executionPermissionsScore != null &&
+    executionPermissionsScore < 50;
   const sorted = [...dims].sort(
     (a, b) => b.weight * (b.target - b.score) - a.weight * (a.target - a.score),
   );
@@ -185,6 +200,27 @@ export default async function Page() {
                   </>
                 )}
               </div>
+            )}
+            {showAutoModeMystery && (
+              <aside
+                aria-label="Auto-mode sanity check"
+                className="mt-3 rounded-md border border-[color:var(--color-warn)]/40 bg-[color:var(--color-warn)]/5 p-3 text-xs leading-relaxed text-[color:var(--color-text)]"
+              >
+                Setup says auto mode is configured, but Execution measures{" "}
+                <span className="mono">{executionPermissionsScore} / 100</span>{" "}
+                on permissions. Check the{" "}
+                <Link
+                  href="/methodology/probes#kinds-heading"
+                  className="underline decoration-dotted underline-offset-2 hover:text-[color:var(--color-accent)]"
+                >
+                  session-kind census
+                </Link>{" "}
+                — if most sessions are{" "}
+                <span className="mono">sdk_orchestrated</span> or{" "}
+                <span className="mono">observer</span>, the interactive-only
+                denominator already filters them. Otherwise, your interactive
+                sessions may not be running in auto mode.
+              </aside>
             )}
           </div>
 

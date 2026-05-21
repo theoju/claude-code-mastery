@@ -759,6 +759,7 @@ describe("buildSignalsSummary", () => {
         "mcpServersConnected",
         "outputStyle",
         "parallelWorktreeAdoption",
+        "permissionsDefaultMode",
         "personalAgents",
         "personalCommands",
         "personalSkillNames",

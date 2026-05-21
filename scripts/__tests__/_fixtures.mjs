@@ -13,6 +13,7 @@ export function makeSignals(overrides = {}) {
       hookEvents: [],
       hookTotalCount: 0,
       outputStyle: null,
+      permissionsDefaultMode: null,
     },
     personalAgents: [],
     personalCommands: [],
