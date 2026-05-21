@@ -149,12 +149,47 @@ describe("gatherInsightsSignals", () => {
     writeFacet(dir, "s1", { session_type: "multi_task" });
     writeFacet(dir, "s2", { session_type: "multi_task" });
     writeFacet(dir, "s3", { session_type: "single_task" });
+    // multiTaskSessionCount is gated on interactive_cli kind — give each
+    // session an interactive transcript so it survives the gate.
+    writeTranscript(dir, "proj-a", "s1", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    writeTranscript(dir, "proj-a", "s2", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    writeTranscript(dir, "proj-a", "s3", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
     const r = await gatherInsightsSignals({
       claudeHome: dir,
       now: NOW,
       lookbackDays: 30,
     });
     expect(r.multiTaskSessionCount).toBe(2);
+  });
+
+  it("multiTaskSessionCount excludes non-interactive sessions", async () => {
+    // Regression: multiTaskSessionCount must respect the interactive_cli
+    // universe gate. SDK-orchestrated sessions (entrypoint sdk-cli) can
+    // also be tagged multi_task in facets, but they don't reflect user
+    // adoption of multi-task planning — counting them dilutes the
+    // planning scorer's denominator.
+    writeMeta(dir, "s-int", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "s-sdk", { start_time: TWENTY_DAYS_AGO });
+    writeFacet(dir, "s-int", { session_type: "multi_task" });
+    writeFacet(dir, "s-sdk", { session_type: "multi_task" });
+    writeTranscript(dir, "-Users-x-Projects-app", "s-int", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    writeTranscript(dir, "-Users-x-Projects-routine", "s-sdk", [
+      { type: "user", entrypoint: "sdk-cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+    });
+    expect(r.multiTaskSessionCount).toBe(1);
   });
 
   it("aggregates scheduled and remote tool invocations from tool_counts", async () => {

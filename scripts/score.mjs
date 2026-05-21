@@ -664,8 +664,6 @@ export const EXECUTION_SCORERS = {
   }),
 
   // requireSessions: false — gates internally on multiTaskSessionCount instead.
-  // Universe is interactive_only: multiTaskSessionCount is already restricted to
-  // the interactive subset by insights-signals.
   planning: withGates(
     { transcripts: true, requireSessions: false, universe: "interactive_only" },
     (s) => {

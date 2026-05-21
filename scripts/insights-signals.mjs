@@ -139,7 +139,12 @@ export async function gatherInsightsSignals({
 
     const facet = facets.get(m.session_id);
     if (facet) {
-      if (facet.session_type === "multi_task") multiTaskSessionCount += 1;
+      if (
+        facet.session_type === "multi_task" &&
+        m._kind === "interactive_cli"
+      ) {
+        multiTaskSessionCount += 1;
+      }
       if (facet.outcome)
         outcomeCounts[facet.outcome] = (outcomeCounts[facet.outcome] || 0) + 1;
       const fc = facet.friction_counts || {};
