@@ -652,7 +652,7 @@ describe("EXECUTION_SCORERS", () => {
   });
 
   describe("platform-setup-only dimensions", () => {
-    it.each(["model-effort", "memory", "customization"])(
+    it.each(["memory", "customization"])(
       "%s returns null with NO_TELEMETRY_FOR_DIMENSION reason",
       (id) => {
         const r = EXECUTION_SCORERS[id](
@@ -708,6 +708,45 @@ describe("EXECUTION_SCORERS", () => {
       );
       expect(r.score).toBe(10);
       expect(r.gaps.join(" ")).toMatch(/<30%/);
+    });
+  });
+
+  describe("model-effort", () => {
+    it("returns NO_TRANSCRIPTS when transcripts not scanned", () => {
+      const r = EXECUTION_SCORERS["model-effort"](
+        makeSignals({ insights: makeInsights({ transcriptsScanned: false }) }),
+      );
+      expect(r.score).toBeNull();
+      expect(r.gapReason).toMatch(/includeTranscripts/);
+    });
+    it("scores the Opus-dominant session ratio", () => {
+      const r = EXECUTION_SCORERS["model-effort"](
+        makeSignals({
+          insights: makeInsights({
+            transcriptsScanned: true,
+            interactiveSessionsAnalyzed: 10,
+            opusDominantSessionCount: 8,
+            opusModelMatchesTotal: 40,
+          }),
+        }),
+      );
+      expect(r.score).toBe(80);
+      expect(r.gapReason).toBeNull();
+      expect(r.evidence.join(" ")).toMatch(/8\/10/);
+    });
+    it("flags low Opus adoption (<50%) with a gap message", () => {
+      const r = EXECUTION_SCORERS["model-effort"](
+        makeSignals({
+          insights: makeInsights({
+            transcriptsScanned: true,
+            interactiveSessionsAnalyzed: 10,
+            opusDominantSessionCount: 3,
+            opusModelMatchesTotal: 12,
+          }),
+        }),
+      );
+      expect(r.score).toBe(30);
+      expect(r.gaps.join(" ")).toMatch(/fewer than half/);
     });
   });
 });

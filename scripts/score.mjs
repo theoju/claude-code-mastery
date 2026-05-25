@@ -818,16 +818,40 @@ export const EXECUTION_SCORERS = {
     },
   ),
 
+  // Tip 2: Opus-dominant session ratio. The MODEL half of "Model & Effort" —
+  // effort level is never written to session-meta, but model choice IS
+  // recoverable from transcripts (entry.message.model). Universe interactive_only:
+  // model choice is user posture, not an SDK/observer default.
+  "model-effort": withGates(
+    { transcripts: true, universe: "interactive_only" },
+    (s) => {
+      const {
+        opusDominantSessionCount,
+        opusModelMatchesTotal,
+        interactiveSessionsAnalyzed,
+      } = s.insights;
+      if (opusDominantSessionCount == null)
+        return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
+      const ratio = opusDominantSessionCount / interactiveSessionsAnalyzed;
+      const score = clamp(Math.round(ratio * 100));
+      const evidence = [
+        `Opus-dominant in ${opusDominantSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(ratio * 100)}%) — ${opusModelMatchesTotal} Opus assistant turns total`,
+      ];
+      const gaps = [];
+      if (ratio < 0.5)
+        gaps.push(
+          "Opus-dominant in fewer than half of interactive sessions — Boris tip 2",
+        );
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
+
   // Platform-Setup-only-by-nature dimensions. /insights data does not carry the
-  // relevant signal: model/effort are never written to session-meta;
-  // memory-related tools never appear in tool_counts; terminal/IDE
+  // relevant signal: memory-related tools never appear in tool_counts; terminal/IDE
   // customization (statusline, keybindings, themes) is pure client config.
   // Surface the rationale per dimension so users see "unmeasured because X"
   // instead of a blank radar vertex that looks identical to a forgotten scorer.
-  // Universe is inert here (these always return unavailable) but the contract
-  // still requires a declared value — "all_sessions" because there is no
-  // per-session denominator math regardless.
-  "model-effort": noTelemetry(),
+  // Universe is inert here (always unavailable) but the contract requires a value.
   memory: noTelemetry(),
   customization: noTelemetry(),
 

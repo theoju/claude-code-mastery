@@ -131,6 +131,8 @@ export function makeInsights(overrides = {}) {
     worktreeUsageSessionCount: null,
     learningModeSessionCount: null,
     learningModeMatchesTotal: null,
+    opusDominantSessionCount: null,
+    opusModelMatchesTotal: null,
   };
   return deepMerge(base, overrides);
 }
