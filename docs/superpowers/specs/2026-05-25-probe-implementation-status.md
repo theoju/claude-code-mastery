@@ -3,11 +3,13 @@
 **Date:** 2026-05-25
 **Status:** Living tracker — update on every probe add/remove.
 **Validated against:** `app/data/boris-tip-index.json` (75 tips), `app/data/rubric.json`
-(12 dimensions / 42 next-actions), `app/data/probe-catalog.json` (42 probes),
+(12 dimensions / 43 next-actions), `app/data/probe-catalog.json` (42 probes),
 `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`), `scripts/_usage-data.mjs`
 (transcript scanners), `scripts/run-assessment.mjs#buildSignalsSummary`
-(61 `signalsSummary` keys). Snapshot updated after PR2 (`hasPostCompactHook` +
-`permissionsDefaultMode` wiring).
+(61 `signalsSummary` keys). Snapshot current as of **v0.9.10** — the probe-coverage
+expansion (#72 `colorCommandUses`, #73 integrity guards, #74 PostCompact +
+auto-mode, #75 Opus exec scorer) plus the radar hydration fix (#71), tracked as
+**CCE-24**.
 
 ## Purpose
 
@@ -265,15 +267,12 @@ that _could_ be instrumented if justified.
 | **F4** | **Two** dimensions have **no Execution measurement** by design (`memory`, `customization` → `noTelemetry()`); `model-effort` moved off `noTelemetry()` in PR3 (Opus-usage exec scorer, tip 2). Worth stating that two radar vertices remain Platform-only on the execution axis.                                                                                                                                        | Info              | resolved (PR3) |
 | **F5** | No test guards the human-readable "Boris tip N" citation against `boris-tip-index.json` (only the predicate is validated). F3-class drift can recur silently. Likewise, no test asserts every `satisfiedWhen` LHS has a `probe-catalog.json` entry (the seam that let F2 slip).                                                                                                                                         | Med (process)     | resolved (PR1) |
 
-### Suggested low-risk fixes (one-liners)
+### Resolution — all findings closed
 
-- **F2:** add a `colorCommandUses` entry to `probe-catalog.json` (source `history`/`transcripts`).
-- **F3:** correct the four tip-number citations in `rubric.json` + `probe-catalog.json`.
-- **F5:** two cheap test guards — (a) every action's cited `Boris tip N` resolves
-  to a topic in `boris-tip-index.json`; (b) every `satisfiedWhen` LHS field has a
-  catalog entry.
-- **F1:** reconcile the "87" wording in `CLAUDE.md` to "75 (+12 backfilled in the
-  classification doc)".
+All five findings (F1–F5) are resolved per the **Status** column above — landed
+across the probe-coverage expansion stack and shipped in **v0.9.10**, tracked as
+**CCE-24**. The former "suggested fixes" list is retired; the Findings table is the
+record of what changed and where.
 
 ## Pointers
 
