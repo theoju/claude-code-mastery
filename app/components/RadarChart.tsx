@@ -21,6 +21,12 @@ const TT_LINE_H = 16;
 const TT_PAD_X = 10;
 const TT_PAD_Y = 10;
 
+// Math.sin/Math.cos are implementation-defined per ECMAScript; Node and
+// Chrome's V8 can disagree by ~1 ULP, which breaks SSR hydration on raw SVG
+// coords. Quantize to 0.1px so the drift is rounded away. Math.round is fully
+// spec'd (unlike toFixed's banker-rounding ties), so q() is deterministic.
+const q = (v: number) => Math.round(v * 10) / 10;
+
 export default function RadarChart({
   dimensions,
   size = 480,
@@ -37,7 +43,7 @@ export default function RadarChart({
   const pointAt = (value: number, i: number) => {
     const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
     const r = (value / 100) * radius;
-    return [cx + Math.cos(angle) * r, cy + Math.sin(angle) * r] as const;
+    return [q(cx + Math.cos(angle) * r), q(cy + Math.sin(angle) * r)] as const;
   };
 
   const scorePath =
@@ -123,8 +129,8 @@ export default function RadarChart({
             key={i}
             x1={cx}
             y1={cy}
-            x2={cx + Math.cos(angle) * radius}
-            y2={cy + Math.sin(angle) * radius}
+            x2={q(cx + Math.cos(angle) * radius)}
+            y2={q(cy + Math.sin(angle) * radius)}
             stroke="var(--color-line)"
             strokeWidth={0.5}
           />
@@ -186,8 +192,8 @@ export default function RadarChart({
 
       {dimensions.map((d, i) => {
         const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
-        const lx = cx + Math.cos(angle) * (radius + 26);
-        const ly = cy + Math.sin(angle) * (radius + 26);
+        const lx = q(cx + Math.cos(angle) * (radius + 26));
+        const ly = q(cy + Math.sin(angle) * (radius + 26));
         const anchor =
           Math.abs(Math.cos(angle)) < 0.2
             ? "middle"
@@ -226,8 +232,8 @@ export default function RadarChart({
         const [sx, sy] = pointAt(d.score, i);
         const [ex, ey] =
           d.executionScore != null ? pointAt(d.executionScore, i) : [sx, sy];
-        const mx = (sx + ex) / 2;
-        const my = (sy + ey) / 2;
+        const mx = q((sx + ex) / 2);
+        const my = q((sy + ey) / 2);
         return (
           <circle
             key={`hit-${d.id}`}
@@ -294,8 +300,8 @@ function Tooltip({
   const maxX = bounds.size + PAD_R - TT_W;
   const minY = -PAD_T;
   const maxY = bounds.size + PAD_B - boxH;
-  const tx = Math.max(minX, Math.min(maxX, vx + offsetX));
-  const ty = Math.max(minY, Math.min(maxY, vy + offsetY));
+  const tx = q(Math.max(minX, Math.min(maxX, vx + offsetX)));
+  const ty = q(Math.max(minY, Math.min(maxY, vy + offsetY)));
 
   const setupLine = `${Math.round(dim.score)}%  (raw ${dim.rawScore}/${dim.rawTarget})`;
   const execLineText = hasExecution

@@ -232,4 +232,40 @@ describe("RadarChart", () => {
       "gamma",
     );
   });
+
+  // Quantize SVG coords so Math.sin/cos ULP drift between Node V8 (SSR) and
+  // Chrome V8 (hydration) can't trigger a React hydration mismatch. Path strings
+  // already pass through .toFixed(1); this test pins the same contract on every
+  // numeric SVG attribute the radar emits.
+  it("quantizes every numeric SVG coord to at most one decimal place", () => {
+    const dims = [
+      { ...dim("a", 100), executionScore: 80 },
+      { ...dim("b", 87), executionScore: 56 },
+      { ...dim("c", 94), executionScore: 53 },
+      { ...dim("d", 75), executionScore: 100 },
+      { ...dim("e", 100), executionScore: 28 },
+      { ...dim("f", 100), executionScore: null },
+      { ...dim("g", 89), executionScore: null },
+      { ...dim("h", 100), executionScore: 69 },
+      { ...dim("i", 100), executionScore: null },
+      { ...dim("j", 94), executionScore: null },
+      { ...dim("k", 87), executionScore: 100 },
+      { ...dim("l", 100), executionScore: 80 },
+    ];
+    const { container } = render(
+      <RadarChart dimensions={dims} showExecution />,
+    );
+    const coordAttrs = ["cx", "cy", "x", "y", "x1", "y1", "x2", "y2"];
+    const quantum = /^-?\d+(\.\d)?$/;
+    const offenders: string[] = [];
+    for (const el of container.querySelectorAll("circle, line, text")) {
+      for (const attr of coordAttrs) {
+        const v = el.getAttribute(attr);
+        if (v != null && !quantum.test(v)) {
+          offenders.push(`<${el.tagName.toLowerCase()} ${attr}="${v}">`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 });
