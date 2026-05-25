@@ -213,7 +213,7 @@ The spec succeeds when:
 The implementation edits `~/.claude/hooks/stop-verify.sh` — a user-level file outside any repo. There is no feature branch and no PR for the script itself. However:
 
 - **Spec doc** (this file) lives at `docs/superpowers/specs/2026-05-21-stop-verify-hash-dedup-design.md` and is committed to this repo on a feature branch.
-- **Implementation plan** (next, via `writing-plans`) lives at `docs/superpowers/plans/2026-05-21-stop-verify-hash-dedup.md` and is committed alongside.
+- **Implementation plan** (next, via `writing-plans`) lives at `docs/superpowers/plans/archived/2026-05-21-stop-verify-hash-dedup.md` and is committed alongside.
 - Both can land in a single docs-only PR to `main`, since there's no source code in this repo to ship.
 - **No CCE ticket required** — this is a tooling fix, not a feature on the CCE backlog. (Open one retroactively if the user wants the audit trail.)
 
