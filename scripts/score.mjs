@@ -91,6 +91,10 @@ export const SCORERS = {
       score += 15;
       ev.push("Not using the dangerous-skip bypass");
     }
+    if (s.settings.permissionsDefaultMode === "auto") {
+      score += 10;
+      ev.push("permissions.defaultMode: auto — auto-mode classifier active");
+    }
     const allowCount = s.settings.allowList.length;
     if (allowCount === 0) {
       gaps.push(

@@ -123,6 +123,22 @@ describe("SCORERS.permissions", () => {
     );
     expect(noTranscript.score).toBe(clean.score);
   });
+  it("permissions: +10 when defaultMode is auto", () => {
+    const base = SCORERS.permissions(
+      makeSignals({
+        settings: {
+          ...makeSignals().settings,
+          permissionsDefaultMode: "default",
+        },
+      }),
+    ).score;
+    const auto = SCORERS.permissions(
+      makeSignals({
+        settings: { ...makeSignals().settings, permissionsDefaultMode: "auto" },
+      }),
+    ).score;
+    expect(auto - base).toBe(10);
+  });
 });
 
 describe("SCORERS['model-effort']", () => {
