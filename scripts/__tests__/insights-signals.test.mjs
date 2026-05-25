@@ -609,14 +609,23 @@ describe("gatherInsightsSignals", () => {
       { type: "assistant", message: { model: "claude-sonnet-4-6" } },
       { type: "assistant", message: { model: "claude-sonnet-4-6" } },
     ]);
+    // Exactly 50% Opus is a TIE — strict majority means NOT dominant.
+    writeMeta(dir, "tied", { start_time: TWENTY_DAYS_AGO });
+    writeTranscript(dir, "-Users-x-Projects-app", "tied", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+      { type: "assistant", message: { model: "claude-opus-4-7" } },
+      { type: "assistant", message: { model: "claude-sonnet-4-6" } },
+    ]);
     const r = await gatherInsightsSignals({
       claudeHome: dir,
       now: NOW,
       lookbackDays: 30,
       includeTranscripts: true,
     });
+    // Only opus-heavy is dominant; balanced (1/3) and tied (1/2) are not.
     expect(r.opusDominantSessionCount).toBe(1);
-    expect(r.opusModelMatchesTotal).toBe(3);
+    // Broad Opus-turn sum across all three sessions: 2 + 1 + 1 = 4.
+    expect(r.opusModelMatchesTotal).toBe(4);
   });
 
   it("leaves opus fields null when transcripts not scanned", async () => {

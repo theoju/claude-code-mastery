@@ -830,6 +830,10 @@ export const EXECUTION_SCORERS = {
         opusModelMatchesTotal,
         interactiveSessionsAnalyzed,
       } = s.insights;
+      // Defensive, not dead: withGates guarantees transcriptsScanned===true,
+      // but a cached insights blob from before this scorer existed (e.g. an old
+      // assessment-history.json entry) can be transcripts-scanned yet lack the
+      // opus field. Route those to unmeasured rather than scoring a false 0.
       if (opusDominantSessionCount == null)
         return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
       const ratio = opusDominantSessionCount / interactiveSessionsAnalyzed;
