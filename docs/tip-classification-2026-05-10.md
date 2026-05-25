@@ -4,6 +4,11 @@
 **Captured:** 2026-05-11T04:10:00Z (evening refresh after v0.9.6: PRs #48 + #49 merged, radar UX shipped via v0.9.5). **v3.4 update reflects v0.9.7 UI-only release** — no scorer or rubric changes.
 **Lookback:** 14 days on the current snapshot (per `/self-assessment --insights-lookback 14`); 30 days for the v3.2 baseline rows further down. Values reflect post-v0.9.6 scorer behavior; v0.9.7 did not move any scorer.
 
+> **Superseded for probe-status tracking by**
+> `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` (current,
+> 75-canonical, post-PR #72). This doc remains the historical 30-day habit-count
+> analysis; consult the tracker for "what's implemented now."
+
 ## Why this artifact exists
 
 Execution overall trajectory across the assessment-history snapshots:
