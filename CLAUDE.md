@@ -226,7 +226,7 @@ already checked out at …`). The GitHub-side merge still succeeds — only
   pre-dedup hook lives at `~/.claude/hooks/stop-verify.sh.pre-dedup`;
   test harness at `~/.claude/hooks/__tests__/stop-verify.test.sh`
   (9 tests). Spec + plan: `docs/superpowers/specs/2026-05-21-stop-verify-hash-dedup-design.md` +
-  `docs/superpowers/plans/2026-05-21-stop-verify-hash-dedup.md`.
+  `docs/superpowers/plans/archived/2026-05-21-stop-verify-hash-dedup.md`.
 - **Subagent behavioral tests should use absolute `/tmp` paths.** When
   dispatching reviewer or implementer subagents that run sample shell
   commands (e.g. behavioral verification of a bash script), require

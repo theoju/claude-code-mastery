@@ -191,7 +191,7 @@ export const SCORERS = {
     const batchCommandUses =
       s.batchCommandUses ?? s.transcriptInvocations?.batchCommandUses ?? 0;
     // v0.9 bonuses cap at +15 combined per the calibration design (see
-    // docs/superpowers/plans/2026-05-09-score-formula-update.md). Each
+    // docs/superpowers/plans/archived/2026-05-09-score-formula-update.md). Each
     // signal still contributes its full weight when fired alone.
     let v9Bonus = 0;
     // Tip 1 broadening (2026-05-10): credit any of the three adoption paths.
