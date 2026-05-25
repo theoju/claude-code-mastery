@@ -186,6 +186,8 @@ export async function gatherInsightsSignals({
     worktreeUsageSessionCount: null,
     learningModeSessionCount: null,
     learningModeMatchesTotal: null,
+    opusDominantSessionCount: null,
+    opusModelMatchesTotal: null,
   };
 
   if (includeTranscripts) {
@@ -195,11 +197,18 @@ export async function gatherInsightsSignals({
     let worktreeUsageSessionCount = 0;
     let learningModeSessionCount = 0;
     let learningModeMatchesTotal = 0;
+    let opusDominantSessionCount = 0;
+    let opusModelMatchesTotal = 0;
     for (const m of inWindow) {
       const path = transcriptIndex.get(m.session_id);
       if (!path) continue;
-      const { modes, hasWorktreeState, learningModeMatches } =
-        await scanTranscriptModes(path);
+      const {
+        modes,
+        hasWorktreeState,
+        learningModeMatches,
+        assistantTurns,
+        opusAssistantTurns,
+      } = await scanTranscriptModes(path);
       // Posture counters describe user adoption — they must only count
       // sessions whose kind is "interactive_cli". SDK/observer/subagent
       // sessions can record permissionMode but don't reflect user choice
@@ -222,8 +231,15 @@ export async function gatherInsightsSignals({
         // adoption, and the skill signal carries no occurrence semantics).
         if (learningModeMatches > 0 || modes.has("learning"))
           learningModeSessionCount += 1;
+        // Tip 2: Opus-dominant = strict majority of assistant turns on Opus.
+        // Interactive-only (model choice is user posture); ties and zero-turn
+        // sessions are not dominant.
+        if (assistantTurns > 0 && opusAssistantTurns * 2 > assistantTurns)
+          opusDominantSessionCount += 1;
       }
       learningModeMatchesTotal += learningModeMatches;
+      // Volume metric stays broad (banner-style), like learningModeMatchesTotal.
+      opusModelMatchesTotal += opusAssistantTurns;
     }
     result.transcriptsScanned = true;
     result.autoModeSessionCount = autoModeSessionCount;
@@ -232,6 +248,8 @@ export async function gatherInsightsSignals({
     result.worktreeUsageSessionCount = worktreeUsageSessionCount;
     result.learningModeSessionCount = learningModeSessionCount;
     result.learningModeMatchesTotal = learningModeMatchesTotal;
+    result.opusDominantSessionCount = opusDominantSessionCount;
+    result.opusModelMatchesTotal = opusModelMatchesTotal;
   }
 
   return result;

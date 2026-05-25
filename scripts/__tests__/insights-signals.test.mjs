@@ -592,6 +592,45 @@ describe("gatherInsightsSignals", () => {
     expect(r.autoModeSessionCount).toBe(1);
   });
 
+  it("aggregates opusDominantSessionCount and opusModelMatchesTotal (tip 2)", async () => {
+    writeMeta(dir, "opus-heavy", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "balanced", { start_time: TWENTY_DAYS_AGO });
+    // Opus-dominant: 2 of 3 assistant turns on Opus (strict majority).
+    writeTranscript(dir, "-Users-x-Projects-app", "opus-heavy", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+      { type: "assistant", message: { model: "claude-opus-4-7" } },
+      { type: "assistant", message: { model: "claude-opus-4-7" } },
+      { type: "assistant", message: { model: "claude-haiku-4-5" } },
+    ]);
+    // Not dominant: only 1 of 3 on Opus.
+    writeTranscript(dir, "-Users-x-Projects-app", "balanced", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+      { type: "assistant", message: { model: "claude-opus-4-7" } },
+      { type: "assistant", message: { model: "claude-sonnet-4-6" } },
+      { type: "assistant", message: { model: "claude-sonnet-4-6" } },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+    expect(r.opusDominantSessionCount).toBe(1);
+    expect(r.opusModelMatchesTotal).toBe(3);
+  });
+
+  it("leaves opus fields null when transcripts not scanned", async () => {
+    writeMeta(dir, "s1", { start_time: TWENTY_DAYS_AGO });
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: false,
+    });
+    expect(r.opusDominantSessionCount).toBeNull();
+    expect(r.opusModelMatchesTotal).toBeNull();
+  });
+
   it("survives malformed JSON files without throwing", async () => {
     mkdirSync(join(dir, "usage-data", "session-meta"), { recursive: true });
     mkdirSync(join(dir, "usage-data", "facets"), { recursive: true });
