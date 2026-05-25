@@ -4,6 +4,30 @@ A local Next.js 16 dashboard that scores Claude Code usage against Boris Cherny'
 75 workflow tips. Reads `~/.claude/` and `~/.claude/usage-data/` directly — no
 Anthropic API calls, no telemetry uploaded.
 
+## Commands
+
+```bash
+npm run dev            # Next.js dev server (Turbopack) on http://localhost:3737
+npm run build          # production build
+npm run lint           # next lint
+
+npm run assess         # score local setup → write assessment.json (+ Slack if enabled)
+npm run assess:print   # same, but --print --no-slack (full dimension block to stdout)
+# scorer flags: --claude-md-target <name=path|path>  --include-transcripts
+#               --no-transcripts  --insights-lookback <N>  --no-slack  --print
+
+npx vitest run                         # full unit suite (see ## Tests for count)
+npx vitest run path/to/file.test.tsx   # one file
+npx vitest run -t "substring of name"  # one test by name
+npm run test:unit         # excludes scripts/__tests__/integration/**
+npm run test:integration  # only scripts/__tests__/integration
+npm run test:coverage     # vitest --coverage
+npm run test:e2e          # Playwright (e2e/, needs `npm run dev` reachable)
+```
+
+`scripts/run-assessment.mjs` does **not** auto-load `.env.local`; for ad-hoc
+runs that should post to Slack, prefix with `set -a; source .env.local; set +a;`.
+
 ## Scoring model
 
 Two independent axes, never collapsed:
@@ -69,7 +93,7 @@ app/
 ## Tests
 
 ```bash
-npx vitest run            # 520 tests, ~5s
+npx vitest run            # 539 tests across 38 files, ~5s
 ```
 
 If a test fails after a scoring change, update the fixture in
