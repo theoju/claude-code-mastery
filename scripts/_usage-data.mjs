@@ -409,6 +409,11 @@ export async function scanTranscriptModes(path) {
   // is the only reliable behavioral signature. Substring on raw line text
   // is intentional — avoids stringifying nested message.content per turn.
   let learningModeMatches = 0;
+  // Tip 2: Opus-usage signal. Count assistant turns and the subset that ran on
+  // Opus (entry.message.model matches /opus/i) so insights-signals can derive an
+  // Opus-dominant session ratio for the model-effort Execution scorer.
+  let assistantTurns = 0;
+  let opusAssistantTurns = 0;
   const rl = createInterface({
     input: createReadStream(path, { encoding: "utf8" }),
   });
@@ -428,6 +433,12 @@ export async function scanTranscriptModes(path) {
     if (entry.type === "assistant" && raw.includes("★ Insight ")) {
       learningModeMatches += 1;
     }
+    if (entry.type === "assistant") {
+      assistantTurns += 1;
+      const model = entry.message?.model;
+      if (typeof model === "string" && /opus/i.test(model))
+        opusAssistantTurns += 1;
+    }
     // Mode-equivalent skill detection — scan raw line text for the
     // <command-name> markup. Lenient on leading slash; compares against
     // the FULL namespaced form (don't strip plugin prefix) since the
@@ -440,7 +451,14 @@ export async function scanTranscriptModes(path) {
       }
     }
   }
-  return { modes, hasWorktreeState, skills, learningModeMatches };
+  return {
+    modes,
+    hasWorktreeState,
+    skills,
+    learningModeMatches,
+    assistantTurns,
+    opusAssistantTurns,
+  };
 }
 
 // Classify a session by transcript-file inspection. Cheap: only reads

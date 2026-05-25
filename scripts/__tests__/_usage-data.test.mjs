@@ -204,6 +204,28 @@ describe("scanTranscriptModes", () => {
     expect(r.learningModeMatches).toBe(1);
   });
 
+  it("counts opus vs total assistant turns", async () => {
+    const lines = [
+      JSON.stringify({
+        type: "assistant",
+        message: { model: "claude-opus-4-7" },
+      }),
+      JSON.stringify({
+        type: "assistant",
+        message: { model: "claude-opus-4-7" },
+      }),
+      JSON.stringify({
+        type: "assistant",
+        message: { model: "claude-haiku-4-5" },
+      }),
+      JSON.stringify({ type: "user" }),
+    ];
+    writeFileSync(path, lines.join("\n"));
+    const r = await scanTranscriptModes(path);
+    expect(r.assistantTurns).toBe(3);
+    expect(r.opusAssistantTurns).toBe(2);
+  });
+
   // Mode equivalents from skill invocations. The Planning Setup scorer already
   // credits the user for having superpowers (brainstorming, writing-plans,
   // executing-plans) — see score.mjs:288. The Execution scorer needs the

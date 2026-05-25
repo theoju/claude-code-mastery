@@ -20,11 +20,12 @@ Each per-dimension score is normalized to 100: `clamp(round(rawScore / target ×
 The raw values are preserved alongside (`rawScore`, `rawTarget`, `executionRawScore`)
 for audit. **Never re-introduce the old `overall / 89` form.**
 
-Nine of twelve dims have Execution scorers. The remaining three (Model & Effort,
-Memory & Context, Terminal & Customization) route to _unmeasured_ via
-`gapReason` because the relevant signals never reach the cooked telemetry.
-Unmeasured ≠ scored zero — the radar marks them with italic labels and a
-footnote.
+Ten of twelve dims have Execution scorers. The remaining two (Memory & Context,
+Terminal & Customization) route to _unmeasured_ via `gapReason` because the
+relevant signals never reach the cooked telemetry. Model & Effort is _partially_
+measured: the Opus-usage half (Boris tip 2) is scored from transcripts, but
+effort level stays settings-only. Unmeasured ≠ scored zero — the radar marks
+unmeasured dims with italic labels and a footnote.
 
 ## Where things live
 
