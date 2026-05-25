@@ -79,6 +79,11 @@
     "path": "~/.claude.json → remote-control opt-in",
     "description": "True if remote-control (spawn local sessions from mobile) is opted in."
   },
+  "permissionsDefaultMode": {
+    "source": "settings",
+    "path": "~/.claude/settings.json → permissions.defaultMode",
+    "description": "Permission default mode string. 'auto' is the auto-mode classifier (Boris tip 42); 'acceptEdits'/'default'/'plan' are the alternatives."
+  },
   "mcpServersConnected": {
     "source": "settings",
     "path": "~/.claude.json → mcpServers (connected count)",

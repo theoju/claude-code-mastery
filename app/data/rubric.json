@@ -65,7 +65,7 @@
           "id": "auto-mode-on",
           "action": "Turn off skipDangerousModePermissionPrompt, turn on auto mode (shift+tab or --enable-auto-mode) — Boris tip 42",
           "effort": "5min",
-          "satisfiedWhen": "!skipDangerous",
+          "satisfiedWhen": "permissionsDefaultMode=auto & !skipDangerous",
           "borisTip": 42
         },
         {

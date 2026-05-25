@@ -26,6 +26,7 @@ const ALL_SATISFIED_SIGNALS = {
   skipDangerous: false,
   allowListCount: 38,
   hasWildcardAllow: true,
+  permissionsDefaultMode: "auto",
   // automation
   hasShipCommand: true,
   hasVerifyAgent: true,
