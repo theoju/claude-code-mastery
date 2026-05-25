@@ -26,12 +26,14 @@ const ALL_SATISFIED_SIGNALS = {
   skipDangerous: false,
   allowListCount: 38,
   hasWildcardAllow: true,
+  permissionsDefaultMode: "auto",
   // automation
   hasShipCommand: true,
   hasVerifyAgent: true,
   hasStopHook: true,
   hasPostToolHook: true,
   hasFormatterHook: true,
+  hasPostCompactHook: true,
   hasStopHookNotification: true,
   hasIsolatedAgent: true,
   // model-effort

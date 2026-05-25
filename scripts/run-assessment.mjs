@@ -163,8 +163,14 @@ export function buildSignalsSummary(signals) {
     // Verbatim — predicates use the `=v|w` literal-match operator (e.g.
     // `outputStyle=Explanatory|Learning`).
     outputStyle: signals.settings.outputStyle ?? null,
-    // Diagnostic only; never used by any predicate. Preserves the two-axis rule.
+    // Used by the permissions scorer (+10 credit) and the auto-mode-on predicate
+    // (`permissionsDefaultMode=auto & !skipDangerous`).
     permissionsDefaultMode: signals.settings.permissionsDefaultMode ?? null,
+    // Tip 41: PostCompact hook re-injects critical instructions after compaction.
+    // Derived from the already-parsed hookEvents key list (signals.mjs).
+    hasPostCompactHook: (signals.settings.hookEvents || []).includes(
+      "PostCompact",
+    ),
   };
 }
 

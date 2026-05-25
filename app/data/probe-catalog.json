@@ -49,6 +49,11 @@
     "path": "~/.claude/settings.json → hooks.Stop",
     "description": "True if at least one Stop hook is defined."
   },
+  "hasPostCompactHook": {
+    "source": "settings",
+    "path": "~/.claude/settings.json → hooks.PostCompact",
+    "description": "True if a PostCompact hook is defined (fires after context compaction to re-inject instructions), Boris tip 41."
+  },
   "hasFormatterHook": {
     "source": "settings",
     "path": "~/.claude/settings.json → hooks.PostToolUse (formatter detection)",
@@ -73,6 +78,11 @@
     "source": "settings",
     "path": "~/.claude.json → remote-control opt-in",
     "description": "True if remote-control (spawn local sessions from mobile) is opted in."
+  },
+  "permissionsDefaultMode": {
+    "source": "settings",
+    "path": "~/.claude/settings.json → permissions.defaultMode",
+    "description": "Permission default mode string. 'auto' is the auto-mode classifier (Boris tip 42); 'acceptEdits'/'default'/'plan' are the alternatives."
   },
   "mcpServersConnected": {
     "source": "settings",

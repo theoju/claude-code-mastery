@@ -78,6 +78,7 @@ describe("buildSignalsSummary", () => {
       "hookEvents",
       "hasStopHook",
       "hasPostToolHook",
+      "hasPostCompactHook",
       "hasShipCommand",
       "hasVerifyAgent",
       "hasCodeReviewPlugin",
@@ -716,6 +717,17 @@ describe("buildSignalsSummary", () => {
     expect(buildSignalsSummary(makeSignals()).hasCodeReviewPlugin).toBe(false);
   });
 
+  it("derives hasPostCompactHook from hookEvents membership", () => {
+    expect(buildSignalsSummary(makeSignals()).hasPostCompactHook).toBe(false);
+    const withPC = makeSignals({
+      settings: {
+        ...makeSignals().settings,
+        hookEvents: ["Stop", "PostCompact"],
+      },
+    });
+    expect(buildSignalsSummary(withPC).hasPostCompactHook).toBe(true);
+  });
+
   it("output keys form a stable contract — locked-in by snapshot", () => {
     const r = buildSignalsSummary(makeSignals());
     const sortedKeys = Object.keys(r).sort();
@@ -741,6 +753,7 @@ describe("buildSignalsSummary", () => {
         "hasFormatterHook",
         "hasIsolatedAgent",
         "hasMcpServers",
+        "hasPostCompactHook",
         "hasPostToolHook",
         "hasRemoteControl",
         "hasShipCommand",
