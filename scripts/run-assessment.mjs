@@ -138,6 +138,7 @@ export function buildSignalsSummary(signals) {
     voiceCommandUses: maxProbe(signals, "voiceCommandUses"),
     clearCommandUses: maxProbe(signals, "clearCommandUses"),
     compactCommandUses: maxProbe(signals, "compactCommandUses"),
+    colorCommandUses: maxProbe(signals, "colorCommandUses"),
     fewerPermsCommandUses: maxProbe(signals, "fewerPermsCommandUses"),
     // Tip 45 (Boris): auto-memory is default-on. Read the inverse env flag
     // `CLAUDE_CODE_DISABLE_AUTO_MEMORY` and invert. The signals layer is

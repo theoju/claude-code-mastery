@@ -52,6 +52,7 @@ function makeSignals(overrides = {}) {
       voiceCommandUses: 1,
       clearCommandUses: 3,
       compactCommandUses: 2,
+      colorCommandUses: 3,
       fewerPermsCommandUses: 1,
     },
     insights: null,
@@ -110,6 +111,7 @@ describe("buildSignalsSummary", () => {
       "voiceCommandUses",
       "clearCommandUses",
       "compactCommandUses",
+      "colorCommandUses",
       "fewerPermsCommandUses",
       "autoMemoryEnabled",
       "parallelWorktreeAdoption",
@@ -590,6 +592,7 @@ describe("buildSignalsSummary", () => {
     expect(r.voiceCommandUses).toBe(1);
     expect(r.clearCommandUses).toBe(3);
     expect(r.compactCommandUses).toBe(2);
+    expect(r.colorCommandUses).toBe(3);
     expect(r.fewerPermsCommandUses).toBe(1);
   });
 
@@ -726,6 +729,7 @@ describe("buildSignalsSummary", () => {
         "btwCommandUses",
         "claudeMdExists",
         "clearCommandUses",
+        "colorCommandUses",
         "compactCommandUses",
         "effortLevel",
         "fewerPermsCommandUses",

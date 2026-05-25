@@ -71,6 +71,7 @@ const ALL_SATISFIED_SIGNALS = {
   voiceCommandUses: 1,
   clearCommandUses: 1,
   compactCommandUses: 1,
+  colorCommandUses: 1,
   fewerPermsCommandUses: 1,
   autoMemoryEnabled: true,
   parallelWorktreeAdoption: true,
