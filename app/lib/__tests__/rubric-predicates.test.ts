@@ -32,6 +32,7 @@ const ALL_SATISFIED_SIGNALS = {
   hasStopHook: true,
   hasPostToolHook: true,
   hasFormatterHook: true,
+  hasPostCompactHook: true,
   hasStopHookNotification: true,
   hasIsolatedAgent: true,
   // model-effort

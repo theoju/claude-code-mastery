@@ -43,6 +43,13 @@
           "effort": "5min",
           "satisfiedWhen": "simplifyCommandUses>=1",
           "borisTip": 29
+        },
+        {
+          "id": "post-compact-hook",
+          "action": "Add a PostCompact hook to re-inject critical instructions after context compaction — Boris tip 41",
+          "effort": "15min",
+          "satisfiedWhen": "hasPostCompactHook",
+          "borisTip": 41
         }
       ]
     },
