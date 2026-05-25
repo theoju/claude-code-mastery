@@ -13,31 +13,36 @@
           "id": "hook-formatter",
           "action": "Add a PostToolUse hook that runs your formatter on Write|Edit — Boris tip 7",
           "effort": "15min",
-          "satisfiedWhen": "hasFormatterHook"
+          "satisfiedWhen": "hasFormatterHook",
+          "borisTip": 7
         },
         {
           "id": "ship-command",
           "action": "Create ~/.claude/commands/ship.md that chains test → verify → simplify → review → commit → push+PR → Jira. See docs/superpowers/specs/2026-05-09-ship-slash-command-design.md and docs/ship-pattern.md for a reference design — Boris tip 5",
           "effort": "30min",
-          "satisfiedWhen": "hasShipCommand"
+          "satisfiedWhen": "hasShipCommand",
+          "borisTip": 5
         },
         {
           "id": "verify-agent",
           "action": "Build one personal ~/.claude/agents/verify-app.md tuned to how you verify features end-to-end — Boris tip 14/73",
           "effort": "1hr",
-          "satisfiedWhen": "hasVerifyAgent"
+          "satisfiedWhen": "hasVerifyAgent",
+          "borisTip": [14, 73]
         },
         {
           "id": "stop-hook",
           "action": "Wire a Stop hook that pokes Claude to re-verify before yielding on long-running tasks — Boris tip 13",
           "effort": "15min",
-          "satisfiedWhen": "hasStopHook"
+          "satisfiedWhen": "hasStopHook",
+          "borisTip": 13
         },
         {
           "id": "simplify-skill",
           "action": "Run /simplify on a recent PR — Boris tip 29",
           "effort": "5min",
-          "satisfiedWhen": "simplifyCommandUses>=1"
+          "satisfiedWhen": "simplifyCommandUses>=1",
+          "borisTip": 29
         }
       ]
     },
@@ -53,25 +58,29 @@
           "id": "auto-mode-on",
           "action": "Turn off skipDangerousModePermissionPrompt, turn on auto mode (shift+tab or --enable-auto-mode) — Boris tip 42",
           "effort": "5min",
-          "satisfiedWhen": "!skipDangerous"
+          "satisfiedWhen": "!skipDangerous",
+          "borisTip": 42
         },
         {
           "id": "fewer-permission-prompts",
           "action": "Run /fewer-permission-prompts once this week to tune a real allowlist — Boris tip 69",
           "effort": "15min",
-          "satisfiedWhen": "allowListCount>=10"
+          "satisfiedWhen": "allowListCount>=10",
+          "borisTip": 69
         },
         {
           "id": "wildcard-allowlist",
           "action": "Add wildcard allowlist entries (e.g. 'Bash(npm run *)', 'Bash(gh pr *)') to settings.json — Boris tip 20",
           "effort": "15min",
-          "satisfiedWhen": "hasWildcardAllow"
+          "satisfiedWhen": "hasWildcardAllow",
+          "borisTip": 20
         },
         {
           "id": "fewer-perms-skill",
           "action": "Run /fewer-permission-prompts to extend your allowlist — Boris tip 69",
           "effort": "5min",
-          "satisfiedWhen": "fewerPermsCommandUses>=1"
+          "satisfiedWhen": "fewerPermsCommandUses>=1",
+          "borisTip": 69
         }
       ]
     },
@@ -87,19 +96,22 @@
           "id": "effort-xhigh",
           "action": "Set effortLevel to 'xhigh' or 'max' once in ~/.claude/settings.json — Boris tip 67, 72",
           "effort": "5min",
-          "satisfiedWhen": "effortLevel=xhigh|max"
+          "satisfiedWhen": "effortLevel=xhigh|max",
+          "borisTip": [67, 72]
         },
         {
           "id": "effort-max-reflex",
           "action": "Learn the /effort max reflex for debugging and architecture sessions — Boris tip 34",
           "effort": "5min",
-          "satisfiedWhen": "effortLevel=max"
+          "satisfiedWhen": "effortLevel=max",
+          "borisTip": 34
         },
         {
           "id": "auto-compact-window",
           "action": "Export CLAUDE_CODE_AUTO_COMPACT_WINDOW=400000 in shell rc — Boris tip 64",
           "effort": "5min",
-          "satisfiedWhen": "autoCompactWindow"
+          "satisfiedWhen": "autoCompactWindow",
+          "borisTip": 64
         }
       ]
     },
@@ -115,19 +127,22 @@
           "id": "worktree-aliases",
           "action": "Set up 3 named worktree shell aliases (za/zb/zc) — or otherwise reach 3+ parallel-worktree sessions — Boris tip 1",
           "effort": "15min",
-          "satisfiedWhen": "parallelWorktreeAdoption"
+          "satisfiedWhen": "parallelWorktreeAdoption",
+          "borisTip": 1
         },
         {
           "id": "batch-sweep",
-          "action": "Next migration or sweep: phrase it as 'use /batch with worktree isolation, put up PRs'",
+          "action": "Next migration or sweep: phrase it as 'use /batch with worktree isolation, put up PRs' — Boris tip 30",
           "effort": "5min",
-          "satisfiedWhen": "batchCommandUses>=1"
+          "satisfiedWhen": "batchCommandUses>=1",
+          "borisTip": 30
         },
         {
           "id": "agent-isolation",
           "action": "Add isolation: worktree to any custom agent you build — Boris tip 28",
           "effort": "5min",
-          "satisfiedWhen": "hasIsolatedAgent"
+          "satisfiedWhen": "hasIsolatedAgent",
+          "borisTip": 28
         }
       ]
     },
@@ -143,25 +158,29 @@
           "id": "chrome-extension",
           "action": "Install the Claude Chrome extension for any web work — Boris tip 51",
           "effort": "5min",
-          "satisfiedWhen": "hasClaudeInChrome"
+          "satisfiedWhen": "hasClaudeInChrome",
+          "borisTip": 51
         },
         {
           "id": "go-reflex",
           "action": "Adopt 'Claude do X, then /go' as your default closing prompt — Boris tip 73",
           "effort": "5min",
-          "satisfiedWhen": "goCommandUses>=3"
+          "satisfiedWhen": "goCommandUses>=3",
+          "borisTip": 73
         },
         {
           "id": "branch-diff",
           "action": "Ask Claude to diff behavior between main and the feature branch after any non-trivial change — Boris tip 10",
           "effort": "5min",
-          "satisfiedWhen": "shipVerifyStageRecent>=1"
+          "satisfiedWhen": "shipVerifyStageRecent>=1",
+          "borisTip": 10
         },
         {
           "id": "code-review-plugin",
           "action": "Install the code-review plugin — auto-review PRs when they open (Boris tip 32)",
           "effort": "5min",
-          "satisfiedWhen": "hasCodeReviewPlugin=true"
+          "satisfiedWhen": "hasCodeReviewPlugin=true",
+          "borisTip": 32
         }
       ]
     },
@@ -177,37 +196,43 @@
           "id": "auto-dream",
           "action": "Run /memory and enable auto-dream — Boris tip 45",
           "effort": "5min",
-          "satisfiedWhen": "autoMemoryEnabled"
+          "satisfiedWhen": "autoMemoryEnabled",
+          "borisTip": 45
         },
         {
           "id": "rewind-reflex",
           "action": "Get into the /rewind reflex when Claude goes sideways — keeps failed attempts out of context — Boris tip 62",
           "effort": "5min",
-          "satisfiedWhen": "rewindCommandUses>=1"
+          "satisfiedWhen": "rewindCommandUses>=1",
+          "borisTip": 62
         },
         {
           "id": "claude-md-corrections",
           "action": "Write a CLAUDE.md for claude-extensions the first time you hit a correction worth remembering — Boris tip 4",
           "effort": "30min",
-          "satisfiedWhen": "claudeMdExists"
+          "satisfiedWhen": "claudeMdExists",
+          "borisTip": 4
         },
         {
           "id": "btw-side-channel",
           "action": "Use /btw for side questions while Claude works — Boris tip 33+54",
           "effort": "5min",
-          "satisfiedWhen": "btwCommandUses>=1"
+          "satisfiedWhen": "btwCommandUses>=1",
+          "borisTip": [33, 54]
         },
         {
           "id": "compact-clear-balance-compact",
           "action": "Use /compact when continuing related work — keeps the relevant trail, drops the noise — Boris tip 63",
           "effort": "5min",
-          "satisfiedWhen": "compactCommandUses>=1"
+          "satisfiedWhen": "compactCommandUses>=1",
+          "borisTip": 63
         },
         {
           "id": "compact-clear-balance-clear",
           "action": "Use /clear when starting a fresh task — fastest reset for unrelated work — Boris tip 63",
           "effort": "5min",
-          "satisfiedWhen": "clearCommandUses>=1"
+          "satisfiedWhen": "clearCommandUses>=1",
+          "borisTip": 63
         }
       ]
     },
@@ -222,13 +247,15 @@
         {
           "id": "goal-constraints-template",
           "action": "Adopt a template: Goal / Constraints / Acceptance Criteria at the top of every non-trivial prompt — Boris tip 66",
-          "effort": "5min"
+          "effort": "5min",
+          "borisTip": 66
         },
         {
           "id": "plan-then-launch",
           "action": "After plan mode, resist the urge to narrate step by step — launch and come back — Boris tip 65",
           "effort": "5min",
-          "satisfiedWhen": "planThenLaunchSessions>=1"
+          "satisfiedWhen": "planThenLaunchSessions>=1",
+          "borisTip": 65
         }
       ]
     },
@@ -244,25 +271,29 @@
           "id": "vercel-cli",
           "action": "npm i -g vercel to unlock env/deploy/logs agentic flows",
           "effort": "5min",
-          "satisfiedWhen": "hasVercelCli"
+          "satisfiedWhen": "hasVercelCli",
+          "borisTip": null
         },
         {
           "id": "slack-mcp",
           "action": "If your team uses Slack, add the Slack MCP — highest-value MCP per Boris — Boris tip 9",
           "effort": "15min",
-          "satisfiedWhen": "hasSlackPlugin"
+          "satisfiedWhen": "hasSlackPlugin",
+          "borisTip": 9
         },
         {
           "id": "claude-in-chrome",
           "action": "Wire up Claude in Chrome — enables browser-driving agents (mcp__claude-in-chrome__*) — Boris tip 51",
           "effort": "10min",
-          "satisfiedWhen": "hasClaudeInChrome"
+          "satisfiedWhen": "hasClaudeInChrome",
+          "borisTip": 51
         },
         {
           "id": "mcp-servers",
           "action": "Connect ≥3 MCP servers — Boris tip 9 — high-value MCPs include Atlassian, Slack, Playwright, Postman",
           "effort": "30min",
-          "satisfiedWhen": "mcpServersConnected>=3"
+          "satisfiedWhen": "mcpServersConnected>=3",
+          "borisTip": 9
         }
       ]
     },
@@ -278,25 +309,29 @@
           "id": "per-worktree-color",
           "action": "Set per-worktree /color so parallel sessions are distinguishable at a glance — Boris tip 40",
           "effort": "5min",
-          "satisfiedWhen": "colorCommandUses>=1"
+          "satisfiedWhen": "colorCommandUses>=1",
+          "borisTip": 40
         },
         {
           "id": "focus-mode",
           "action": "Try /focus for autonomous runs once auto mode is on — Boris tip 71",
           "effort": "5min",
-          "satisfiedWhen": "focusCommandUses>=1"
+          "satisfiedWhen": "focusCommandUses>=1",
+          "borisTip": 71
         },
         {
           "id": "spinner-verbs",
           "action": "Customize a handful of spinner verbs — Boris tip 25",
           "effort": "5min",
-          "satisfiedWhen": "hasCustomSpinnerVerbs"
+          "satisfiedWhen": "hasCustomSpinnerVerbs",
+          "borisTip": 25
         },
         {
           "id": "voice-input",
           "action": "Try /voice — speak prompts at 3x typing speed — Boris tip 60",
           "effort": "5min",
-          "satisfiedWhen": "voiceCommandUses>=1"
+          "satisfiedWhen": "voiceCommandUses>=1",
+          "borisTip": 60
         }
       ]
     },
@@ -312,19 +347,22 @@
           "id": "babysit-loop",
           "action": "Start with one loop: /loop 30m /babysit — Boris tip 48",
           "effort": "5min",
-          "satisfiedWhen": "loopCommandUses>=1"
+          "satisfiedWhen": "loopCommandUses>=1",
+          "borisTip": 48
         },
         {
           "id": "stop-hook-notification",
           "action": "Set up a Stop-hook system notification for autonomous runs — Boris tip 75",
           "effort": "15min",
-          "satisfiedWhen": "hasStopHookNotification"
+          "satisfiedWhen": "hasStopHookNotification",
+          "borisTip": 75
         },
         {
           "id": "promote-routine",
           "action": "Promote repeating patterns to a Routine (cloud-hosted, laptop-closed) — Boris tip 61",
           "effort": "30min",
-          "satisfiedWhen": "scheduleCommandUses>=1"
+          "satisfiedWhen": "scheduleCommandUses>=1",
+          "borisTip": 61
         }
       ]
     },
@@ -340,12 +378,14 @@
           "id": "remote-control",
           "action": "Enable 'Remote Control for all sessions' in /config — Boris tip 47",
           "effort": "5min",
-          "satisfiedWhen": "hasRemoteControl"
+          "satisfiedWhen": "hasRemoteControl",
+          "borisTip": 47
         },
         {
           "id": "ios-task",
           "action": "Try kicking off one task from iOS this week — Boris tip 46",
-          "effort": "5min"
+          "effort": "5min",
+          "borisTip": 46
         }
       ]
     },
@@ -361,13 +401,15 @@
           "id": "spaced-repetition-skill",
           "action": "Optional: build a spaced-repetition skill for parts of the codebase you want to retain — Boris tip 15",
           "effort": "2hr",
-          "satisfiedWhen": "personalSkillNames~spaced|repetition|review|retain|recall|flashcard"
+          "satisfiedWhen": "personalSkillNames~spaced|repetition|review|retain|recall|flashcard",
+          "borisTip": 15
         },
         {
           "id": "output-style-tuned",
           "action": "Set outputStyle to Explanatory or Learning when learning a new codebase — Boris tip 26",
           "effort": "5min",
-          "satisfiedWhen": "outputStyle=Explanatory|Learning"
+          "satisfiedWhen": "outputStyle=Explanatory|Learning",
+          "borisTip": 26
         }
       ]
     }
