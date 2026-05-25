@@ -39,7 +39,7 @@ self-assessment scores against the 75 canonical tips only. (See Finding F1.)
 - **E** — Execution scorer (`EXECUTION_SCORERS[dim]`): "do you actually use it?"
 - **P+E** — both axes scored.
 - **P / exec unmeasured** — dimension routes Execution to `noTelemetry()`
-  (`model-effort`, `memory`, `customization`): the relevant signal never reaches
+  (`memory`, `customization`): the relevant signal never reaches
   cooked telemetry, so Execution renders as _unmeasured_, not zero.
 
 ## Tracking-status legend
@@ -153,10 +153,12 @@ These drive the **Execution** scorers (no `satisfiedWhen`; consumed directly in
 | `scheduledInvocationsTotal`                             | scheduled (1→50, ≥3→100)               | all_sessions     |
 | `remoteInvocationsTotal`                                | remote (1→50, ≥3→100)                  | all_sessions     |
 | `learningModeSessionCount`, `learningModeMatchesTotal`  | learning (★ Insight banner ratio)      | interactive_only |
+| `opusDominantSessionCount`, `opusModelMatchesTotal`     | model-effort (Opus-dominant ratio)     | interactive_only |
 
-**No Execution scorer (by design, `noTelemetry()`):** `model-effort`, `memory`,
-`customization` — the relevant signals (model id, memory-tool calls, client-side
-config) never reach cooked telemetry.
+**No Execution scorer (by design, `noTelemetry()`):** `memory`, `customization`
+— the relevant signals (memory-tool calls, client-side config) never reach
+cooked telemetry. `model-effort` is now **partially** measured: the model half
+(Opus usage, tip 2) is scored from transcripts; effort level stays settings-only.
 
 ---
 
@@ -165,7 +167,7 @@ config) never reach cooked telemetry.
 | #   | Topic                     | Dim                       | Status | Probe / signal                                                                                      | Axis                |
 | --- | ------------------------- | ------------------------- | ------ | --------------------------------------------------------------------------------------------------- | ------------------- |
 | 1   | Parallel Execution        | parallel                  | ✅     | `parallelWorktreeAdoption`; exec `subagent`+`worktree`                                              | P+E                 |
-| 2   | Model Selection           | model-effort              | 📊     | `effortLevel` proxy (model id not probed)                                                           | P / exec unmeasured |
+| 2   | Model Selection           | model-effort              | ✅     | `effortLevel` (P) + exec `opusDominantSessionCount` (Opus-dominant ratio)                           | P+E                 |
 | 3   | Plan Mode                 | planning                  | ✅     | exec `planModeSessionCount/multiTask`; `planThenLaunchSessions`                                     | P+E                 |
 | 4   | CLAUDE.md                 | memory                    | ✅     | `claudeMdExists`                                                                                    | P / exec unmeasured |
 | 5   | Skills & Slash Commands   | automation                | ✅     | `hasShipCommand` (+ skill/command counts)                                                           | P                   |
@@ -180,7 +182,7 @@ config) never reach cooked telemetry.
 | 14  | Verification (#1)         | verification              | ✅     | `hasVerifyAgent`; exec friction rate                                                                | P+E                 |
 | 15  | Learning with Claude      | learning                  | ✅     | `personalSkillNames~spaced`                                                                         | P                   |
 | 16  | Terminal Config           | customization             | 📊     | `statuslineConfigured`/`keybindingsConfigured` (loose)                                              | P                   |
-| 17  | Effort Level              | model-effort              | ✅     | `effortLevel`                                                                                       | P / exec unmeasured |
+| 17  | Effort Level              | model-effort              | ✅     | `effortLevel` (effort facet; exec scorer measures the Opus facet, tip 2)                            | P                   |
 | 18  | Plugins                   | integrations              | ✅     | `plugins.length`; exec `toolInvocationsByPlugin`                                                    | P+E                 |
 | 19  | Custom Agents             | automation/parallel       | 📊     | `personalAgents`, `hasIsolatedAgent`                                                                | P                   |
 | 20  | Permissions Management    | permissions               | ✅     | `hasWildcardAllow`, `allowListCount`                                                                | P                   |
@@ -227,7 +229,7 @@ config) never reach cooked telemetry.
 | 61  | Routines                  | scheduled                 | ✅     | `scheduleCommandUses`; exec `scheduledInvocationsTotal`                                             | P+E                 |
 | 62  | /rewind                   | memory                    | ✅     | `rewindCommandUses>=1`                                                                              | P                   |
 | 63  | /compact vs /clear        | memory                    | ✅     | `compactCommandUses>=1` + `clearCommandUses>=1`                                                     | P                   |
-| 64  | Auto-Compact Window       | model-effort              | ✅     | `autoCompactWindow`                                                                                 | P / exec unmeasured |
+| 64  | Auto-Compact Window       | model-effort              | ✅     | `autoCompactWindow` (effort facet; exec scorer measures the Opus facet, tip 2)                      | P                   |
 | 65  | Delegation over Guidance  | planning                  | ✅     | `planThenLaunchSessions>=1`; exec plan ratio                                                        | P+E                 |
 | 66  | Full Task Context Upfront | planning                  | 🗣     | `goal-constraints-template` (unpredicated)                                                          | coaching            |
 | 67  | xhigh effort              | model-effort              | ✅     | `effortLevel=xhigh\|max`                                                                            | P                   |
@@ -240,7 +242,7 @@ config) never reach cooked telemetry.
 | 74  | 4.6→4.7 Shifts            | —                         | ❌     | meta/changelog — not tracked                                                                        | —                   |
 | 75  | Task Notifications        | automation/scheduled      | ✅     | `hasStopHookNotification`                                                                           | P                   |
 
-**Tally** (75 = 47 + 12 + 2 + 14): ✅ direct **47** · 📊 shared **12** ·
+**Tally** (75 = 48 + 11 + 2 + 14): ✅ direct **48** · 📊 shared **11** ·
 🗣 coaching-only **2** (46, 66) ·
 ❌ untracked **14** (11, 12, 21, 27, 37, 38, 39, 50, 52, 53, 57, 58, 70, 74).
 
@@ -260,7 +262,7 @@ that _could_ be instrumented if justified.
 | **F1** | `CLAUDE.md` says "87 workflow tips"; canonical index is **75**. The 87 scheme is an analytical backfill (rows 76–87 from a reference doc, never in the data files).                                                                                                                                                                                                                                                     | Low (doc drift)   | resolved (PR1) |
 | **F2** | `colorCommandUses` (merged PR #72) is **absent from `probe-catalog.json`** — the `/methodology/probes` page won't document it, though the predicate + scorer wiring exist.                                                                                                                                                                                                                                              | Med (visible gap) | resolved (PR1) |
 | **F3** | Three rubric next-actions cite the **wrong Boris tip number** (cosmetic copy, predicates are correct): `code-review-plugin` cites tip 44 (=iMessage; should be **32**); `claude-in-chrome` cites tip 32 (=Code Review Agents; should be **51**); `output-style-tuned` cites tip 34 (=/effort max; should be **26**). Also `probe-catalog.json` `hasCustomSpinnerVerbs` desc cites tip 4 (=CLAUDE.md; should be **25**). | Low (misleading)  | resolved (PR1) |
-| **F4** | Three dimensions have **no Execution measurement** by design (`model-effort`, `memory`, `customization` → `noTelemetry()`). A third of the radar is Platform-only on the execution axis — correct, but worth stating.                                                                                                                                                                                                   | Info              | accepted       |
+| **F4** | **Two** dimensions have **no Execution measurement** by design (`memory`, `customization` → `noTelemetry()`); `model-effort` moved off `noTelemetry()` in PR3 (Opus-usage exec scorer, tip 2). Worth stating that two radar vertices remain Platform-only on the execution axis.                                                                                                                                        | Info              | resolved (PR3) |
 | **F5** | No test guards the human-readable "Boris tip N" citation against `boris-tip-index.json` (only the predicate is validated). F3-class drift can recur silently. Likewise, no test asserts every `satisfiedWhen` LHS has a `probe-catalog.json` entry (the seam that let F2 slip).                                                                                                                                         | Med (process)     | resolved (PR1) |
 
 ### Suggested low-risk fixes (one-liners)
