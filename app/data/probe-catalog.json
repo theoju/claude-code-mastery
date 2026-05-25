@@ -62,7 +62,7 @@
   "hasCustomSpinnerVerbs": {
     "source": "settings",
     "path": "~/.claude/settings.json → customSpinnerVerbs",
-    "description": "True if the user has defined custom spinner verbs (cosmetic personalization, Boris tip 4)."
+    "description": "True if the user has defined custom spinner verbs (cosmetic personalization, Boris tip 25)."
   },
   "hasClaudeInChrome": {
     "source": "settings",

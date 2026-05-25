@@ -159,7 +159,7 @@
         },
         {
           "id": "code-review-plugin",
-          "action": "Install the code-review plugin — auto-review PRs when they open (Boris tip 44)",
+          "action": "Install the code-review plugin — auto-review PRs when they open (Boris tip 32)",
           "effort": "5min",
           "satisfiedWhen": "hasCodeReviewPlugin=true"
         }
@@ -254,7 +254,7 @@
         },
         {
           "id": "claude-in-chrome",
-          "action": "Wire up Claude in Chrome — enables browser-driving agents (mcp__claude-in-chrome__*) — Boris tip 32",
+          "action": "Wire up Claude in Chrome — enables browser-driving agents (mcp__claude-in-chrome__*) — Boris tip 51",
           "effort": "10min",
           "satisfiedWhen": "hasClaudeInChrome"
         },
@@ -365,7 +365,7 @@
         },
         {
           "id": "output-style-tuned",
-          "action": "Set outputStyle to Explanatory or Learning when learning a new codebase — Boris tip 34",
+          "action": "Set outputStyle to Explanatory or Learning when learning a new codebase — Boris tip 26",
           "effort": "5min",
           "satisfiedWhen": "outputStyle=Explanatory|Learning"
         }
