@@ -185,24 +185,24 @@ export default function MethodologyPage() {
         </ul>
       </Section>
 
-      <Section title="Why the remaining 3 dimensions are unmeasured">
+      <Section title="Why the remaining 2 dimensions are unmeasured">
         <p>
-          Three dimensions render with no Execution vertex. Each has an explicit{" "}
+          Two dimensions render with no Execution vertex. (Model &amp; Effort
+          Tuning is now <em>partially</em> measured — its Opus-usage half, Boris
+          tip 2, is scored from transcripts; effort level stays settings-only.)
+          Each remaining one has an explicit{" "}
           <span className="mono">gapReason</span> visible on the per-dimension
           card so users can tell <em>which</em> kind of unmeasured it is:
         </p>
         <ul>
           <li>
-            <strong>Model &amp; Effort Tuning</strong>,{" "}
-            <strong>Memory &amp; Context Management</strong>,
+            <strong>Memory &amp; Context Management</strong> and
             <strong> Terminal &amp; Customization</strong> —{" "}
             <em>not feasible from /insights</em>. The relevant signals never
-            reach the cooked telemetry: model/effort are not written to{" "}
-            <span className="mono">session-meta</span>; memory-related tools do
-            not appear in <span className="mono">tool_counts</span>;
-            terminal/IDE customization (statusline, theme, keybindings) is
-            purely client-side configuration. Platform-Setup-only is the honest
-            position.
+            reach the cooked telemetry: memory-related tools do not appear in{" "}
+            <span className="mono">tool_counts</span>; terminal/IDE
+            customization (statusline, theme, keybindings) is purely client-side
+            configuration. Platform-Setup-only is the honest position.
           </li>
         </ul>
         <p>
