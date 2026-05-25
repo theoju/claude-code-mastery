@@ -169,6 +169,11 @@
     "path": "~/.claude/history.jsonl",
     "description": "Count of /compact invocations. Boris tip 54."
   },
+  "colorCommandUses": {
+    "source": "history",
+    "path": "~/.claude/history.jsonl + transcript MAX-merge",
+    "description": "Count of /color invocations. Per-worktree prompt color so parallel sessions are distinguishable, Boris tip 40."
+  },
   "focusCommandUses": {
     "source": "history",
     "path": "~/.claude/history.jsonl + transcript MAX-merge",
