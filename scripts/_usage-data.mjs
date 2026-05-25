@@ -109,6 +109,7 @@ const TARGET_COMMANDS = new Set([
   "voice",
   "clear",
   "compact",
+  "color",
   "fewer-permission-prompts",
 ]);
 
@@ -145,6 +146,7 @@ const SLASH_RE = {
   voice: /^\/voice(?![\w-])/,
   clear: /^\/clear(?![\w-])/,
   compact: /^\/compact(?![\w-])/,
+  color: /^\/color(?![\w-])/,
   // Hyphenated command — the negative lookahead still rejects `-foo`
   // extensions; the literal hyphens in the path are part of the command name.
   "fewer-permission-prompts": /^\/fewer-permission-prompts(?![\w-])/,
@@ -224,6 +226,7 @@ export async function scanTranscriptInvocations(options = {}) {
     voiceCommandUses: 0,
     clearCommandUses: 0,
     compactCommandUses: 0,
+    colorCommandUses: 0,
     fewerPermsCommandUses: 0,
   };
   // Vitest skip: when integration tests run gatherSignals without injecting
@@ -271,6 +274,7 @@ export async function scanTranscriptInvocations(options = {}) {
     let sessionHasVoice = false;
     let sessionHasClear = false;
     let sessionHasCompact = false;
+    let sessionHasColor = false;
     let sessionHasFewerPerms = false;
     const window = [];
 
@@ -295,6 +299,7 @@ export async function scanTranscriptInvocations(options = {}) {
         if (found.has("voice")) sessionHasVoice = true;
         if (found.has("clear")) sessionHasClear = true;
         if (found.has("compact")) sessionHasCompact = true;
+        if (found.has("color")) sessionHasColor = true;
         if (found.has("fewer-permission-prompts")) sessionHasFewerPerms = true;
       }
 
@@ -360,6 +365,7 @@ export async function scanTranscriptInvocations(options = {}) {
     if (sessionHasVoice) counts.voiceCommandUses++;
     if (sessionHasClear) counts.clearCommandUses++;
     if (sessionHasCompact) counts.compactCommandUses++;
+    if (sessionHasColor) counts.colorCommandUses++;
     if (sessionHasFewerPerms) counts.fewerPermsCommandUses++;
   }
   return counts;

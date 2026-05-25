@@ -86,6 +86,7 @@ describe("scanTranscriptInvocations", () => {
       voiceCommandUses: 0,
       clearCommandUses: 0,
       compactCommandUses: 0,
+      colorCommandUses: 0,
       fewerPermsCommandUses: 0,
     });
   });
@@ -124,6 +125,18 @@ describe("scanTranscriptInvocations", () => {
       lookbackDays: 30,
     });
     expect(r.voiceCommandUses).toBe(2);
+  });
+
+  it("counts colorCommandUses as 1-per-session for sessions with /color", async () => {
+    writeSession("s1", [userMarkup("/color")]);
+    writeSession("s2", [userText("/color red")]);
+    writeSession("s3", [userText("just typing")]);
+    const r = await scanTranscriptInvocations({
+      projectsRoot,
+      now: new Date("2026-05-10T00:00:00Z"),
+      lookbackDays: 30,
+    });
+    expect(r.colorCommandUses).toBe(2);
   });
 
   it("counts clearCommandUses as 1-per-session for sessions with /clear", async () => {

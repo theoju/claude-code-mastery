@@ -277,7 +277,8 @@
         {
           "id": "per-worktree-color",
           "action": "Set per-worktree /color so parallel sessions are distinguishable at a glance — Boris tip 40",
-          "effort": "5min"
+          "effort": "5min",
+          "satisfiedWhen": "colorCommandUses>=1"
         },
         {
           "id": "focus-mode",
