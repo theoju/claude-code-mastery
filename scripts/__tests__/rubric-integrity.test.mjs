@@ -23,6 +23,8 @@ const actions = rubric.dimensions.flatMap((d) =>
 );
 
 // Split a satisfiedWhen predicate into its LHS field names.
+// Assumes '&' is the only field-level conjunction; '|' is value-space OR
+// (e.g. `outputStyle=Explanatory|Learning`) consumed by the operator split.
 function lhsFields(predicate) {
   return predicate
     .split("&")
@@ -31,7 +33,9 @@ function lhsFields(predicate) {
     .filter(Boolean);
 }
 
-// Parse every tip number out of a "Boris tip 14/73" / "tip 33+54" / "tip 67, 72" suffix.
+// Parse every tip number out of a "Boris tip 14/73" / "tip 33+54" / "tip 67, 72"
+// suffix. Supported separators inside the run: / + , and whitespace; the em-dash
+// that follows a citation terminates the match.
 function proseTips(text) {
   const m = text.match(/Boris tip\s+([\d/+,\s]+)/i);
   if (!m) return [];
@@ -81,7 +85,7 @@ describe("rubric integrity", () => {
     expect(mismatches).toEqual([]);
   });
 
-  it("every borisTip resolves to a known topic (informational)", () => {
+  it("every borisTip resolves to a known topic in boris-tip-index.json", () => {
     for (const a of actions) {
       for (const n of tipSet(a.borisTip)) {
         expect(tipIndex.tips[String(n)]?.topic).toBeTruthy();
