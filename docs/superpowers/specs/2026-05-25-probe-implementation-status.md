@@ -3,10 +3,11 @@
 **Date:** 2026-05-25
 **Status:** Living tracker — update on every probe add/remove.
 **Validated against:** `app/data/boris-tip-index.json` (75 tips), `app/data/rubric.json`
-(12 dimensions / 42 next-actions), `app/data/probe-catalog.json` (40 probes),
+(12 dimensions / 42 next-actions), `app/data/probe-catalog.json` (42 probes),
 `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`), `scripts/_usage-data.mjs`
 (transcript scanners), `scripts/run-assessment.mjs#buildSignalsSummary`
-(60 `signalsSummary` keys). Snapshot taken after PR #72 (`colorCommandUses`).
+(61 `signalsSummary` keys). Snapshot updated after PR2 (`hasPostCompactHook` +
+`permissionsDefaultMode` wiring).
 
 ## Purpose
 
