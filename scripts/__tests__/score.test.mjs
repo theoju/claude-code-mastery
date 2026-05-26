@@ -7,6 +7,7 @@ import {
   scoreAll,
   computeTrends,
   DEFAULT_NOISE_FLOOR,
+  adoptionBonus,
 } from "../score.mjs";
 import { makeSignals, makeRubric, makeInsights } from "./_fixtures.mjs";
 
@@ -1064,6 +1065,32 @@ describe("SCORERS.parallel — v0.8 bonuses", () => {
   });
 });
 
+describe("customization breadth (tip 27)", () => {
+  it("rewards configuring many customization surfaces", () => {
+    const few = makeSignals({ statuslineConfigured: true });
+    const many = makeSignals({
+      statuslineConfigured: true,
+      keybindingsConfigured: true,
+      has: { explanatoryStyle: true },
+      settings: { customSpinnerVerbCount: 3, hasTerminalSetup: true },
+    });
+    expect(SCORERS.customization(many).score).toBeGreaterThan(
+      SCORERS.customization(few).score,
+    );
+  });
+  it("emits a 'customization surfaces' evidence line at breadth >= 4", () => {
+    const many = makeSignals({
+      statuslineConfigured: true,
+      keybindingsConfigured: true,
+      has: { explanatoryStyle: true },
+      settings: { customSpinnerVerbCount: 3, hasTerminalSetup: true },
+    });
+    expect(SCORERS.customization(many).evidence.join(" ")).toMatch(
+      /customization surface/,
+    );
+  });
+});
+
 describe("SCORERS — v0.8 small bonuses across remaining dims", () => {
   it("scheduled: +10 for babysitLoopUses, +5 for scheduleCommandUses", () => {
     const baseline = SCORERS.scheduled(makeSignals()).score;
@@ -1137,5 +1164,158 @@ describe("SCORERS — v0.8 small bonuses across remaining dims", () => {
     expect(SCORERS.remote(makeSignals({ hasRemoteControl: true })).score).toBe(
       Math.min(100, baseline + 10),
     );
+  });
+});
+
+describe("parallel execution — cowork adoption credit (tip 50)", () => {
+  it("adds capped credit when cowork dispatch adopted", () => {
+    const base = makeSignals({
+      insights: makeInsights({
+        subagentSessionCount: 0,
+        transcriptsScanned: true,
+      }),
+    });
+    const withCowork = makeSignals({
+      settings: { coworkDispatchAdopted: true },
+      insights: makeInsights({
+        subagentSessionCount: 0,
+        transcriptsScanned: true,
+      }),
+    });
+    const a = EXECUTION_SCORERS.parallel(base).score;
+    const b = EXECUTION_SCORERS.parallel(withCowork).score;
+    expect(b).toBeGreaterThan(a);
+  });
+});
+
+describe("execution adoption credit (tips 74/33/planning/learning)", () => {
+  const ins = () =>
+    makeInsights({
+      transcriptsScanned: true,
+      opusDominantSessionCount: 0,
+      planModeSessionCount: 0,
+      multiTaskSessionCount: 1,
+      hookFireCount: 0,
+      learningModeSessionCount: 0,
+    });
+
+  it("model-effort gains awareness credit (tip 74, capped low)", () => {
+    const a = EXECUTION_SCORERS["model-effort"](
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS["model-effort"](
+      makeSignals({
+        settings: { opus47AwarenessAdopted: true },
+        insights: ins(),
+      }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+    expect(b - a).toBe(8);
+  });
+  it("automation gains btw counter credit (tip 33)", () => {
+    const a = EXECUTION_SCORERS.automation(
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS.automation(
+      makeSignals({ settings: { cliBtwUseCount: 36 }, insights: ins() }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+  });
+  it("planning gains plan-mode recency credit", () => {
+    const a = EXECUTION_SCORERS.planning(
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS.planning(
+      makeSignals({ settings: { planModeRecencyDays: 1 }, insights: ins() }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+  });
+  it("learning gains skill-recency credit", () => {
+    const a = EXECUTION_SCORERS.learning(
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS.learning(
+      makeSignals({ settings: { skillsUsedRecently: 3 }, insights: ins() }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+  });
+});
+
+describe("adoptionBonus", () => {
+  it("boolean: full cap when on, zero when off", () => {
+    expect(adoptionBonus({ on: true, kind: "boolean", cap: 15 }).points).toBe(
+      15,
+    );
+    expect(adoptionBonus({ on: false, kind: "boolean", cap: 15 }).points).toBe(
+      0,
+    );
+  });
+  it("counter: scales to cap, never exceeds", () => {
+    expect(
+      adoptionBonus({ value: 0, kind: "counter", cap: 10, target: 5 }).points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ value: 5, kind: "counter", cap: 10, target: 5 }).points,
+    ).toBe(10);
+    expect(
+      adoptionBonus({ value: 50, kind: "counter", cap: 10, target: 5 }).points,
+    ).toBe(10);
+  });
+  it("recency: full cap when recent, decays to 0 past window", () => {
+    expect(
+      adoptionBonus({ days: 0, kind: "recency", cap: 10, window: 30 }).points,
+    ).toBe(10);
+    expect(
+      adoptionBonus({ days: 30, kind: "recency", cap: 10, window: 30 }).points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ days: null, kind: "recency", cap: 10, window: 30 })
+        .points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ days: -5, kind: "recency", cap: 10, window: 30 }).points,
+    ).toBe(10);
+    expect(
+      adoptionBonus({ days: -100, kind: "recency", cap: 10, window: 30 })
+        .points,
+    ).toBe(10);
+  });
+  it("non-finite value/days yield 0 points, never NaN", () => {
+    // counter: missing/NaN value must not propagate NaN into the score
+    expect(
+      adoptionBonus({ value: undefined, kind: "counter", cap: 10, target: 3 })
+        .points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ value: NaN, kind: "counter", cap: 10, target: 3 }).points,
+    ).toBe(0);
+    // recency: NaN/Infinity days must not propagate NaN
+    expect(
+      adoptionBonus({ days: NaN, kind: "recency", cap: 8, window: 30 }).points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ days: Infinity, kind: "recency", cap: 8, window: 30 })
+        .points,
+    ).toBe(0);
+  });
+  it("emits evidence when credited, gap when not", () => {
+    const hit = adoptionBonus({
+      on: true,
+      kind: "boolean",
+      cap: 15,
+      evidenceText: "E",
+      gapText: "G",
+    });
+    expect(hit.evidence).toBe("E");
+    expect(hit.gap).toBeNull();
+    const miss = adoptionBonus({
+      on: false,
+      kind: "boolean",
+      cap: 15,
+      evidenceText: "E",
+      gapText: "G",
+    });
+    expect(miss.evidence).toBeNull();
+    expect(miss.gap).toBe("G");
   });
 });

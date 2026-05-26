@@ -14,6 +14,13 @@ export function makeSignals(overrides = {}) {
       hookTotalCount: 0,
       outputStyle: null,
       permissionsDefaultMode: null,
+      coworkDispatchAdopted: false,
+      opus47AwarenessAdopted: false,
+      cliBtwUseCount: 0,
+      planModeRecencyDays: null,
+      skillsUsedRecently: 0,
+      customSpinnerVerbCount: 0,
+      hasTerminalSetup: false,
     },
     personalAgents: [],
     personalCommands: [],
@@ -135,6 +142,7 @@ export function makeInsights(overrides = {}) {
     opusDominantSessionCount: null,
     opusModelMatchesTotal: null,
     desktopSessionCount: null,
+    aiTitlePresent: null,
   };
   return deepMerge(base, overrides);
 }

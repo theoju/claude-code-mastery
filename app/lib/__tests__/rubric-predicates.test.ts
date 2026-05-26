@@ -87,6 +87,9 @@ const ALL_SATISFIED_SIGNALS = {
   hasCodeReviewPlugin: true,
   // Tip 52 — desktop-app adoption
   desktopSessionCount: 1,
+  // cowork / opus47 runtime-adoption probes
+  coworkDispatchAdopted: true,
+  opus47AwarenessAdopted: true,
 };
 
 describe("rubric satisfiedWhen predicates", () => {

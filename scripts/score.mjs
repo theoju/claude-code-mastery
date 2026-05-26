@@ -406,6 +406,25 @@ export const SCORERS = {
         "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
       );
     }
+    // Breadth bonus rewards configuring many surfaces on top of the per-surface
+    // depth credit above. The overlap (explanatory style + terminal setup count
+    // both here and individually) is intentional: tip 27 ("customize
+    // everything") is about breadth, so a broadly-configured setup earns both.
+    const surfaces = [
+      s.statuslineConfigured,
+      s.keybindingsConfigured,
+      s.has.explanatoryStyle,
+      (s.settings?.customSpinnerVerbCount || 0) > 0,
+      !!s.settings?.hasTerminalSetup,
+      (s.colorCommandUses ?? 0) > 0,
+      (s.voiceCommandUses ?? 0) > 0,
+    ].filter(Boolean).length;
+    if (surfaces >= 4) {
+      score += 10;
+      ev.push(
+        `${surfaces} customization surfaces configured — "customize everything" (Boris tip 27)`,
+      );
+    }
     return { score: clamp(score), evidence: ev, gaps };
   },
 
@@ -530,6 +549,44 @@ function noTelemetry() {
 
 function pct(n) {
   return Math.round(n * 100) / 100;
+}
+
+// Capped adoption credit — a third scorer-contribution shape alongside the
+// withGates ratio scorers. NOT gated by a session denominator: these signals
+// are global booleans / counters / recency from ~/.claude.json, not per-session
+// rates. `cap` bounds the contribution so one ever-used flag can't dominate a
+// dimension. `label` ("behavioral" | "awareness" | "proxy") is carried for
+// honest rendering. Returns { points, evidence, gap, label }.
+export function adoptionBonus({
+  kind,
+  cap,
+  on,
+  value,
+  days,
+  window,
+  target,
+  label = "behavioral",
+  evidenceText = null,
+  gapText = null,
+}) {
+  let frac;
+  if (kind === "boolean") frac = on ? 1 : 0;
+  else if (kind === "counter")
+    frac =
+      target > 0 && Number.isFinite(value) ? Math.min(value / target, 1) : 0;
+  else if (kind === "recency")
+    frac =
+      Number.isFinite(days) && window > 0
+        ? Math.max(0, Math.min(1, 1 - days / window))
+        : 0;
+  else throw new Error(`adoptionBonus: unknown kind ${kind}`);
+  const points = Math.round(cap * frac);
+  return {
+    points,
+    label,
+    evidence: points > 0 ? evidenceText : null,
+    gap: points > 0 ? null : gapText,
+  };
 }
 
 // Wraps an execution scorer with the standard insights/transcripts/sessions
@@ -674,6 +731,18 @@ export const EXECUTION_SCORERS = {
       gaps.push(
         "Subagent dispatch in fewer than 20% of interactive sessions — Boris tip 1",
       );
+    const cowork = adoptionBonus({
+      kind: "boolean",
+      cap: 15,
+      on: !!s.settings?.coworkDispatchAdopted,
+      label: "behavioral",
+      evidenceText:
+        "Cowork / agents-fleet dispatch adopted (~/.claude.json hasUsedAgentsFleet) — Boris tip 50",
+      gapText: "Never dispatched a cowork / agents-fleet run — Boris tip 50",
+    });
+    score += cowork.points;
+    if (cowork.evidence) evidence.push(cowork.evidence);
+    if (cowork.gap) gaps.push(cowork.gap);
     return { score: clamp(Math.round(score)), evidence, gaps, gapReason: null };
   }),
 
@@ -685,7 +754,7 @@ export const EXECUTION_SCORERS = {
       if (multiTaskSessionCount === 0)
         return unavailable(GAP_REASONS.NO_MULTI_TASK);
       const ratio = planModeSessionCount / multiTaskSessionCount;
-      const score = clamp(Math.round(ratio * COEFFS.planningRatioWeight));
+      let score = clamp(Math.round(ratio * COEFFS.planningRatioWeight));
       const evidence = [
         `Plan mode: ${planModeSessionCount}/${multiTaskSessionCount} multi-task sessions (${pct(ratio * 100)}%)`,
       ];
@@ -694,6 +763,17 @@ export const EXECUTION_SCORERS = {
         gaps.push(
           "Plan mode in fewer than half of multi-task sessions — Boris tip 65",
         );
+      const planRecency = adoptionBonus({
+        kind: "recency",
+        cap: 8,
+        days: s.settings?.planModeRecencyDays ?? null,
+        window: 30,
+        label: "behavioral",
+        evidenceText: `Plan mode used in the last ${s.settings?.planModeRecencyDays} day(s) — recency corroboration`,
+        gapText: null,
+      });
+      score = clamp(score + planRecency.points);
+      if (planRecency.evidence) evidence.push(planRecency.evidence);
       return { score, evidence, gaps, gapReason: null };
     },
   ),
@@ -719,6 +799,17 @@ export const EXECUTION_SCORERS = {
     const gaps = [];
     if (hookFireCount === 0)
       gaps.push("Zero hook fires in window — automation is dormant");
+    const btw = adoptionBonus({
+      kind: "counter",
+      cap: 10,
+      value: s.settings?.cliBtwUseCount ?? 0,
+      target: 10,
+      label: "behavioral",
+      evidenceText: `/btw side-channel adopted (${s.settings?.cliBtwUseCount ?? 0} uses) — Boris tip 33`,
+      gapText: null,
+    });
+    score += btw.points;
+    if (btw.evidence) evidence.push(btw.evidence);
     return { score: clamp(score), evidence, gaps, gapReason: null };
   }),
 
@@ -851,7 +942,7 @@ export const EXECUTION_SCORERS = {
       if (opusDominantSessionCount == null)
         return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
       const ratio = opusDominantSessionCount / interactiveSessionsAnalyzed;
-      const score = clamp(Math.round(ratio * 100));
+      let score = clamp(Math.round(ratio * 100));
       const evidence = [
         `Opus-dominant in ${opusDominantSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(ratio * 100)}%) — ${opusModelMatchesTotal} Opus assistant turns total`,
       ];
@@ -860,6 +951,17 @@ export const EXECUTION_SCORERS = {
         gaps.push(
           "Opus-dominant in fewer than half of interactive sessions — Boris tip 2",
         );
+      const awareness = adoptionBonus({
+        kind: "boolean",
+        cap: 8,
+        on: !!s.settings?.opus47AwarenessAdopted,
+        label: "awareness",
+        evidenceText:
+          "Engaged with the 4.7 release surface (release notes / launch) — Boris tip 74 (awareness proxy)",
+        gapText: null,
+      });
+      score = clamp(score + awareness.points);
+      if (awareness.evidence) evidence.push(awareness.evidence);
       return { score, evidence, gaps, gapReason: null };
     },
   ),
@@ -889,7 +991,7 @@ export const EXECUTION_SCORERS = {
       if (learningModeSessionCount == null)
         return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
       const ratio = learningModeSessionCount / interactiveSessionsAnalyzed;
-      const score = clamp(Math.round(ratio * 100));
+      let score = clamp(Math.round(ratio * 100));
       const evidence = [
         `Explanatory-mode active in ${learningModeSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(ratio * 100)}%) — ${learningModeMatchesTotal} ★ Insight banners total`,
       ];
@@ -899,6 +1001,17 @@ export const EXECUTION_SCORERS = {
           "Explanatory mode active in <30% of interactive sessions — try /output-style explanatory for learning work",
         );
       }
+      const skillRecency = adoptionBonus({
+        kind: "counter",
+        cap: 10,
+        value: s.settings?.skillsUsedRecently ?? 0,
+        target: 3,
+        label: "behavioral",
+        evidenceText: `${s.settings?.skillsUsedRecently ?? 0} skill(s) used in the last 30 days — active self-improving toolkit`,
+        gapText: null,
+      });
+      score = clamp(score + skillRecency.points);
+      if (skillRecency.evidence) evidence.push(skillRecency.evidence);
       return { score, evidence, gaps, gapReason: null };
     },
   ),

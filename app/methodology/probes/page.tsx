@@ -14,7 +14,8 @@ type SourceKey =
   | "filesystem"
   | "plugins"
   | "transcripts"
-  | "history";
+  | "history"
+  | "runtime";
 
 interface CatalogEntry {
   source: SourceKey;
@@ -48,11 +49,12 @@ interface ProbeRow {
 
 // `axis` mirrors the probe tracker's taxonomy: P (config) for settings /
 // filesystem / plugins, P* (behavior) for transcript- and history-derived
-// usage signals. There is no E (Execution) source here — cooked-telemetry
-// signals aren't predicate-backed, so they never appear as probes.
+// usage signals. Axis A (runtime adoption) signals ARE predicate-backed and
+// feed the Execution axis via capped adoption credit; cooked-telemetry
+// Execution signals remain non-predicate-backed and never appear here.
 const SOURCE_META: Record<
   SourceKey,
-  { title: string; blurb: string; order: number; axis: "P" | "P*" }
+  { title: string; blurb: string; order: number; axis: "P" | "P*" | "A" }
 > = {
   settings: {
     title: "settings.json & CLI config",
@@ -89,6 +91,24 @@ const SOURCE_META: Record<
     order: 5,
     axis: "P*",
   },
+  runtime: {
+    title: "Runtime adoption (~/.claude.json)",
+    blurb:
+      "Durable feature-adoption flags from ~/.claude.json (hasUsedAgentsFleet, release-notes engagement). Axis A: these feed Execution adoption credit, not Platform Setup.",
+    order: 6,
+    axis: "A",
+  },
+};
+
+const AXIS_BADGE_BASE =
+  "mono text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 border border-[color:var(--color-line)] rounded-sm";
+// Full static class strings (not interpolated) so Tailwind's JIT scanner emits
+// each arbitrary-value color utility — interpolating the CSS var would only work
+// incidentally, when the literal happens to appear elsewhere in the source.
+const AXIS_TEXT_COLOR: Record<"P" | "P*" | "A", string> = {
+  P: "text-[color:var(--color-mute)]",
+  "P*": "text-[color:var(--color-accent)]",
+  A: "text-[color:var(--color-warn)]",
 };
 
 function extractPrimarySignal(predicate: string): string {
@@ -175,6 +195,7 @@ export default function ProbesPage() {
     "plugins",
     "transcripts",
     "history",
+    "runtime",
     "unclassified",
   ];
 
@@ -219,11 +240,14 @@ export default function ProbesPage() {
         <p className="text-xs text-[color:var(--color-mute)] max-w-3xl leading-relaxed mt-3">
           <span className="mono text-[color:var(--color-text)]">axis P</span>{" "}
           (config — settings / filesystem / plugins) ·{" "}
-          <span className="mono text-[color:var(--color-text)]">axis P*</span>{" "}
-          (behavior — transcripts / shell history). Both feed the{" "}
-          <strong>Platform Setup</strong> score. Execution-axis signals (cooked
-          telemetry) aren&apos;t predicate-backed and drive the dashboard radar,
-          not this page.
+          <span className="mono text-[color:var(--color-accent)]">axis P*</span>{" "}
+          (behavior — transcripts / shell history) — both feed{" "}
+          <strong>Platform Setup</strong>. ·{" "}
+          <span className="mono text-[color:var(--color-warn)]">axis A</span>{" "}
+          (runtime adoption — ~/.claude.json flags) feeds the{" "}
+          <strong>Execution</strong> axis via capped adoption credit.
+          Cooked-telemetry Execution signals aren&apos;t predicate-backed and
+          drive the dashboard radar, not this page.
         </p>
       </header>
 
@@ -325,11 +349,13 @@ export default function ProbesPage() {
               </h2>
               {axisLabel && (
                 <span
-                  className="mono text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 border border-[color:var(--color-line)] rounded-sm text-[color:var(--color-mute)]"
+                  className={`${AXIS_BADGE_BASE} ${AXIS_TEXT_COLOR[axisLabel]}`}
                   title={
                     axisLabel === "P"
                       ? "Platform Setup — config presence"
-                      : "Platform Setup — transcript-derived behavior"
+                      : axisLabel === "P*"
+                        ? "Platform Setup — transcript-derived behavior"
+                        : "Execution — runtime adoption credit"
                   }
                 >
                   axis {axisLabel}

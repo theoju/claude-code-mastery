@@ -191,6 +191,57 @@ export function detectTerminalSetup(cliConfig) {
   );
 }
 
+// Boris tip 50: cowork / agents-fleet dispatch. ~/.claude.json#hasUsedAgentsFleet
+// is a durable "has used" adoption flag (same shape as hasUsedRemoteControl).
+export function detectCoworkDispatch(cliConfig) {
+  return cliConfig?.hasUsedAgentsFleet === true;
+}
+
+// Boris tip 74: awareness of the 4.6→4.7 shift. Proxy — engagement with the
+// release-notes / Opus-4.7-launch surfaces, not behavioral mastery.
+export function detectOpus47Awareness(cliConfig) {
+  if (!cliConfig) return false;
+  return (
+    (typeof cliConfig.opus47LaunchSeenCount === "number" &&
+      cliConfig.opus47LaunchSeenCount > 0) ||
+    cliConfig.unpinOpus47LaunchEffort === true ||
+    (typeof cliConfig.lastReleaseNotesSeen === "string" &&
+      cliConfig.lastReleaseNotesSeen.length > 0)
+  );
+}
+
+// Boris tip 33: /btw side-channel. ~/.claude.json#btwUseCount is a stronger
+// counter than the history.jsonl scan (MAX-merged in buildSignalsSummary).
+export function detectBtwUseCount(cliConfig) {
+  const n = cliConfig?.btwUseCount;
+  return typeof n === "number" && n > 0 ? n : 0;
+}
+
+// Whole days since the last plan-mode use, or null if never. Corroborates the
+// transcript-derived plan-mode ratio (planning dimension).
+export function detectPlanModeRecencyDays(cliConfig, nowMs = Date.now()) {
+  const ts = cliConfig?.lastPlanModeUse;
+  if (typeof ts !== "string") return null;
+  const t = Date.parse(ts);
+  if (!Number.isFinite(t)) return null;
+  return Math.floor((nowMs - t) / 86_400_000);
+}
+
+// Count of skills whose lastUsedAt is within the project's 30-day window.
+// Corroborates the explanatory-mode learning scorer.
+const SKILL_RECENCY_DAYS = 30;
+export function detectSkillsUsedRecently(cliConfig, nowMs = Date.now()) {
+  const usage = cliConfig?.skillUsage;
+  if (!usage || typeof usage !== "object") return 0;
+  let n = 0;
+  for (const entry of Object.values(usage)) {
+    const t = Date.parse(entry?.lastUsedAt ?? "");
+    if (Number.isFinite(t) && (nowMs - t) / 86_400_000 <= SKILL_RECENCY_DAYS)
+      n++;
+  }
+  return n;
+}
+
 // True if a Stop hook fires a system notification when Claude finishes —
 // Boris tip 75. Distinguishes "I get pinged for autonomous runs" from "I
 // have *some* Stop hook" (e.g. a stop-verify.sh check). Tokens cover macOS
@@ -602,6 +653,11 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
   const hasClaudeInChrome = detectClaudeInChrome(cliConfig);
   const hasRemoteControl = detectRemoteControl(cliConfig);
   const hasTerminalSetup = detectTerminalSetup(cliConfig);
+  const coworkDispatchAdopted = detectCoworkDispatch(cliConfig);
+  const opus47AwarenessAdopted = detectOpus47Awareness(cliConfig);
+  const cliBtwUseCount = detectBtwUseCount(cliConfig);
+  const planModeRecencyDays = detectPlanModeRecencyDays(cliConfig);
+  const skillsUsedRecently = detectSkillsUsedRecently(cliConfig);
   const projectSettings =
     (await safeReadJson(join(projectRoot, ".claude", "settings.local.json"))) ||
     {};
@@ -762,6 +818,11 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
       hasClaudeInChrome,
       hasRemoteControl,
       hasTerminalSetup,
+      coworkDispatchAdopted,
+      opus47AwarenessAdopted,
+      cliBtwUseCount,
+      planModeRecencyDays,
+      skillsUsedRecently,
       hasVercelCli,
       // P2.2 (Boris tip 34): Default | Explanatory | Learning | Concise | custom.
       // Verbatim string; null when settings.outputStyle is absent.

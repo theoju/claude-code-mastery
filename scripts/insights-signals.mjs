@@ -189,6 +189,7 @@ export async function gatherInsightsSignals({
     opusDominantSessionCount: null,
     opusModelMatchesTotal: null,
     desktopSessionCount: null,
+    aiTitlePresent: null,
   };
 
   if (includeTranscripts) {
@@ -201,12 +202,14 @@ export async function gatherInsightsSignals({
     let opusDominantSessionCount = 0;
     let opusModelMatchesTotal = 0;
     let desktopSessionCount = 0;
+    let aiTitlePresent = false;
     for (const m of inWindow) {
       const path = transcriptIndex.get(m.session_id);
       if (!path) continue;
       const {
         modes,
         hasWorktreeState,
+        hasAiTitle,
         learningModeMatches,
         assistantTurns,
         opusAssistantTurns,
@@ -247,6 +250,8 @@ export async function gatherInsightsSignals({
       if (entrypoint === "claude-desktop") {
         desktopSessionCount += 1;
       }
+      // Tip 39: info-only — true if ANY scanned session has an ai-title entry.
+      if (hasAiTitle) aiTitlePresent = true;
     }
     result.transcriptsScanned = true;
     result.autoModeSessionCount = autoModeSessionCount;
@@ -258,6 +263,7 @@ export async function gatherInsightsSignals({
     result.opusDominantSessionCount = opusDominantSessionCount;
     result.opusModelMatchesTotal = opusModelMatchesTotal;
     result.desktopSessionCount = desktopSessionCount;
+    result.aiTitlePresent = aiTitlePresent;
   }
 
   return result;
