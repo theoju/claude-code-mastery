@@ -187,6 +187,9 @@ export function buildSignalsSummary(signals) {
     // (/go-style) because desktop is not a slash command with a history.jsonl
     // analogue. Broad volume counter (no universe gating).
     desktopSessionCount: signals.insights?.desktopSessionCount ?? 0,
+    // Tip 39: info-only — true if any scanned session had an ai-title entry.
+    // Not scored, no rubric predicate, no probe-catalog entry.
+    aiTitlePresent: !!signals.insights?.aiTitlePresent,
     // P2.2 (Boris tip 34): root-level `outputStyle` string from settings.json.
     // Verbatim — predicates use the `=v|w` literal-match operator (e.g.
     // `outputStyle=Explanatory|Learning`).

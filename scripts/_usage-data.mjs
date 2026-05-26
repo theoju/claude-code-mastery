@@ -429,6 +429,7 @@ export async function scanTranscriptModes(path) {
   const modes = new Set();
   const skills = new Set();
   let hasWorktreeState = false;
+  let hasAiTitle = false;
   // Detect explanatory-output-style adoption via its rendered banner. The
   // transcript schema has no outputStyle field (verified empirically across
   // 60+ sample transcripts); the plugin's instruction to emit `★ Insight `
@@ -456,6 +457,7 @@ export async function scanTranscriptModes(path) {
       entrypoint = entry.entrypoint;
     }
     if (entry.type === "worktree-state") hasWorktreeState = true;
+    if (entry.type === "ai-title") hasAiTitle = true;
     if (typeof entry.permissionMode === "string")
       modes.add(entry.permissionMode);
     if (typeof entry.attributionSkill === "string")
@@ -484,6 +486,7 @@ export async function scanTranscriptModes(path) {
   return {
     modes,
     hasWorktreeState,
+    hasAiTitle,
     skills,
     learningModeMatches,
     assistantTurns,

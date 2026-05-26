@@ -6,7 +6,7 @@
 (12 dimensions / 46 next-actions), `app/data/probe-catalog.json` (45 probes +
 the `_meta` sidecar), `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`),
 `scripts/_usage-data.mjs` (transcript scanners),
-`scripts/run-assessment.mjs#buildSignalsSummary` (66 `signalsSummary` keys).
+`scripts/run-assessment.mjs#buildSignalsSummary` (71 `signalsSummary` keys).
 Snapshot current as of **main @ post-v0.9.12** — the `/effort max` reflex probe
 (`effortMaxAdopted` derived OR + `effortMaxCommandUses` transcript counter, tip 34)
 **shipped in #85 / CCE-29** (merged to `main`, pending release). The prior

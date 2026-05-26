@@ -423,6 +423,38 @@ describe("scanTranscriptModes", () => {
     const r = await scanTranscriptModes(path);
     expect(r.entrypoint).toBe("claude-desktop");
   });
+
+  // Tip 39: ai-title detection (info-only signal)
+  it("returns hasAiTitle=true when transcript contains an ai-title entry", async () => {
+    const lines = [
+      JSON.stringify({ type: "user", permissionMode: "auto" }),
+      JSON.stringify({
+        type: "assistant",
+        message: { model: "claude-sonnet-4-6" },
+      }),
+      JSON.stringify({
+        type: "ai-title",
+        aiTitle: "Implement dark mode",
+        sessionId: "s1",
+      }),
+    ];
+    writeFileSync(path, lines.join("\n"));
+    const r = await scanTranscriptModes(path);
+    expect(r.hasAiTitle).toBe(true);
+  });
+
+  it("returns hasAiTitle=false when transcript has no ai-title entry", async () => {
+    const lines = [
+      JSON.stringify({ type: "user", permissionMode: "auto" }),
+      JSON.stringify({
+        type: "assistant",
+        message: { model: "claude-sonnet-4-6" },
+      }),
+    ];
+    writeFileSync(path, lines.join("\n"));
+    const r = await scanTranscriptModes(path);
+    expect(r.hasAiTitle).toBe(false);
+  });
 });
 
 describe("classifySessionKind", () => {

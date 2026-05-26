@@ -836,6 +836,7 @@ describe("buildSignalsSummary", () => {
     const sortedKeys = Object.keys(r).sort();
     expect(sortedKeys).toMatchInlineSnapshot(`
       [
+        "aiTitlePresent",
         "allowListCount",
         "autoCompactWindow",
         "autoMemoryEnabled",
@@ -846,6 +847,7 @@ describe("buildSignalsSummary", () => {
         "clearCommandUses",
         "colorCommandUses",
         "compactCommandUses",
+        "coworkDispatchAdopted",
         "desktopSessionCount",
         "effortLevel",
         "effortMaxAdopted",
@@ -882,6 +884,7 @@ describe("buildSignalsSummary", () => {
         "keybindingsConfigured",
         "loopCommandUses",
         "mcpServersConnected",
+        "opus47AwarenessAdopted",
         "outputStyle",
         "parallelWorktreeAdoption",
         "permissionsDefaultMode",
@@ -889,6 +892,7 @@ describe("buildSignalsSummary", () => {
         "personalCommands",
         "personalSkillNames",
         "personalSkills",
+        "planModeRecencyDays",
         "planThenLaunchSessions",
         "plugins",
         "projectsWithMemory",
@@ -897,6 +901,7 @@ describe("buildSignalsSummary", () => {
         "shipVerifyStageRecent",
         "shipsRecent",
         "simplifyCommandUses",
+        "skillsUsedRecently",
         "skipDangerous",
         "statuslineConfigured",
         "voiceCommandUses",
