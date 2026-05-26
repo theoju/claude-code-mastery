@@ -1,6 +1,6 @@
 {
   "name": "claude-code-self-assessment-dashboard",
-  "version": "0.9.14",
+  "version": "0.9.15",
   "private": true,
   "scripts": {
     "setup": "bash scripts/setup.sh",
