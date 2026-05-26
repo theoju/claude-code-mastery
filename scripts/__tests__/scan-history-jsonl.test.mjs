@@ -18,6 +18,7 @@ const COMMANDS = [
   "focus",
   "schedule",
   "batch",
+  "color",
 ];
 
 beforeEach(() => {
@@ -62,6 +63,7 @@ describe("scanHistoryJsonl", () => {
       focusCommandUses: 0,
       scheduleCommandUses: 0,
       batchCommandUses: 0,
+      colorCommandUses: 0,
     });
   });
 
@@ -229,6 +231,49 @@ describe("scanHistoryJsonl", () => {
     });
     expect(r.babysitLoopUses ?? 0).toBe(0);
     expect(r.fewerPermsCommandUses).toBe(1);
+  });
+
+  it("counts /color sessions — history is the only reliable source (client-side command lands as a system-type transcript entry; Boris tip 40)", async () => {
+    writeFileSync(
+      historyPath,
+      [
+        entry({
+          display: "/color red",
+          sessionId: "s1",
+          timestamp: ts("2026-05-09T10:00:00Z"),
+        }),
+        entry({
+          display: "/color blue",
+          sessionId: "s2",
+          timestamp: ts("2026-05-09T11:00:00Z"),
+        }),
+        // dedup: same session, two /color invocations → counts once
+        entry({
+          display: "/color orange",
+          sessionId: "s3",
+          timestamp: ts("2026-05-09T12:00:00Z"),
+        }),
+        entry({
+          display: "/color green",
+          sessionId: "s3",
+          timestamp: ts("2026-05-09T13:00:00Z"),
+        }),
+        // hyphenated continuation must NOT match the bare command
+        entry({
+          display: "/color-scheme nope",
+          sessionId: "s4",
+          timestamp: ts("2026-05-09T14:00:00Z"),
+        }),
+      ].join("\n"),
+    );
+    const r = await scanHistoryJsonl({
+      historyPath,
+      now: new Date("2026-05-10T00:00:00Z"),
+      lookbackMs: 14 * 24 * 60 * 60 * 1000,
+      commands: COMMANDS,
+    });
+    // s1, s2, s3 (deduped) → 3; s4 (/color-scheme) excluded; args stripped
+    expect(r.colorCommandUses).toBe(3);
   });
 
   it("strips plugin prefix from /plugin:cmd form", async () => {

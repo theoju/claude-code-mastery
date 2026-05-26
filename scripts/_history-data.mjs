@@ -26,6 +26,11 @@ const COMMAND_TO_FIELD = {
   voice: "voiceCommandUses",
   clear: "clearCommandUses",
   compact: "compactCommandUses",
+  // /color is client-side (recolors the prompt) and lands in the session
+  // transcript as a system-type entry, which scanTranscriptInvocations
+  // (user-message-only) can't see. history.jsonl is the only reliable
+  // source for real /color adoption — Boris tip 40.
+  color: "colorCommandUses",
   "fewer-permission-prompts": "fewerPermsCommandUses",
   loop: "loopCommandUses",
   // /babysit is intentionally NOT mapped here. babysitLoopUses must keep
@@ -132,7 +137,9 @@ export async function scanHistoryJsonl(opts = {}) {
  * The default list of commands worth scanning from history.jsonl —
  * everything in TARGET_COMMANDS except /rewind (keyboard shortcut,
  * never typed) and /go (PROMPT_PHRASE command, JSONL mid-text path
- * already covers it).
+ * already covers it). /color belongs here specifically because it is
+ * client-side: its real invocations never reach the user-message
+ * transcript scan, so history.jsonl is its only reliable source.
  */
 export const HISTORY_COMMAND_LIST = [
   "simplify",
@@ -140,6 +147,7 @@ export const HISTORY_COMMAND_LIST = [
   "voice",
   "clear",
   "compact",
+  "color",
   "fewer-permission-prompts",
   "loop",
   "focus",
