@@ -1022,6 +1022,24 @@ describe("SCORERS.verification — v0.8 bonuses", () => {
     expect(oneGo).toBe(baseline); // below threshold
     expect(threeGo).toBe(Math.min(100, baseline + 3));
   });
+
+  it("adds +5 when desktopSessionCount >= 1 (Boris tip 52)", () => {
+    const baseline = SCORERS.verification(makeSignals()).score;
+    const withDesktop = SCORERS.verification(
+      makeSignals({ desktopSessionCount: 1 }),
+    );
+    const withoutDesktop = SCORERS.verification(
+      makeSignals({ desktopSessionCount: 0 }),
+    );
+    expect(withDesktop.score).toBe(Math.min(100, baseline + 5));
+    expect(withDesktop.evidence).toContain(
+      "Used the Claude Code desktop app — Boris tip 52",
+    );
+    expect(withoutDesktop.score).toBe(baseline); // credit not applied
+    expect(withoutDesktop.evidence).not.toContain(
+      "Used the Claude Code desktop app — Boris tip 52",
+    );
+  });
 });
 
 describe("SCORERS.parallel — v0.8 bonuses", () => {

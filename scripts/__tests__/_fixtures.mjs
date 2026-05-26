@@ -133,6 +133,7 @@ export function makeInsights(overrides = {}) {
     learningModeMatchesTotal: null,
     opusDominantSessionCount: null,
     opusModelMatchesTotal: null,
+    desktopSessionCount: null,
   };
   return deepMerge(base, overrides);
 }

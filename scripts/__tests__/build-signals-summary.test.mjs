@@ -763,6 +763,7 @@ describe("buildSignalsSummary", () => {
         "clearCommandUses",
         "colorCommandUses",
         "compactCommandUses",
+        "desktopSessionCount",
         "effortLevel",
         "fewerPermsCommandUses",
         "focusCommandUses",

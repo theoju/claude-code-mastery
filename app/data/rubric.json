@@ -195,6 +195,13 @@
           "effort": "5min",
           "satisfiedWhen": "hasCodeReviewPlugin=true",
           "borisTip": 32
+        },
+        {
+          "id": "desktop-app",
+          "action": "Try the Claude Code desktop app for a richer review/diff experience — Boris tip 52",
+          "effort": "5min",
+          "satisfiedWhen": "desktopSessionCount>=1",
+          "borisTip": 52
         }
       ]
     },

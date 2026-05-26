@@ -160,6 +160,10 @@ export function buildSignalsSummary(signals) {
     insightsLookbackDays: signals.insights?.lookbackDays ?? null,
     insightsTranscriptsScanned: signals.insights?.transcriptsScanned ?? false,
     insightsHookFireCount: signals.insights?.hookFireCount ?? 0,
+    // Tip 52: desktop-app adoption — direct insights value, not a maxProbe
+    // (/go-style) because desktop is not a slash command with a history.jsonl
+    // analogue. Broad volume counter (no universe gating).
+    desktopSessionCount: signals.insights?.desktopSessionCount ?? 0,
     // P2.2 (Boris tip 34): root-level `outputStyle` string from settings.json.
     // Verbatim — predicates use the `=v|w` literal-match operator (e.g.
     // `outputStyle=Explanatory|Learning`).

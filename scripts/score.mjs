@@ -268,6 +268,12 @@ export const SCORERS = {
       score += 3;
       ev.push(`/go reflex adopted (${goCommandUses} uses)`);
     }
+    const desktopSessionCount =
+      s.desktopSessionCount ?? s.insights?.desktopSessionCount ?? 0;
+    if (desktopSessionCount >= 1) {
+      score += 5;
+      ev.push("Used the Claude Code desktop app — Boris tip 52");
+    }
     return { score: clamp(score), evidence: ev, gaps };
   },
 

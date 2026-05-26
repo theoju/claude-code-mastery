@@ -154,6 +154,11 @@
     "path": "~/.claude/projects/**/*.jsonl → first 5 lines, entrypoint field",
     "description": "Classifies in-window sessions as interactive_cli, sdk_orchestrated, observer, or subagent. Posture scorers (auto mode, plan mode, learning) divide by interactive_cli only — SDK and observer sessions don't honor user-level settings and would dilute the ratio."
   },
+  "desktopSessionCount": {
+    "source": "transcripts",
+    "path": "~/.claude/projects/*/*.jsonl → entrypoint == \"claude-desktop\"",
+    "description": "Count of sessions launched from the Claude Code desktop app (transcript entrypoint), Boris tip 52."
+  },
   "shipVerifyStageRecent": {
     "source": "transcripts",
     "path": "projects/*/*.jsonl scan for /ship verify-agent fires",

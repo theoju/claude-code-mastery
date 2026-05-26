@@ -84,6 +84,8 @@ const ALL_SATISFIED_SIGNALS = {
   outputStyle: "Explanatory",
   // P6.1 — hasCodeReviewPlugin (Boris tip 44)
   hasCodeReviewPlugin: true,
+  // Tip 52 — desktop-app adoption
+  desktopSessionCount: 1,
 };
 
 describe("rubric satisfiedWhen predicates", () => {
