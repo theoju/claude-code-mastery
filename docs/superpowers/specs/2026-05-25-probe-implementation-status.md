@@ -75,6 +75,18 @@ Every implemented signal, grouped by source layer. `signalsSummary` field names 
 the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.json`
 (drives `/methodology/probes`).
 
+> **Relation to the dashboard `/methodology/probes` page.** That page renders
+> only the **predicate-backed** probes — one card per rubric next-action with a
+> `satisfiedWhen` — so its check count is _smaller_ than this registry's row
+> count (which also lists Insights/Execution signals and non-catalog `—` rows).
+> It groups by the catalog `source` field, **not** the source _layer_ headings
+> here: the command counters surface under a **`history`** source rather than
+> under Transcripts, and cooked-telemetry signals don't appear at all (they
+> aren't predicate-backed — they drive the radar). Each source group is
+> axis-labeled **P** / **P\***, mirroring the [Axis legend](#axis-legend)
+> above. One catalog entry, `sessionsByKind`, is metadata-only (the session
+> census), not a predicate.
+
 ### Settings (`~/.claude/settings.json`, `~/.claude.json`) — readers in `signals.mjs`
 
 | Field                     | Predicate / use                                                                                | Catalog | Axis |
