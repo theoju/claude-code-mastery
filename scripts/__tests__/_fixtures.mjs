@@ -136,6 +136,7 @@ export function makeInsights(overrides = {}) {
     autoModeSessionCount: null,
     bypassPermissionsSessionCount: null,
     planModeSessionCount: null,
+    planModeMultiTaskSessionCount: null,
     worktreeUsageSessionCount: null,
     learningModeSessionCount: null,
     learningModeMatchesTotal: null,

@@ -493,12 +493,33 @@ describe("EXECUTION_SCORERS", () => {
           insights: makeInsights({
             transcriptsScanned: true,
             multiTaskSessionCount: 10,
-            planModeSessionCount: 3,
+            planModeMultiTaskSessionCount: 3,
           }),
         }),
       );
       expect(r.score).toBe(30);
       expect(r.gaps.join(" ")).toMatch(/half of multi-task/);
+    });
+    it("uses the multi-task∩plan-mode intersection as numerator — ratio never exceeds 100%", () => {
+      // Real-world shape that produced the 36/34 (105.88%) bug: 36 interactive
+      // plan-mode sessions, but only 34 are multi_task, and there are 34
+      // multi_task sessions total → all multi_task sessions used plan mode.
+      const r = EXECUTION_SCORERS.planning(
+        makeSignals({
+          insights: makeInsights({
+            transcriptsScanned: true,
+            multiTaskSessionCount: 34,
+            planModeMultiTaskSessionCount: 34,
+            planModeSessionCount: 36, // broader count must NOT be the numerator
+          }),
+        }),
+      );
+      // The evidence-string assertions are the real revert guard: a numerator
+      // revert to planModeSessionCount would render "36/34 … (105.88%)" here.
+      // (score ≤ 100 alone is trivially true — clamp() caps it regardless.)
+      expect(r.evidence.join(" ")).toMatch(/34\/34 multi-task sessions \(100/);
+      expect(r.evidence.join(" ")).not.toMatch(/36\/34|105\.88/);
+      expect(r.score).toBeLessThanOrEqual(100);
     });
   });
 

@@ -750,13 +750,17 @@ export const EXECUTION_SCORERS = {
   planning: withGates(
     { transcripts: true, requireSessions: false, universe: "interactive_only" },
     (s) => {
-      const { planModeSessionCount, multiTaskSessionCount } = s.insights;
+      const { planModeMultiTaskSessionCount, multiTaskSessionCount } =
+        s.insights;
       if (multiTaskSessionCount === 0)
         return unavailable(GAP_REASONS.NO_MULTI_TASK);
-      const ratio = planModeSessionCount / multiTaskSessionCount;
+      // Numerator is the multi_task∩plan_mode intersection (not the broader
+      // planModeSessionCount), so the ratio is a true fraction of multi-task
+      // sessions and can't exceed 100%.
+      const ratio = planModeMultiTaskSessionCount / multiTaskSessionCount;
       let score = clamp(Math.round(ratio * COEFFS.planningRatioWeight));
       const evidence = [
-        `Plan mode: ${planModeSessionCount}/${multiTaskSessionCount} multi-task sessions (${pct(ratio * 100)}%)`,
+        `Plan mode: ${planModeMultiTaskSessionCount}/${multiTaskSessionCount} multi-task sessions (${pct(ratio * 100)}%)`,
       ];
       const gaps = [];
       if (ratio < 0.5)
