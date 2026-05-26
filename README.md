@@ -62,9 +62,12 @@ That's the whole loop. Everything else is optional polish.
    under `~/.claude/projects/*/*.jsonl` for the `★ Insight` banner (learning
    mode), worktree usage, and skill attribution.
 3. **`scripts/score.mjs`** applies deterministic rules per dimension and
-   normalizes each to 100 (`raw / target × 100`). Nine of twelve dims have
-   Execution scorers; the remaining three are routed to _unmeasured_ via
-   `gapReason` rather than scored zero. Every number is traceable to a signal.
+   normalizes each to 100 (`raw / target × 100`). Ten of twelve dims have
+   Execution scorers; the remaining two — Memory & Context and Terminal &
+   Customization — route to _unmeasured_ via `gapReason` rather than scored
+   zero. (Model & Effort is _partially_ measured: Opus usage is scored from
+   transcripts, effort level stays settings-only.) Every number is traceable
+   to a signal.
 4. **`scripts/run-assessment.mjs`** orchestrates: signals → score → write
    `app/data/assessment.json`, append `app/data/assessment-history.json`, post
    to Slack if configured.
