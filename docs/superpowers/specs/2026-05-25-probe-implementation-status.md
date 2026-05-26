@@ -3,16 +3,15 @@
 **Date:** 2026-05-25
 **Status:** Living tracker — update on every probe add/remove.
 **Validated against:** `app/data/boris-tip-index.json` (75 tips), `app/data/rubric.json`
-(12 dimensions / 46 next-actions), `app/data/probe-catalog.json` (45 probes),
-`scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`), `scripts/_usage-data.mjs`
-(transcript scanners), `scripts/run-assessment.mjs#buildSignalsSummary`
-(64 `signalsSummary` keys). Snapshot reflects **v0.9.10** plus the three coverage
-probes on the `feat/coverage-probes-37-11-52` branch — `hasSessionStartHook`
-(tip 37), `hasTerminalSetup` (tip 11), `desktopSessionCount` (tip 52) —
-**unreleased, pending the next release**. The v0.9.10 baseline was the
-probe-coverage expansion (#72 `colorCommandUses`, #73 integrity guards, #74
-PostCompact + auto-mode, #75 Opus exec scorer) plus the radar hydration fix
-(#71), tracked as **CCE-24**.
+(12 dimensions / 46 next-actions), `app/data/probe-catalog.json` (44 probes +
+the `_meta` sidecar), `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`),
+`scripts/_usage-data.mjs` (transcript scanners),
+`scripts/run-assessment.mjs#buildSignalsSummary` (64 `signalsSummary` keys).
+Snapshot current as of **v0.9.11** — the three coverage probes `hasSessionStartHook`
+(tip 37), `hasTerminalSetup` (tip 11), `desktopSessionCount` (tip 52) **shipped in
+#79 / CCE-25**. The prior **v0.9.10** baseline was the probe-coverage expansion
+(#72 `colorCommandUses`, #73 integrity guards, #74 PostCompact + auto-mode, #75
+Opus exec scorer) plus the radar hydration fix (#71), tracked as **CCE-24**.
 
 ## Purpose
 
@@ -66,29 +65,31 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 
 ### Settings (`~/.claude/settings.json`, `~/.claude.json`) — readers in `signals.mjs`
 
-| Field                     | Predicate / use                                                             | Catalog | Axis |
-| ------------------------- | --------------------------------------------------------------------------- | ------- | ---- |
-| `outputStyle`             | `outputStyle=Explanatory\|Learning` (learning)                              | ✅      | P    |
-| `effortLevel`             | `effortLevel=xhigh\|max`, `=max` (model-effort)                             | ✅      | P    |
-| `skipDangerous`           | `!skipDangerous` (permissions)                                              | ✅      | P    |
-| `allowListCount`          | `allowListCount>=10` (permissions)                                          | ✅      | P    |
-| `hasWildcardAllow`        | `hasWildcardAllow` (permissions)                                            | ✅      | P    |
-| `autoCompactWindow`       | `autoCompactWindow` (model-effort)                                          | ✅      | P    |
-| `autoMemoryEnabled`       | `autoMemoryEnabled` (memory) — inverse of `CLAUDE_CODE_DISABLE_AUTO_MEMORY` | ✅      | P    |
-| `hasStopHook`             | `hasStopHook` (automation)                                                  | ✅      | P    |
-| `hasPostCompactHook`      | `hasPostCompactHook` (automation)                                           | ✅      | P    |
-| `hasFormatterHook`        | `hasFormatterHook` (automation)                                             | ✅      | P    |
-| `hasStopHookNotification` | `hasStopHookNotification` (scheduled)                                       | ✅      | P    |
-| `hasCustomSpinnerVerbs`   | `hasCustomSpinnerVerbs` (customization)                                     | ✅      | P    |
-| `hasClaudeInChrome`       | `hasClaudeInChrome` (verification, integrations)                            | ✅      | P    |
-| `hasRemoteControl`        | `hasRemoteControl` (remote)                                                 | ✅      | P    |
-| `mcpServersConnected`     | `mcpServersConnected>=3` (integrations)                                     | ✅      | P    |
-| `permissionsDefaultMode`  | `permissionsDefaultMode=auto` (permissions); permissions scorer +10         | ✅      | P    |
-| `hookTotalCount`          | automation scorer credit (generic)                                          | —       | P    |
-| `hookEvents`              | Stop-hook presence (scheduled), evidence                                    | —       | P    |
-| `hasPostToolHook`         | scorer/evidence (generic PostToolUse)                                       | —       | P    |
-| `statuslineConfigured`    | customization scorer (+15)                                                  | —       | P    |
-| `keybindingsConfigured`   | customization scorer (+10)                                                  | —       | P    |
+| Field                     | Predicate / use                                                                                | Catalog | Axis |
+| ------------------------- | ---------------------------------------------------------------------------------------------- | ------- | ---- |
+| `outputStyle`             | `outputStyle=Explanatory\|Learning` (learning)                                                 | ✅      | P    |
+| `effortLevel`             | `effortLevel=xhigh\|max`, `=max` (model-effort)                                                | ✅      | P    |
+| `skipDangerous`           | `!skipDangerous` (permissions)                                                                 | ✅      | P    |
+| `allowListCount`          | `allowListCount>=10` (permissions)                                                             | ✅      | P    |
+| `hasWildcardAllow`        | `hasWildcardAllow` (permissions)                                                               | ✅      | P    |
+| `autoCompactWindow`       | `autoCompactWindow` (model-effort)                                                             | ✅      | P    |
+| `autoMemoryEnabled`       | `autoMemoryEnabled` (memory) — inverse of `CLAUDE_CODE_DISABLE_AUTO_MEMORY`                    | ✅      | P    |
+| `hasStopHook`             | `hasStopHook` (automation)                                                                     | ✅      | P    |
+| `hasPostCompactHook`      | `hasPostCompactHook` (automation)                                                              | ✅      | P    |
+| `hasSessionStartHook`     | `hasSessionStartHook` (automation) — `hookEvents` includes `SessionStart`, Boris tip 37        | ✅      | P    |
+| `hasFormatterHook`        | `hasFormatterHook` (automation)                                                                | ✅      | P    |
+| `hasStopHookNotification` | `hasStopHookNotification` (scheduled)                                                          | ✅      | P    |
+| `hasCustomSpinnerVerbs`   | `hasCustomSpinnerVerbs` (customization)                                                        | ✅      | P    |
+| `hasClaudeInChrome`       | `hasClaudeInChrome` (verification, integrations)                                               | ✅      | P    |
+| `hasRemoteControl`        | `hasRemoteControl` (remote)                                                                    | ✅      | P    |
+| `hasTerminalSetup`        | `hasTerminalSetup` (customization) — `~/.claude.json` deep-link / Option-as-Meta, Boris tip 11 | ✅      | P    |
+| `mcpServersConnected`     | `mcpServersConnected>=3` (integrations)                                                        | ✅      | P    |
+| `permissionsDefaultMode`  | `permissionsDefaultMode=auto` (permissions); permissions scorer +10                            | ✅      | P    |
+| `hookTotalCount`          | automation scorer credit (generic)                                                             | —       | P    |
+| `hookEvents`              | Stop-hook presence (scheduled), evidence                                                       | —       | P    |
+| `hasPostToolHook`         | scorer/evidence (generic PostToolUse)                                                          | —       | P    |
+| `statuslineConfigured`    | customization scorer (+15)                                                                     | —       | P    |
+| `keybindingsConfigured`   | customization scorer (+10)                                                                     | —       | P    |
 
 ### Filesystem (`~/.claude/{agents,commands,skills,projects}`) — `signals.mjs`
 
@@ -118,26 +119,27 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 
 ### Transcripts (`~/.claude/projects/*/*.jsonl`) — `_usage-data.mjs`
 
-| Field                      | Predicate / use                            | Catalog | Axis |
-| -------------------------- | ------------------------------------------ | ------- | ---- |
-| `parallelWorktreeAdoption` | `parallelWorktreeAdoption` (parallel)      | ✅      | P    |
-| `planThenLaunchSessions`   | `planThenLaunchSessions>=1` (planning)     | ✅      | P    |
-| `shipVerifyStageRecent`    | `shipVerifyStageRecent>=1` (verification)  | ✅      | P    |
-| `sessionsByKind`           | universe classifier (gates posture ratios) | ✅      | —    |
-| `goCommandUses`            | `goCommandUses>=3` (verification)          | ✅      | P    |
-| `batchCommandUses`         | `batchCommandUses>=1` (parallel)           | ✅      | P    |
-| `simplifyCommandUses`      | `simplifyCommandUses>=1` (automation)      | ✅      | P    |
-| `btwCommandUses`           | `btwCommandUses>=1` (memory)               | ✅      | P    |
-| `voiceCommandUses`         | `voiceCommandUses>=1` (customization)      | ✅      | P    |
-| `clearCommandUses`         | `clearCommandUses>=1` (memory)             | ✅      | P    |
-| `compactCommandUses`       | `compactCommandUses>=1` (memory)           | ✅      | P    |
-| `colorCommandUses`         | `colorCommandUses>=1` (customization)      | ✅      | P    |
-| `fewerPermsCommandUses`    | `fewerPermsCommandUses>=1` (permissions)   | ✅      | P    |
-| `focusCommandUses`         | `focusCommandUses>=1` (customization)      | ✅      | P    |
-| `scheduleCommandUses`      | `scheduleCommandUses>=1` (scheduled)       | ✅      | P    |
-| `loopCommandUses`          | `loopCommandUses>=1` (scheduled)           | ✅      | P    |
-| `babysitLoopUses`          | scheduled scorer (`/loop /babysit`)        | —       | P    |
-| `rewindCommandUses`        | `rewindCommandUses>=1` (memory)            | ✅      | P    |
+| Field                      | Predicate / use                                                                                     | Catalog | Axis |
+| -------------------------- | --------------------------------------------------------------------------------------------------- | ------- | ---- |
+| `parallelWorktreeAdoption` | `parallelWorktreeAdoption` (parallel)                                                               | ✅      | P    |
+| `planThenLaunchSessions`   | `planThenLaunchSessions>=1` (planning)                                                              | ✅      | P    |
+| `shipVerifyStageRecent`    | `shipVerifyStageRecent>=1` (verification)                                                           | ✅      | P    |
+| `sessionsByKind`           | universe classifier (gates posture ratios)                                                          | ✅      | —    |
+| `goCommandUses`            | `goCommandUses>=3` (verification)                                                                   | ✅      | P    |
+| `batchCommandUses`         | `batchCommandUses>=1` (parallel)                                                                    | ✅      | P    |
+| `simplifyCommandUses`      | `simplifyCommandUses>=1` (automation)                                                               | ✅      | P    |
+| `btwCommandUses`           | `btwCommandUses>=1` (memory)                                                                        | ✅      | P    |
+| `voiceCommandUses`         | `voiceCommandUses>=1` (customization)                                                               | ✅      | P    |
+| `clearCommandUses`         | `clearCommandUses>=1` (memory)                                                                      | ✅      | P    |
+| `compactCommandUses`       | `compactCommandUses>=1` (memory)                                                                    | ✅      | P    |
+| `colorCommandUses`         | `colorCommandUses>=1` (customization)                                                               | ✅      | P    |
+| `fewerPermsCommandUses`    | `fewerPermsCommandUses>=1` (permissions)                                                            | ✅      | P    |
+| `focusCommandUses`         | `focusCommandUses>=1` (customization)                                                               | ✅      | P    |
+| `scheduleCommandUses`      | `scheduleCommandUses>=1` (scheduled)                                                                | ✅      | P    |
+| `loopCommandUses`          | `loopCommandUses>=1` (scheduled)                                                                    | ✅      | P    |
+| `babysitLoopUses`          | scheduled scorer (`/loop /babysit`)                                                                 | —       | P    |
+| `rewindCommandUses`        | `rewindCommandUses>=1` (memory)                                                                     | ✅      | P    |
+| `desktopSessionCount`      | `desktopSessionCount>=1` (verification) — transcript `entrypoint == "claude-desktop"`, Boris tip 52 | ✅      | P    |
 
 > All command counters are MAX-merged with `~/.claude/history.jsonl` in
 > `buildSignalsSummary` via `maxProbe(field)` and gated to the lookback window.
