@@ -269,6 +269,18 @@ all-docs` thresholds (the docs check is vacuous on an empty set) — so the
 - Jira instance: `designitright.atlassian.net`.
 - Project: **Claude-Code-Extensions** (key: `CCE`). All tickets for work
   in this repo live here; ticket keys follow the `CCE-N` pattern.
+- **`CCE` is a _shared_ project spanning sibling repos, not just this
+  one.** `~/Projects/engineering-docs-agent` files its work under the
+  same `CCE` key (its CLAUDE.md: "All Jira work for this project lives
+  in… Key prefix: `CCE`"). So a `CCE-N` ticket describing
+  engineering-docs-agent work (e.g. **CCE-6** live-pytest gate, **CCE-7**
+  per-agent `--allowedTools` narrowing) is **correctly filed** — it is
+  _not_ misrouted to the wrong tracker, and must **not** be "moved" to a
+  separate project (that would violate the "don't spin up a second
+  project for sub-areas" rule below). Tickets don't self-declare which
+  codebase they target; infer it from the summary, or disambiguate with
+  a label/component if it matters. (Caught when a backlog triage briefly
+  mistook CCE-6/CCE-7 as belonging to the wrong repo, 2026-05-25.)
 - Reference the key in PR titles and commit messages when the work maps
   to a ticket (e.g. `feat(rubric): expand /ship next-action — CCE-12`).
 - When future automation in this repo needs Jira integration (status
