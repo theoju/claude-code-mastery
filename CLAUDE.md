@@ -233,6 +233,36 @@ already checked out at …`). The GitHub-side merge still succeeds — only
   `mktemp -d` or `/tmp/...` explicitly. Inherited cwd defaults can
   leave artifacts in the project's working tree — the v0.9.9 cycle's
   T6 reviewer left a `tmp/svtest/` directory that needed manual cleanup.
+- **/ship's early cost-gate (Stage 0a) fires on a _clean_ working tree.**
+  When all work is already committed, `staged-diff-summary.sh` reports 0
+  files / 0 lines, which trivially passes the gate's `≤1 file / ≤50 lines /
+all-docs` thresholds (the docs check is vacuous on an empty set) — so the
+  "docs-only, skip verify/simplify?" prompt appears even on a large _code_
+  branch. Judge the gate against the committed branch diff
+  (`git diff main...HEAD`), not the working tree; the default `y` runs the
+  full chain anyway (v0.9.11 cycle, shipping #79 via `/ship`).
+- **`gh pr merge --squash --delete-branch` can return no stdout yet still
+  succeed.** Empty output is not failure. Confirm with
+  `gh pr view <N> --json state,mergeCommit` (expect `MERGED` + a commit SHA)
+  and that `origin/main` advanced before assuming the merge didn't land —
+  then `git fetch --prune` + `git merge --ff-only origin/main` to sync local
+  main (v0.9.11 cycle).
+- **`gh release create --target <short-SHA>` fails with HTTP 422**
+  (`Release.target_commitish is invalid`). Use `--target main` (or a full
+  40-char SHA). The tag lands at that target's current HEAD, so run it right
+  after the release-bump PR squash-merges and local main is fast-forwarded
+  (v0.9.10 cycle).
+- **`block-destructive.sh` scans the literal command text, including heredoc
+  bodies.** A `gh pr create` / `gh release create` whose `--body`/`--notes`
+  heredoc merely _contains_ a blocked pattern (e.g. the string `rm -rf`
+  quoted in release notes) gets the whole command blocked. Write PR/release
+  bodies to a file with the Write tool and pass `--body-file` /
+  `--notes-file` (v0.9.10 cycle).
+- **Address a /ship verify-agent "yes-with-caveats" before Stage 5, not
+  after.** The caveat is logged non-blocking, but fixing it in the working
+  tree before the commit keeps the fix in the same PR — e.g. the v0.9.11
+  cycle's missing tip-11 scorer-credit test, flagged at Stage 2 and closed
+  before commit, rather than deferred to a follow-up.
 
 ## Issue tracking
 
