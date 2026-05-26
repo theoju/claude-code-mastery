@@ -185,6 +185,28 @@ function extractSlashCommands(text) {
   return found;
 }
 
+// Detect the /effort max reflex (Boris tip 34). Unlike the name-only
+// TARGET_COMMANDS scan, this is ARGUMENT-aware: the reflex is the `max`
+// level specifically, so a bare /effort or /effort xhigh must NOT count.
+// Two shapes, mirroring extractSlashCommands:
+//   1. <command-name>/effort</command-name> … <command-args>max</command-args>
+//   2. ^/effort max   (start-anchored bare-text fallback)
+// Start-anchoring plus the command-args requirement is what discriminates
+// a genuine invocation from the rubric's own "/effort max reflex" prose
+// and assistant report echoes that otherwise pollute a naive substring
+// scan (the v0.9.12 survey found a handful of real sessions behind 700+
+// raw hits).
+const EFFORT_NAME_TAG_RE = /<command-name>\/effort<\/command-name>/;
+const EFFORT_ARGS_MAX_RE = /<command-args>\s*max\s*<\/command-args>/i;
+const EFFORT_BARE_MAX_RE = /^\/effort\s+max(?![\w-])/i;
+function hasEffortMax(text) {
+  if (!text) return false;
+  if (EFFORT_NAME_TAG_RE.test(text) && EFFORT_ARGS_MAX_RE.test(text)) {
+    return true;
+  }
+  return EFFORT_BARE_MAX_RE.test(text.trimStart());
+}
+
 function userMessageText(line) {
   if (line.type !== "user" || !line.message) return null;
   const c = line.message.content;
@@ -228,6 +250,7 @@ export async function scanTranscriptInvocations(options = {}) {
     compactCommandUses: 0,
     colorCommandUses: 0,
     fewerPermsCommandUses: 0,
+    effortMaxCommandUses: 0,
   };
   // Vitest skip: when integration tests run gatherSignals without injecting
   // projectsRoot, don't walk the developer's real ~/.claude/projects/.
@@ -276,6 +299,7 @@ export async function scanTranscriptInvocations(options = {}) {
     let sessionHasCompact = false;
     let sessionHasColor = false;
     let sessionHasFewerPerms = false;
+    let sessionHasEffortMax = false;
     const window = [];
 
     const processCurrent = () => {
@@ -301,6 +325,7 @@ export async function scanTranscriptInvocations(options = {}) {
         if (found.has("compact")) sessionHasCompact = true;
         if (found.has("color")) sessionHasColor = true;
         if (found.has("fewer-permission-prompts")) sessionHasFewerPerms = true;
+        if (hasEffortMax(uText)) sessionHasEffortMax = true;
       }
 
       const toolName = assistantToolUseName(line);
@@ -367,6 +392,7 @@ export async function scanTranscriptInvocations(options = {}) {
     if (sessionHasCompact) counts.compactCommandUses++;
     if (sessionHasColor) counts.colorCommandUses++;
     if (sessionHasFewerPerms) counts.fewerPermsCommandUses++;
+    if (sessionHasEffortMax) counts.effortMaxCommandUses++;
   }
   return counts;
 }

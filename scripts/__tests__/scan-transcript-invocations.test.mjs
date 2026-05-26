@@ -65,6 +65,21 @@ const userMarkup = (cmd, ts = "2026-05-09T12:00:00Z") =>
     },
   });
 
+// CLI markup shape for an *argument-bearing* slash command. /effort max
+// is the motivating case (Boris tip 34): the reflex is the `max` level,
+// so detection is argument-aware — only the `max` arg counts, not any
+// /effort invocation. Mirrors the real transcript shape surveyed in the
+// v0.9.12 cycle (command-name + command-args on separate lines).
+const userEffortMarkup = (arg, ts = "2026-05-09T12:00:00Z") =>
+  JSON.stringify({
+    type: "user",
+    timestamp: ts,
+    message: {
+      role: "user",
+      content: `<command-message>effort</command-message>\n<command-name>/effort</command-name>\n<command-args>${arg}</command-args>`,
+    },
+  });
+
 describe("scanTranscriptInvocations", () => {
   it("returns zeros when projectsRoot is empty", async () => {
     const r = await scanTranscriptInvocations({
@@ -88,6 +103,7 @@ describe("scanTranscriptInvocations", () => {
       compactCommandUses: 0,
       colorCommandUses: 0,
       fewerPermsCommandUses: 0,
+      effortMaxCommandUses: 0,
     });
   });
 
@@ -173,6 +189,45 @@ describe("scanTranscriptInvocations", () => {
       lookbackDays: 30,
     });
     expect(r.fewerPermsCommandUses).toBe(2);
+  });
+
+  it("counts effortMaxCommandUses 1-per-session for sessions with /effort max", async () => {
+    // Argument-aware (Boris tip 34): only the `max` level is the reflex.
+    writeSession("s1", [
+      userEffortMarkup("max"),
+      userEffortMarkup("max"), // 2 in one session → still counts the session once
+    ]);
+    writeSession("s2", [userText("/effort max for this debugging push")]); // bare start-of-line
+    writeSession("s3", [userEffortMarkup("xhigh")]); // wrong arg → does NOT count
+    writeSession("s4", [userMarkup("/effort")]); // bare /effort, no max arg → does NOT count
+    writeSession("s5", [userText("just typing")]);
+    const r = await scanTranscriptInvocations({
+      projectsRoot,
+      now: new Date("2026-05-10T00:00:00Z"),
+      lookbackDays: 30,
+    });
+    expect(r.effortMaxCommandUses).toBe(2);
+  });
+
+  it("effortMaxCommandUses ignores prose mentions and assistant echoes (pollution guard)", async () => {
+    // The rubric's own next-action text ("Learn the /effort max reflex
+    // for debugging and architecture sessions") and report output echo
+    // "/effort max" hundreds of times. None of it is a user invocation:
+    //   - prose is not start-anchored
+    //   - assistant messages are never user-message text
+    // The v0.9.12 survey found exactly 2 genuine sessions behind 700+
+    // raw grep hits — this test locks in that discrimination.
+    writeSession("s1", [
+      userText("Learn the /effort max reflex for debugging and architecture"),
+      userText("why is /effort max not being detected?"),
+      assistantText("You should adopt the /effort max reflex."),
+    ]);
+    const r = await scanTranscriptInvocations({
+      projectsRoot,
+      now: new Date("2026-05-10T00:00:00Z"),
+      lookbackDays: 30,
+    });
+    expect(r.effortMaxCommandUses).toBe(0);
   });
 
   it("counts /rewind invocations (markup + start-of-line)", async () => {

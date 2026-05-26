@@ -19,6 +19,11 @@
     "path": "~/.claude/settings.json → effortLevel (root)",
     "description": "Reasoning effort string. Default for Opus 4.7 is xhigh; max is per-session opt-in."
   },
+  "effortMaxAdopted": {
+    "source": "transcripts",
+    "path": "Derived OR: settings.effortLevel === 'max' OR /effort max in ≥1 transcript session",
+    "description": "True if the /effort max reflex (Boris tip 34) is adopted either as the persistent default or via at-least-once per-session use. Settings-only scoring missed the ephemeral reflex."
+  },
   "skipDangerous": {
     "source": "settings",
     "path": "~/.claude/settings.json → skipDangerousModePermissionPrompt",

@@ -54,6 +54,7 @@ function makeSignals(overrides = {}) {
       compactCommandUses: 2,
       colorCommandUses: 3,
       fewerPermsCommandUses: 1,
+      effortMaxCommandUses: 2,
     },
     insights: null,
     ...overrides,
@@ -202,6 +203,75 @@ describe("buildSignalsSummary", () => {
     it("defaults to true when settings.autoMemoryEnabled is undefined", () => {
       const r = buildSignalsSummary(makeSignals());
       expect(r.autoMemoryEnabled).toBe(true);
+    });
+  });
+
+  // Tip 34 (Boris): the /effort max *reflex*. The persistent settings
+  // default (effortLevel) is settings-only; the reflex is ephemeral and
+  // only visible in transcripts. effortMaxAdopted ORs the two so genuine
+  // adoption is credited regardless of which path the user took — the
+  // worktreeAliasCount/parallelWorktreeAdoption pattern applied to effort.
+  describe("effortMaxAdopted (tip 34, settings-OR-transcript)", () => {
+    it("is true when the persistent default is already max (no reflex needed)", () => {
+      const r = buildSignalsSummary(
+        makeSignals({
+          settings: { ...makeSignals().settings, effortLevel: "max" },
+          transcriptInvocations: {
+            ...makeSignals().transcriptInvocations,
+            effortMaxCommandUses: 0,
+          },
+        }),
+      );
+      expect(r.effortMaxAdopted).toBe(true);
+    });
+
+    it("is true when default is xhigh but the /effort max reflex is used (>=1 session)", () => {
+      const r = buildSignalsSummary(
+        makeSignals({
+          settings: { ...makeSignals().settings, effortLevel: "xhigh" },
+          transcriptInvocations: {
+            ...makeSignals().transcriptInvocations,
+            effortMaxCommandUses: 1,
+          },
+        }),
+      );
+      expect(r.effortMaxAdopted).toBe(true);
+    });
+
+    it("is false when default is below max AND the reflex was never used", () => {
+      const r = buildSignalsSummary(
+        makeSignals({
+          settings: { ...makeSignals().settings, effortLevel: "xhigh" },
+          transcriptInvocations: {
+            ...makeSignals().transcriptInvocations,
+            effortMaxCommandUses: 0,
+          },
+        }),
+      );
+      expect(r.effortMaxAdopted).toBe(false);
+    });
+
+    it("tolerates missing transcriptInvocations (settings-only fallback)", () => {
+      expect(
+        buildSignalsSummary(
+          makeSignals({
+            settings: { ...makeSignals().settings, effortLevel: "max" },
+            transcriptInvocations: undefined,
+          }),
+        ).effortMaxAdopted,
+      ).toBe(true);
+      expect(
+        buildSignalsSummary(
+          makeSignals({
+            settings: { ...makeSignals().settings, effortLevel: "high" },
+            transcriptInvocations: undefined,
+          }),
+        ).effortMaxAdopted,
+      ).toBe(false);
+    });
+
+    it("forwards the raw effortMaxCommandUses count", () => {
+      expect(buildSignalsSummary(makeSignals()).effortMaxCommandUses).toBe(2);
     });
   });
 
@@ -765,6 +835,8 @@ describe("buildSignalsSummary", () => {
         "compactCommandUses",
         "desktopSessionCount",
         "effortLevel",
+        "effortMaxAdopted",
+        "effortMaxCommandUses",
         "fewerPermsCommandUses",
         "focusCommandUses",
         "goCommandUses",
