@@ -28,6 +28,7 @@ export function makeSignals(overrides = {}) {
     statuslineConfigured: false,
     keybindingsConfigured: false,
     hasClaudeInChrome: false,
+    hasTerminalSetup: false,
     hasRemoteControl: false,
     hasCodeReviewPlugin: false,
     mcpServersConnected: 0,

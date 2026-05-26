@@ -1100,6 +1100,24 @@ describe("SCORERS — v0.8 small bonuses across remaining dims", () => {
     ).toBe(Math.min(100, baseline + 5));
   });
 
+  it("customization: +5 when hasTerminalSetup is true (Boris tip 11)", () => {
+    const baseline = SCORERS.customization(makeSignals()).score;
+    const withTerminal = SCORERS.customization(
+      makeSignals({ hasTerminalSetup: true }),
+    );
+    const withoutTerminal = SCORERS.customization(
+      makeSignals({ hasTerminalSetup: false }),
+    );
+    expect(withTerminal.score).toBe(Math.min(100, baseline + 5));
+    expect(withTerminal.evidence).toContain(
+      "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
+    );
+    expect(withoutTerminal.score).toBe(baseline); // credit not applied
+    expect(withoutTerminal.evidence).not.toContain(
+      "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
+    );
+  });
+
   it("planning: +5 for planThenLaunchSessions >= 1", () => {
     const baseline = SCORERS.planning(makeSignals()).score;
     expect(
