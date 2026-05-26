@@ -126,6 +126,13 @@
           "effort": "5min",
           "satisfiedWhen": "autoCompactWindow",
           "borisTip": 64
+        },
+        {
+          "id": "opus47-awareness",
+          "action": "Review the 4.7 release notes to absorb the 4.6→4.7 workflow shifts — Boris tip 74",
+          "effort": "5min",
+          "satisfiedWhen": "opus47AwarenessAdopted",
+          "borisTip": 74
         }
       ]
     },
@@ -157,6 +164,13 @@
           "effort": "5min",
           "satisfiedWhen": "hasIsolatedAgent",
           "borisTip": 28
+        },
+        {
+          "id": "cowork-dispatch",
+          "action": "Dispatch a cowork / agents-fleet run at least once — Boris tip 50",
+          "effort": "10min",
+          "satisfiedWhen": "coworkDispatchAdopted",
+          "borisTip": 50
         }
       ]
     },
