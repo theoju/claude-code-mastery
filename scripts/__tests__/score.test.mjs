@@ -7,6 +7,7 @@ import {
   scoreAll,
   computeTrends,
   DEFAULT_NOISE_FLOOR,
+  adoptionBonus,
 } from "../score.mjs";
 import { makeSignals, makeRubric, makeInsights } from "./_fixtures.mjs";
 
@@ -1137,5 +1138,59 @@ describe("SCORERS — v0.8 small bonuses across remaining dims", () => {
     expect(SCORERS.remote(makeSignals({ hasRemoteControl: true })).score).toBe(
       Math.min(100, baseline + 10),
     );
+  });
+});
+
+describe("adoptionBonus", () => {
+  it("boolean: full cap when on, zero when off", () => {
+    expect(adoptionBonus({ on: true, kind: "boolean", cap: 15 }).points).toBe(
+      15,
+    );
+    expect(adoptionBonus({ on: false, kind: "boolean", cap: 15 }).points).toBe(
+      0,
+    );
+  });
+  it("counter: scales to cap, never exceeds", () => {
+    expect(
+      adoptionBonus({ value: 0, kind: "counter", cap: 10, target: 5 }).points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ value: 5, kind: "counter", cap: 10, target: 5 }).points,
+    ).toBe(10);
+    expect(
+      adoptionBonus({ value: 50, kind: "counter", cap: 10, target: 5 }).points,
+    ).toBe(10);
+  });
+  it("recency: full cap when recent, decays to 0 past window", () => {
+    expect(
+      adoptionBonus({ days: 0, kind: "recency", cap: 10, window: 30 }).points,
+    ).toBe(10);
+    expect(
+      adoptionBonus({ days: 30, kind: "recency", cap: 10, window: 30 }).points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ days: null, kind: "recency", cap: 10, window: 30 })
+        .points,
+    ).toBe(0);
+  });
+  it("emits evidence when credited, gap when not", () => {
+    const hit = adoptionBonus({
+      on: true,
+      kind: "boolean",
+      cap: 15,
+      evidenceText: "E",
+      gapText: "G",
+    });
+    expect(hit.evidence).toBe("E");
+    expect(hit.gap).toBeNull();
+    const miss = adoptionBonus({
+      on: false,
+      kind: "boolean",
+      cap: 15,
+      evidenceText: "E",
+      gapText: "G",
+    });
+    expect(miss.evidence).toBeNull();
+    expect(miss.gap).toBe("G");
   });
 });

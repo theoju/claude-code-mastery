@@ -532,6 +532,43 @@ function pct(n) {
   return Math.round(n * 100) / 100;
 }
 
+// Capped adoption credit — a third scorer-contribution shape alongside the
+// withGates ratio scorers. NOT gated by a session denominator: these signals
+// are global booleans / counters / recency from ~/.claude.json, not per-session
+// rates. `cap` bounds the contribution so one ever-used flag can't dominate a
+// dimension. `label` ("behavioral" | "awareness" | "proxy") is carried for
+// honest rendering. Returns { points, evidence, gap, label }.
+export function adoptionBonus({
+  kind,
+  cap,
+  on,
+  value,
+  days,
+  window,
+  target,
+  label = "behavioral",
+  evidenceText = null,
+  gapText = null,
+}) {
+  let frac;
+  if (kind === "boolean") frac = on ? 1 : 0;
+  else if (kind === "counter")
+    frac = target > 0 ? Math.min(value / target, 1) : 0;
+  else if (kind === "recency")
+    frac =
+      typeof days === "number" && window > 0
+        ? Math.max(0, 1 - days / window)
+        : 0;
+  else throw new Error(`adoptionBonus: unknown kind ${kind}`);
+  const points = Math.round(cap * frac);
+  return {
+    points,
+    label,
+    evidence: points > 0 ? evidenceText : null,
+    gap: points > 0 ? null : gapText,
+  };
+}
+
 // Wraps an execution scorer with the standard insights/transcripts/sessions
 // gates so each scorer body only deals with the math, not data availability.
 // `universe` is mandatory and selects which denominator the session gate uses:
