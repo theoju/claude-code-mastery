@@ -21,8 +21,8 @@
   },
   "effortMaxAdopted": {
     "source": "transcripts",
-    "path": "Derived OR: settings.effortLevel === 'max' OR /effort max in ≥1 transcript session",
-    "description": "True if the /effort max reflex (Boris tip 34) is adopted either as the persistent default or via at-least-once per-session use. Settings-only scoring missed the ephemeral reflex."
+    "path": "Derived OR: settings.effortLevel === 'max' OR /effort max in ≥2 transcript sessions",
+    "description": "True if the /effort max reflex (Boris tip 34) is adopted either as the persistent default or via recurring per-session use (≥2 distinct sessions, so a one-off experiment doesn't count). Settings-only scoring missed the ephemeral reflex."
   },
   "skipDangerous": {
     "source": "settings",

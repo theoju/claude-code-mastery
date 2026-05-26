@@ -148,12 +148,15 @@ export function buildSignalsSummary(signals) {
       signals.transcriptInvocations?.effortMaxCommandUses ?? 0,
     // Derived OR, mirroring parallelWorktreeAdoption: the reflex is
     // genuinely adopted if EITHER the persistent default is already `max`
-    // (settings) OR the user invoked /effort max at least once
-    // (transcript). Settings-only scoring under-credited the ephemeral
-    // reflex; this closes the gap without a cross-key OR in the rubric DSL.
+    // (settings) OR the user invoked /effort max in >=2 distinct sessions
+    // (transcript). The >=2 floor encodes "recurring reflex, not a one-off
+    // experiment" — a single /effort max could be a try-it-once, whereas
+    // repeating it across sessions is the habit tip 34 actually coaches.
+    // Settings-only scoring under-credited the ephemeral reflex; this
+    // closes the gap without a cross-key OR in the rubric DSL.
     effortMaxAdopted:
       signals.settings.effortLevel === "max" ||
-      (signals.transcriptInvocations?.effortMaxCommandUses ?? 0) >= 1,
+      (signals.transcriptInvocations?.effortMaxCommandUses ?? 0) >= 2,
     // Tip 45 (Boris): auto-memory is default-on. Read the inverse env flag
     // `CLAUDE_CODE_DISABLE_AUTO_MEMORY` and invert. The signals layer is
     // responsible for the env-block parse — this projection just forwards.

@@ -225,13 +225,26 @@ describe("buildSignalsSummary", () => {
       expect(r.effortMaxAdopted).toBe(true);
     });
 
-    it("is true when default is xhigh but the /effort max reflex is used (>=1 session)", () => {
+    it("is false when default is xhigh and /effort max was used only once (one-off, not a reflex)", () => {
       const r = buildSignalsSummary(
         makeSignals({
           settings: { ...makeSignals().settings, effortLevel: "xhigh" },
           transcriptInvocations: {
             ...makeSignals().transcriptInvocations,
             effortMaxCommandUses: 1,
+          },
+        }),
+      );
+      expect(r.effortMaxAdopted).toBe(false);
+    });
+
+    it("is true when default is xhigh but the /effort max reflex recurs (>=2 sessions)", () => {
+      const r = buildSignalsSummary(
+        makeSignals({
+          settings: { ...makeSignals().settings, effortLevel: "xhigh" },
+          transcriptInvocations: {
+            ...makeSignals().transcriptInvocations,
+            effortMaxCommandUses: 2,
           },
         }),
       );
