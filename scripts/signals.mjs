@@ -180,6 +180,17 @@ export function detectRemoteControl(cliConfig) {
   return cliConfig?.hasUsedRemoteControl === true;
 }
 
+// True when the user has configured their terminal for Claude Code — Boris
+// tip 11. Lives in `~/.claude.json` (CLI runtime state). Either a configured
+// deep-link terminal (e.g. "iTerm") or the Option-as-Meta install flag counts.
+export function detectTerminalSetup(cliConfig) {
+  const deepLink = cliConfig?.deepLinkTerminal;
+  return (
+    (typeof deepLink === "string" && deepLink.length > 0) ||
+    cliConfig?.optionAsMetaKeyInstalled === true
+  );
+}
+
 // True if a Stop hook fires a system notification when Claude finishes —
 // Boris tip 75. Distinguishes "I get pinged for autonomous runs" from "I
 // have *some* Stop hook" (e.g. a stop-verify.sh check). Tokens cover macOS
@@ -590,6 +601,7 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
     (await safeReadJson(join(claudeHome(), "..", ".claude.json"))) || {};
   const hasClaudeInChrome = detectClaudeInChrome(cliConfig);
   const hasRemoteControl = detectRemoteControl(cliConfig);
+  const hasTerminalSetup = detectTerminalSetup(cliConfig);
   const projectSettings =
     (await safeReadJson(join(projectRoot, ".claude", "settings.local.json"))) ||
     {};
@@ -749,6 +761,7 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
       hasIsolatedAgent,
       hasClaudeInChrome,
       hasRemoteControl,
+      hasTerminalSetup,
       hasVercelCli,
       // P2.2 (Boris tip 34): Default | Explanatory | Learning | Concise | custom.
       // Verbatim string; null when settings.outputStyle is absent.

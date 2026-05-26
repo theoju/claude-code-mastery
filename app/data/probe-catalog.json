@@ -74,6 +74,11 @@
     "path": "~/.claude/settings.json → customSpinnerVerbs",
     "description": "True if the user has defined custom spinner verbs (cosmetic personalization, Boris tip 25)."
   },
+  "hasTerminalSetup": {
+    "source": "settings",
+    "path": "~/.claude.json → deepLinkTerminal / optionAsMetaKeyInstalled",
+    "description": "True if the terminal is configured for Claude Code (deep-link terminal or Option-as-Meta install), Boris tip 11."
+  },
   "hasClaudeInChrome": {
     "source": "settings",
     "path": "~/.claude.json (CLI runtime state)",

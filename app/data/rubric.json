@@ -320,6 +320,13 @@
       "borisTips": "11, 16, 22, 23, 25, 26, 27, 38, 40, 71",
       "nextActions": [
         {
+          "id": "terminal-setup",
+          "action": "Configure your terminal for Claude Code (iTerm deep-link / Option-as-Meta) — Boris tip 11",
+          "effort": "10min",
+          "satisfiedWhen": "hasTerminalSetup",
+          "borisTip": 11
+        },
+        {
           "id": "per-worktree-color",
           "action": "Set per-worktree /color so parallel sessions are distinguishable at a glance — Boris tip 40",
           "effort": "5min",

@@ -82,6 +82,7 @@ export function buildSignalsSummary(signals) {
       !!signals.settings.hasIsolatedAgent ||
       (signals.insights?.worktreeUsageSessionCount ?? 0) > 0,
     hasClaudeInChrome: !!signals.settings.hasClaudeInChrome,
+    hasTerminalSetup: !!signals.settings.hasTerminalSetup,
     // P6.1 (Boris tip 44): detected at gather-time by anchored regex on
     // enabledPlugins keys; here we just project the boolean through.
     hasCodeReviewPlugin: !!signals.hasCodeReviewPlugin,

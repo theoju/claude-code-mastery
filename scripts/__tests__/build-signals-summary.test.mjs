@@ -781,6 +781,7 @@ describe("buildSignalsSummary", () => {
         "hasSlackPlugin",
         "hasStopHook",
         "hasStopHookNotification",
+        "hasTerminalSetup",
         "hasVercelCli",
         "hasVercelPlugin",
         "hasVerifyAgent",

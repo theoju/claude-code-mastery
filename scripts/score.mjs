@@ -392,6 +392,14 @@ export const SCORERS = {
       score += 5;
       ev.push(`/focus adopted (${focusCommandUses} use(s))`);
     }
+    const hasTerminalSetup =
+      s.hasTerminalSetup ?? !!s.settings?.hasTerminalSetup;
+    if (hasTerminalSetup) {
+      score += 5;
+      ev.push(
+        "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
+      );
+    }
     return { score: clamp(score), evidence: ev, gaps };
   },
 

@@ -49,6 +49,7 @@ const ALL_SATISFIED_SIGNALS = {
   hasVercelPlugin: true,
   hasVercelCli: true,
   hasClaudeInChrome: true,
+  hasTerminalSetup: true,
   mcpServersConnected: 5,
   // remote
   hasRemoteControl: true,
