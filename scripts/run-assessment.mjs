@@ -82,6 +82,7 @@ export function buildSignalsSummary(signals) {
       !!signals.settings.hasIsolatedAgent ||
       (signals.insights?.worktreeUsageSessionCount ?? 0) > 0,
     hasClaudeInChrome: !!signals.settings.hasClaudeInChrome,
+    hasTerminalSetup: !!signals.settings.hasTerminalSetup,
     // P6.1 (Boris tip 44): detected at gather-time by anchored regex on
     // enabledPlugins keys; here we just project the boolean through.
     hasCodeReviewPlugin: !!signals.hasCodeReviewPlugin,
@@ -159,6 +160,10 @@ export function buildSignalsSummary(signals) {
     insightsLookbackDays: signals.insights?.lookbackDays ?? null,
     insightsTranscriptsScanned: signals.insights?.transcriptsScanned ?? false,
     insightsHookFireCount: signals.insights?.hookFireCount ?? 0,
+    // Tip 52: desktop-app adoption — direct insights value, not a maxProbe
+    // (/go-style) because desktop is not a slash command with a history.jsonl
+    // analogue. Broad volume counter (no universe gating).
+    desktopSessionCount: signals.insights?.desktopSessionCount ?? 0,
     // P2.2 (Boris tip 34): root-level `outputStyle` string from settings.json.
     // Verbatim — predicates use the `=v|w` literal-match operator (e.g.
     // `outputStyle=Explanatory|Learning`).
@@ -170,6 +175,11 @@ export function buildSignalsSummary(signals) {
     // Derived from the already-parsed hookEvents key list (signals.mjs).
     hasPostCompactHook: (signals.settings.hookEvents || []).includes(
       "PostCompact",
+    ),
+    // Tip 37: a SessionStart hook is the canonical "setup script" mechanism.
+    // Derived from the already-parsed hookEvents key list (signals.mjs).
+    hasSessionStartHook: (signals.settings.hookEvents || []).includes(
+      "SessionStart",
     ),
   };
 }

@@ -188,6 +188,7 @@ export async function gatherInsightsSignals({
     learningModeMatchesTotal: null,
     opusDominantSessionCount: null,
     opusModelMatchesTotal: null,
+    desktopSessionCount: null,
   };
 
   if (includeTranscripts) {
@@ -199,6 +200,7 @@ export async function gatherInsightsSignals({
     let learningModeMatchesTotal = 0;
     let opusDominantSessionCount = 0;
     let opusModelMatchesTotal = 0;
+    let desktopSessionCount = 0;
     for (const m of inWindow) {
       const path = transcriptIndex.get(m.session_id);
       if (!path) continue;
@@ -208,6 +210,7 @@ export async function gatherInsightsSignals({
         learningModeMatches,
         assistantTurns,
         opusAssistantTurns,
+        entrypoint,
       } = await scanTranscriptModes(path);
       // Posture counters describe user adoption — they must only count
       // sessions whose kind is "interactive_cli". SDK/observer/subagent
@@ -240,6 +243,10 @@ export async function gatherInsightsSignals({
       learningModeMatchesTotal += learningModeMatches;
       // Volume metric stays broad (banner-style), like learningModeMatchesTotal.
       opusModelMatchesTotal += opusAssistantTurns;
+      // Tip 52: broad adoption/volume counter — no universe gating.
+      if (entrypoint === "claude-desktop") {
+        desktopSessionCount += 1;
+      }
     }
     result.transcriptsScanned = true;
     result.autoModeSessionCount = autoModeSessionCount;
@@ -250,6 +257,7 @@ export async function gatherInsightsSignals({
     result.learningModeMatchesTotal = learningModeMatchesTotal;
     result.opusDominantSessionCount = opusDominantSessionCount;
     result.opusModelMatchesTotal = opusModelMatchesTotal;
+    result.desktopSessionCount = desktopSessionCount;
   }
 
   return result;

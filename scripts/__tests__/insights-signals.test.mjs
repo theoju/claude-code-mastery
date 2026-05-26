@@ -640,6 +640,58 @@ describe("gatherInsightsSignals", () => {
     expect(r.opusModelMatchesTotal).toBeNull();
   });
 
+  // Test B — desktopSessionCount aggregation (Boris tip 52)
+  it("counts claude-desktop sessions as desktopSessionCount (tip 52)", async () => {
+    writeMeta(dir, "desktop-1", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "cli-1", { start_time: TWENTY_DAYS_AGO });
+    // Desktop session: entrypoint=claude-desktop on first line
+    writeTranscript(dir, "-Users-x-Projects-app", "desktop-1", [
+      {
+        type: "user",
+        entrypoint: "claude-desktop",
+        timestamp: TWENTY_DAYS_AGO,
+      },
+      { type: "assistant", message: { model: "claude-sonnet-4-6" } },
+    ]);
+    // Plain CLI session: should NOT count
+    writeTranscript(dir, "-Users-x-Projects-app", "cli-1", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+      { type: "assistant", message: { model: "claude-sonnet-4-6" } },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+    expect(r.desktopSessionCount).toBe(1);
+  });
+
+  it("yields desktopSessionCount=0 when no desktop sessions exist", async () => {
+    writeMeta(dir, "cli-only", { start_time: TWENTY_DAYS_AGO });
+    writeTranscript(dir, "-Users-x-Projects-app", "cli-only", [
+      { type: "user", entrypoint: "cli", timestamp: TWENTY_DAYS_AGO },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+    expect(r.desktopSessionCount).toBe(0);
+  });
+
+  it("leaves desktopSessionCount null when transcripts not scanned", async () => {
+    writeMeta(dir, "s1", { start_time: TWENTY_DAYS_AGO });
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: false,
+    });
+    expect(r.desktopSessionCount).toBeNull();
+  });
+
   it("survives malformed JSON files without throwing", async () => {
     mkdirSync(join(dir, "usage-data", "session-meta"), { recursive: true });
     mkdirSync(join(dir, "usage-data", "facets"), { recursive: true });

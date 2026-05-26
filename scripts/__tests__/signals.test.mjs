@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isSubstantive } from "../signals.mjs";
+import { isSubstantive, detectTerminalSetup } from "../signals.mjs";
 
 let tmp;
 
@@ -32,7 +32,10 @@ describe("isSubstantive", () => {
   });
 
   it("rejects frontmatter-only stubs", async () => {
-    const p = await write("frontmatter.md", "---\nname: stub\ndescription: x\n---\n");
+    const p = await write(
+      "frontmatter.md",
+      "---\nname: stub\ndescription: x\n---\n",
+    );
     expect(await isSubstantive(p)).toBe(false);
   });
 
@@ -44,7 +47,7 @@ describe("isSubstantive", () => {
   it("rejects substantive prose with no action verbs", async () => {
     const p = await write(
       "prose.md",
-      "Here is some lengthy text describing the philosophy of the universe and the cosmos in great detail without saying anything imperative."
+      "Here is some lengthy text describing the philosophy of the universe and the cosmos in great detail without saying anything imperative.",
     );
     expect(await isSubstantive(p)).toBe(false);
   });
@@ -52,7 +55,7 @@ describe("isSubstantive", () => {
   it("accepts a real skill with body and an action verb", async () => {
     const p = await write(
       "real.md",
-      "---\nname: ship\n---\n\n# Ship\n\nRun the test suite, then commit and push the result. Always verify in the browser before yielding."
+      "---\nname: ship\n---\n\n# Ship\n\nRun the test suite, then commit and push the result. Always verify in the browser before yielding.",
     );
     expect(await isSubstantive(p)).toBe(true);
   });
@@ -60,12 +63,26 @@ describe("isSubstantive", () => {
   it("accepts a command with imperative content", async () => {
     const p = await write(
       "command.md",
-      "Use this command to deploy. Always run the smoke test first and never skip the verification step."
+      "Use this command to deploy. Always run the smoke test first and never skip the verification step.",
     );
     expect(await isSubstantive(p)).toBe(true);
   });
 
   it("returns false for a non-existent path", async () => {
     expect(await isSubstantive(join(tmp, "does-not-exist.md"))).toBe(false);
+  });
+});
+
+describe("detectTerminalSetup (tip 11)", () => {
+  it("true when deepLinkTerminal is a non-empty string", () => {
+    expect(detectTerminalSetup({ deepLinkTerminal: "iTerm" })).toBe(true);
+  });
+  it("true when optionAsMetaKeyInstalled is exactly true", () => {
+    expect(detectTerminalSetup({ optionAsMetaKeyInstalled: true })).toBe(true);
+  });
+  it("false on empty/missing config", () => {
+    expect(detectTerminalSetup({ deepLinkTerminal: "" })).toBe(false);
+    expect(detectTerminalSetup({})).toBe(false);
+    expect(detectTerminalSetup(null)).toBe(false);
   });
 });

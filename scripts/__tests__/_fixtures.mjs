@@ -28,6 +28,7 @@ export function makeSignals(overrides = {}) {
     statuslineConfigured: false,
     keybindingsConfigured: false,
     hasClaudeInChrome: false,
+    hasTerminalSetup: false,
     hasRemoteControl: false,
     hasCodeReviewPlugin: false,
     mcpServersConnected: 0,
@@ -133,6 +134,7 @@ export function makeInsights(overrides = {}) {
     learningModeMatchesTotal: null,
     opusDominantSessionCount: null,
     opusModelMatchesTotal: null,
+    desktopSessionCount: null,
   };
   return deepMerge(base, overrides);
 }

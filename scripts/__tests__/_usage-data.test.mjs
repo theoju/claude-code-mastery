@@ -382,6 +382,47 @@ describe("scanTranscriptModes", () => {
     const r = await scanTranscriptModes(path);
     expect(r.modes.has("plan")).toBe(true);
   });
+
+  // Test A — entrypoint capture (Boris tip 52, desktop-app probe)
+  it("returns entrypoint=claude-desktop for a desktop transcript", async () => {
+    const lines = [
+      JSON.stringify({
+        type: "user",
+        entrypoint: "claude-desktop",
+        permissionMode: "auto",
+      }),
+      JSON.stringify({
+        type: "assistant",
+        message: { model: "claude-sonnet-4-6" },
+      }),
+    ];
+    writeFileSync(path, lines.join("\n"));
+    const r = await scanTranscriptModes(path);
+    expect(r.entrypoint).toBe("claude-desktop");
+  });
+
+  it("returns entrypoint=null for a transcript with no entrypoint field", async () => {
+    const lines = [
+      JSON.stringify({
+        type: "assistant",
+        message: { model: "claude-sonnet-4-6" },
+      }),
+      JSON.stringify({ permissionMode: "auto" }),
+    ];
+    writeFileSync(path, lines.join("\n"));
+    const r = await scanTranscriptModes(path);
+    expect(r.entrypoint).toBeNull();
+  });
+
+  it("captures only the FIRST entrypoint seen (subsequent entries are ignored)", async () => {
+    const lines = [
+      JSON.stringify({ type: "user", entrypoint: "claude-desktop" }),
+      JSON.stringify({ type: "user", entrypoint: "cli" }),
+    ];
+    writeFileSync(path, lines.join("\n"));
+    const r = await scanTranscriptModes(path);
+    expect(r.entrypoint).toBe("claude-desktop");
+  });
 });
 
 describe("classifySessionKind", () => {

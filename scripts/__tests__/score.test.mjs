@@ -1022,6 +1022,24 @@ describe("SCORERS.verification — v0.8 bonuses", () => {
     expect(oneGo).toBe(baseline); // below threshold
     expect(threeGo).toBe(Math.min(100, baseline + 3));
   });
+
+  it("adds +5 when desktopSessionCount >= 1 (Boris tip 52)", () => {
+    const baseline = SCORERS.verification(makeSignals()).score;
+    const withDesktop = SCORERS.verification(
+      makeSignals({ desktopSessionCount: 1 }),
+    );
+    const withoutDesktop = SCORERS.verification(
+      makeSignals({ desktopSessionCount: 0 }),
+    );
+    expect(withDesktop.score).toBe(Math.min(100, baseline + 5));
+    expect(withDesktop.evidence).toContain(
+      "Used the Claude Code desktop app — Boris tip 52",
+    );
+    expect(withoutDesktop.score).toBe(baseline); // credit not applied
+    expect(withoutDesktop.evidence).not.toContain(
+      "Used the Claude Code desktop app — Boris tip 52",
+    );
+  });
 });
 
 describe("SCORERS.parallel — v0.8 bonuses", () => {
@@ -1080,6 +1098,24 @@ describe("SCORERS — v0.8 small bonuses across remaining dims", () => {
     expect(
       SCORERS.customization(makeSignals({ focusCommandUses: 1 })).score,
     ).toBe(Math.min(100, baseline + 5));
+  });
+
+  it("customization: +5 when hasTerminalSetup is true (Boris tip 11)", () => {
+    const baseline = SCORERS.customization(makeSignals()).score;
+    const withTerminal = SCORERS.customization(
+      makeSignals({ hasTerminalSetup: true }),
+    );
+    const withoutTerminal = SCORERS.customization(
+      makeSignals({ hasTerminalSetup: false }),
+    );
+    expect(withTerminal.score).toBe(Math.min(100, baseline + 5));
+    expect(withTerminal.evidence).toContain(
+      "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
+    );
+    expect(withoutTerminal.score).toBe(baseline); // credit not applied
+    expect(withoutTerminal.evidence).not.toContain(
+      "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
+    );
   });
 
   it("planning: +5 for planThenLaunchSessions >= 1", () => {

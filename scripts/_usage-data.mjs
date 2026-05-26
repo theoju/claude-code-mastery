@@ -414,6 +414,7 @@ export async function scanTranscriptModes(path) {
   // Opus-dominant session ratio for the model-effort Execution scorer.
   let assistantTurns = 0;
   let opusAssistantTurns = 0;
+  let entrypoint = null;
   const rl = createInterface({
     input: createReadStream(path, { encoding: "utf8" }),
   });
@@ -424,6 +425,9 @@ export async function scanTranscriptModes(path) {
       entry = JSON.parse(raw);
     } catch {
       continue;
+    }
+    if (entrypoint === null && typeof entry.entrypoint === "string") {
+      entrypoint = entry.entrypoint;
     }
     if (entry.type === "worktree-state") hasWorktreeState = true;
     if (typeof entry.permissionMode === "string")
@@ -458,6 +462,7 @@ export async function scanTranscriptModes(path) {
     learningModeMatches,
     assistantTurns,
     opusAssistantTurns,
+    entrypoint,
   };
 }
 

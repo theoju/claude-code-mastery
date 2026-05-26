@@ -34,6 +34,7 @@ const ALL_SATISFIED_SIGNALS = {
   hasPostToolHook: true,
   hasFormatterHook: true,
   hasPostCompactHook: true,
+  hasSessionStartHook: true,
   hasStopHookNotification: true,
   hasIsolatedAgent: true,
   // model-effort
@@ -48,6 +49,7 @@ const ALL_SATISFIED_SIGNALS = {
   hasVercelPlugin: true,
   hasVercelCli: true,
   hasClaudeInChrome: true,
+  hasTerminalSetup: true,
   mcpServersConnected: 5,
   // remote
   hasRemoteControl: true,
@@ -82,6 +84,8 @@ const ALL_SATISFIED_SIGNALS = {
   outputStyle: "Explanatory",
   // P6.1 — hasCodeReviewPlugin (Boris tip 44)
   hasCodeReviewPlugin: true,
+  // Tip 52 — desktop-app adoption
+  desktopSessionCount: 1,
 };
 
 describe("rubric satisfiedWhen predicates", () => {
