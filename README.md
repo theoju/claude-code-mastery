@@ -86,6 +86,7 @@ Code state. Probes sit on two axes:
 
 - **P (config)** — Settings / Filesystem / Plugins: _"is it installed/configured?"_ (Platform Setup)
 - **P\* (behavior)** — Transcripts: a usage signal (_"do you do it?"_) that still gates a Platform-Setup next-action, not the Execution radar
+- **A (adoption)** — Runtime (`~/.claude.json`): predicate-backed signals that feed the **Execution** axis as capped adoption credit (_"have you adopted it?"_), distinct from P / P\* which feed Platform Setup
 - **E** — cooked telemetry: the Execution radar vertices (_"are you using it?"_)
 - **P+E** — scored on both axes
 
@@ -99,16 +100,21 @@ probe · 📊 shared/scorer signal · 🗣 behavioral coaching (not auto-detecte
 | Filesystem (`agents` / `commands` / `skills` / `projects`) |      10 | P    |
 | Plugins (`enabledPlugins`, PATH)                           |       6 | P    |
 | Transcripts (`projects/*/*.jsonl`)                         |      21 | P\*  |
+| Runtime (`~/.claude.json`)                                 |       2 | A    |
 | Insights / cooked telemetry (`usage-data/`)                |      11 | E    |
-| **Total**                                                  |  **71** |      |
+| **Total**                                                  |  **73** |      |
 
-Of the 71 signals, **45 are catalog-backed probes**; **44 of them gate a
+Of the 73 signals, **47 are catalog-backed probes**; **46 of them gate a
 `satisfiedWhen` next-action** — the predicate-backed checks the dashboard's
 [`/methodology/probes`](http://localhost:3737/methodology/probes) page renders
 (grouped there by raw source, so the command counters show under _history_ and
-cooked-telemetry signals aren't listed). The 45th catalog entry,
-`sessionsByKind`, is the session-universe classifier. Across the **75 canonical
-tips**: ✅ 51 · 📊 11 · 🗣 2 · ❌ 11.
+cooked-telemetry signals aren't listed). The 47th catalog entry,
+`sessionsByKind`, is the session-universe classifier. The `runtime` source
+brings 3 previously-untracked tips into scoring: tip 50 (Cowork Dispatch, ✅),
+tip 27 (Customize Everything, ✅ Platform breadth), and tip 74 (4.6→4.7 Shifts,
+📊 awareness proxy); tip 39 (Auto Session Naming) is now detected as an
+info-only signal (🗣). Across the **75 canonical tips**: ✅ 53 · 📊 12 · 🗣 3 ·
+❌ 7.
 
 The full per-probe registry (every field, predicate, and axis) and the
 tip-by-tip coverage matrix live in the living tracker,
