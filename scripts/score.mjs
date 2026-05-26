@@ -711,6 +711,18 @@ export const EXECUTION_SCORERS = {
       gaps.push(
         "Subagent dispatch in fewer than 20% of interactive sessions — Boris tip 1",
       );
+    const cowork = adoptionBonus({
+      kind: "boolean",
+      cap: 15,
+      on: !!s.settings?.coworkDispatchAdopted,
+      label: "behavioral",
+      evidenceText:
+        "Cowork / agents-fleet dispatch adopted (~/.claude.json hasUsedAgentsFleet) — Boris tip 50",
+      gapText: "Never dispatched a cowork / agents-fleet run — Boris tip 50",
+    });
+    score += cowork.points;
+    if (cowork.evidence) evidence.push(cowork.evidence);
+    if (cowork.gap) gaps.push(cowork.gap);
     return { score: clamp(Math.round(score)), evidence, gaps, gapReason: null };
   }),
 

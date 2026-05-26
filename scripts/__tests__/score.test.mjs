@@ -1141,6 +1141,27 @@ describe("SCORERS — v0.8 small bonuses across remaining dims", () => {
   });
 });
 
+describe("parallel execution — cowork adoption credit (tip 50)", () => {
+  it("adds capped credit when cowork dispatch adopted", () => {
+    const base = makeSignals({
+      insights: makeInsights({
+        subagentSessionCount: 0,
+        transcriptsScanned: true,
+      }),
+    });
+    const withCowork = makeSignals({
+      settings: { coworkDispatchAdopted: true },
+      insights: makeInsights({
+        subagentSessionCount: 0,
+        transcriptsScanned: true,
+      }),
+    });
+    const a = EXECUTION_SCORERS.parallel(base).score;
+    const b = EXECUTION_SCORERS.parallel(withCowork).score;
+    expect(b).toBeGreaterThan(a);
+  });
+});
+
 describe("adoptionBonus", () => {
   it("boolean: full cap when on, zero when off", () => {
     expect(adoptionBonus({ on: true, kind: "boolean", cap: 15 }).points).toBe(
