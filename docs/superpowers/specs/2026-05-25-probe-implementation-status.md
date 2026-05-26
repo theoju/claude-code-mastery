@@ -3,13 +3,20 @@
 **Date:** 2026-05-25
 **Status:** Living tracker — update on every probe add/remove.
 **Validated against:** `app/data/boris-tip-index.json` (75 tips), `app/data/rubric.json`
-(12 dimensions / 46 next-actions), `app/data/probe-catalog.json` (45 probes +
+(12 dimensions / 48 next-actions), `app/data/probe-catalog.json` (47 probes +
 the `_meta` sidecar), `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`),
 `scripts/_usage-data.mjs` (transcript scanners),
 `scripts/run-assessment.mjs#buildSignalsSummary` (71 `signalsSummary` keys).
 Snapshot current as of **main @ post-v0.9.12** — the `/effort max` reflex probe
 (`effortMaxAdopted` derived OR + `effortMaxCommandUses` transcript counter, tip 34)
-**shipped in #85 / CCE-29** (merged to `main`, pending release). The prior
+**shipped in #85 / CCE-29** (merged to `main`, pending release). The
+**runtime-adoption probes** branch adds `coworkDispatchAdopted` (tip 50, axis A →
+`parallel` Execution scorer) and `opus47AwarenessAdopted` (tip 74, awareness proxy
+→ `model-effort` Execution scorer), plus four non-predicate runtime signals:
+`cliBtwUseCount` (tip 33 MAX-merge), `planModeRecencyDays` (planning recency),
+`skillsUsedRecently` (learning recency), and `aiTitlePresent` (tip 39, info-only).
+Also adds the tip-27 customization-breadth composite (≥4 surfaces → +10 pts in the
+`customization` Platform scorer). The prior
 **v0.9.11** baseline added the three coverage probes `hasSessionStartHook`
 (tip 37), `hasTerminalSetup` (tip 11), `desktopSessionCount` (tip 52) in #79 / CCE-25.
 **v0.9.10** was the probe-coverage expansion (#72 `colorCommandUses`, #73 integrity
@@ -204,104 +211,132 @@ These drive the **Execution** scorers (no `satisfiedWhen`; consumed directly in
 cooked telemetry. `model-effort` is now **partially** measured: the model half
 (Opus usage, tip 2) is scored from transcripts; effort level stays settings-only.
 
+### Runtime (`~/.claude.json` behavioral-adoption flags) — `signals.mjs`
+
+These are **durable behavioral-adoption flags** written by the CLI to
+`~/.claude.json` — distinct from the Settings layer's posture/config fields in
+the same file. They record _has the user ever done X_ and feed the **Execution
+axis (axis A)** as adoption-credit bonuses composed into `EXECUTION_SCORERS`
+via `adoptionBonus()`. They are NOT per-session rates and are NOT gated by a
+session denominator.
+
+| Field                    | Predicate / use                                                                                                                                                                                           | Catalog | Axis |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
+| `coworkDispatchAdopted`  | `coworkDispatchAdopted` (parallel) — `~/.claude.json#hasUsedAgentsFleet`; +15 adoption-credit in parallel Execution scorer; Boris tip 50                                                                  | ✅      | A    |
+| `opus47AwarenessAdopted` | `opus47AwarenessAdopted` (model-effort) — `opus47LaunchSeenCount / unpinOpus47LaunchEffort / lastReleaseNotesSeen`; +8 awareness-proxy credit (capped-low) in model-effort Execution scorer; Boris tip 74 | ✅      | A    |
+| `cliBtwUseCount`         | MAX-merged into `btwCommandUses` in `buildSignalsSummary` — strengthens tip 33 coverage beyond history.jsonl scan                                                                                         | —       | A    |
+| `planModeRecencyDays`    | Recency corroboration for planning Execution scorer — days since `lastPlanModeUse`; +8 pts (recency decay over 30 days)                                                                                   | —       | A    |
+| `skillsUsedRecently`     | Recency corroboration for learning Execution scorer — count of skills with `lastUsedAt` within 30 days; +10 pts at 3 skills                                                                               | —       | A    |
+| `aiTitlePresent`         | Info-only: true if any scanned session has an `ai-title` transcript entry (auto session naming, tip 39). **Not scored, no rubric predicate, no probe-catalog entry.**                                     | —       | —    |
+
+> **Axis label "A" (adoption)** is used here to mark signals from this layer;
+> in Part 2 the standard P / E / P+E / P / exec unmeasured conventions apply
+> at the dimension level. The runtime signals compose into Execution scorers, so
+> their tip rows appear as ✅ or 📊 on the E or P+E dimension axis.
+
 ---
 
 ## Part 2 — Coverage of all 75 Boris tips
 
-| #   | Topic                     | Dim                       | Status | Probe / signal                                                                                      | Axis                |
-| --- | ------------------------- | ------------------------- | ------ | --------------------------------------------------------------------------------------------------- | ------------------- |
-| 1   | Parallel Execution        | parallel                  | ✅     | `parallelWorktreeAdoption`; exec `subagent`+`worktree`                                              | P+E                 |
-| 2   | Model Selection           | model-effort              | ✅     | `effortLevel` (P) + exec `opusDominantSessionCount` (Opus-dominant ratio)                           | P+E                 |
-| 3   | Plan Mode                 | planning                  | ✅     | exec `planModeSessionCount/multiTask`; `planThenLaunchSessions`                                     | P+E                 |
-| 4   | CLAUDE.md                 | memory                    | ✅     | `claudeMdExists`                                                                                    | P / exec unmeasured |
-| 5   | Skills & Slash Commands   | automation                | ✅     | `hasShipCommand` (+ skill/command counts)                                                           | P                   |
-| 6   | Subagents                 | parallel                  | 📊     | exec `subagentSessionCount`; `personalAgents`                                                       | P+E                 |
-| 7   | Hooks                     | automation                | ✅     | `hasFormatterHook`, `hasStopHook`; exec `hookFireCount`                                             | P+E                 |
-| 8   | Permissions               | permissions               | 📊     | `allowListCount`, `skipDangerous`                                                                   | P                   |
-| 9   | MCP Integrations          | integrations              | ✅     | `hasSlackPlugin`, `mcpServersConnected>=3`; exec `toolInvocationsByPlugin`                          | P+E                 |
-| 10  | Prompting Tips            | verification              | 📊     | mapped to `shipVerifyStageRecent`                                                                   | P                   |
-| 11  | Terminal Setup            | customization             | ✅     | `hasTerminalSetup` (deep-link / Option-as-Meta)                                                     | P                   |
-| 12  | Bug Fixing                | —                         | ❌     | not referenced anywhere                                                                             | —                   |
-| 13  | Long-Running Tasks        | automation\*              | ✅     | `hasStopHook`                                                                                       | P                   |
-| 14  | Verification (#1)         | verification              | ✅     | `hasVerifyAgent`; exec friction rate                                                                | P+E                 |
-| 15  | Learning with Claude      | learning                  | ✅     | `personalSkillNames~spaced`                                                                         | P                   |
-| 16  | Terminal Config           | customization             | 📊     | `statuslineConfigured`/`keybindingsConfigured` (loose)                                              | P                   |
-| 17  | Effort Level              | model-effort              | ✅     | `effortLevel` (effort facet; exec scorer measures the Opus facet, tip 2)                            | P                   |
-| 18  | Plugins                   | integrations              | ✅     | `plugins.length`; exec `toolInvocationsByPlugin`                                                    | P+E                 |
-| 19  | Custom Agents             | automation/parallel       | 📊     | `personalAgents`, `hasIsolatedAgent`                                                                | P                   |
-| 20  | Permissions Management    | permissions               | ✅     | `hasWildcardAllow`, `allowListCount`                                                                | P                   |
-| 21  | Sandboxing                | permissions               | ❌     | not separately probed                                                                               | —                   |
-| 22  | Status Line               | customization             | 📊     | `statuslineConfigured`                                                                              | P                   |
-| 23  | Keybindings               | customization             | 📊     | `keybindingsConfigured`                                                                             | P                   |
-| 24  | Hooks (Advanced)          | automation                | 📊     | `hookTotalCount` (generic)                                                                          | P                   |
-| 25  | Spinner Verbs             | customization             | ✅     | `hasCustomSpinnerVerbs`                                                                             | P                   |
-| 26  | Output Styles             | customization/learning    | ✅     | `outputStyle`; exec `learningModeSessionCount`                                                      | P+E                 |
-| 27  | Customize Everything      | customization             | ❌     | umbrella; no probe                                                                                  | —                   |
-| 28  | Git Worktree Support      | parallel                  | ✅     | `hasIsolatedAgent`; exec `worktreeUsageSessionCount`                                                | P+E                 |
-| 29  | /simplify                 | automation                | ✅     | `simplifyCommandUses>=1`                                                                            | P                   |
-| 30  | /batch                    | parallel                  | ✅     | `batchCommandUses>=1`                                                                               | P                   |
-| 31  | /loop                     | scheduled                 | ✅     | `loopCommandUses`                                                                                   | P                   |
-| 32  | Code Review Agents        | (ver/intg)                | ✅     | `hasCodeReviewPlugin`                                                                               | P                   |
-| 33  | /btw                      | memory                    | ✅     | `btwCommandUses>=1`                                                                                 | P                   |
-| 34  | /effort max               | model-effort              | ✅     | `effortMaxAdopted` (settings `max` OR `/effort max` in ≥2 sessions)                                 | P                   |
-| 35  | Remote Control            | remote                    | ✅     | `hasRemoteControl`; exec `remoteInvocationsTotal`                                                   | P+E                 |
-| 36  | Voice                     | customization             | ✅     | `voiceCommandUses` (cited as tip 60)                                                                | P                   |
-| 37  | Setup Scripts             | automation                | ✅     | `hasSessionStartHook` (+ generic `hookTotalCount`)                                                  | P                   |
-| 38  | Session Naming (`--name`) | customization             | ❌     | `claude --name` not probed                                                                          | —                   |
-| 39  | Auto Session Naming       | —                         | ❌     | not tracked                                                                                         | —                   |
-| 40  | /color                    | customization             | ✅     | `colorCommandUses>=1`                                                                               | P                   |
-| 41  | PostCompact Hook          | automation                | ✅     | `hasPostCompactHook`; exec generic `hookTotalCount`                                                 | P                   |
-| 42  | Auto Mode                 | permissions               | ✅     | `permissionsDefaultMode=auto & !skipDangerous`; exec `autoModeSessionCount`; permissions scorer +10 | P+E                 |
-| 43  | /schedule                 | scheduled                 | ✅     | `scheduleCommandUses`; exec `scheduledInvocationsTotal`                                             | P+E                 |
-| 44  | iMessage Plugin           | integrations/remote       | ✅     | `has.imessage`                                                                                      | P                   |
-| 45  | Auto-Memory & Auto-Dream  | memory                    | ✅     | `autoMemoryEnabled`                                                                                 | P / exec unmeasured |
-| 46  | Mobile App                | remote                    | 🗣     | `ios-task` next-action (unpredicated)                                                               | coaching            |
-| 47  | Session Teleporting       | remote                    | ✅     | `hasRemoteControl`                                                                                  | P                   |
-| 48  | /loop & /schedule         | scheduled                 | ✅     | `loopCommandUses`/`babysitLoopUses`                                                                 | P                   |
-| 49  | Hooks Lifecycle           | automation                | 📊     | generic hooks                                                                                       | P                   |
-| 50  | Cowork Dispatch           | remote                    | ❌     | not separately probed                                                                               | —                   |
-| 51  | Chrome Extension          | verification/integrations | ✅     | `hasClaudeInChrome`                                                                                 | P (+E reach)        |
-| 52  | Desktop App               | verification              | ✅     | `desktopSessionCount>=1` (transcript `entrypoint`)                                                  | P                   |
-| 53  | Fork Sessions             | —                         | ❌     | not tracked                                                                                         | —                   |
-| 54  | /btw (deep dive)          | memory                    | ✅     | `btwCommandUses`                                                                                    | P                   |
-| 55  | Git Worktrees (deep)      | parallel                  | ✅     | worktree signals                                                                                    | P+E                 |
-| 56  | /batch (deep)             | parallel                  | ✅     | `batchCommandUses`                                                                                  | P                   |
-| 57  | --bare                    | —                         | ❌     | not tracked                                                                                         | —                   |
-| 58  | --add-dir                 | integrations              | ❌     | not separately probed                                                                               | —                   |
-| 59  | --agent                   | automation                | 📊     | `personalAgents`/`hasIsolatedAgent` (loose)                                                         | P                   |
-| 60  | /voice                    | customization             | ✅     | `voiceCommandUses>=1`                                                                               | P                   |
-| 61  | Routines                  | scheduled                 | ✅     | `scheduleCommandUses`; exec `scheduledInvocationsTotal`                                             | P+E                 |
-| 62  | /rewind                   | memory                    | ✅     | `rewindCommandUses>=1`                                                                              | P                   |
-| 63  | /compact vs /clear        | memory                    | ✅     | `compactCommandUses>=1` + `clearCommandUses>=1`                                                     | P                   |
-| 64  | Auto-Compact Window       | model-effort              | ✅     | `autoCompactWindow` (effort facet; exec scorer measures the Opus facet, tip 2)                      | P                   |
-| 65  | Delegation over Guidance  | planning                  | ✅     | `planThenLaunchSessions>=1`; exec plan ratio                                                        | P+E                 |
-| 66  | Full Task Context Upfront | planning                  | 🗣     | `goal-constraints-template` (unpredicated)                                                          | coaching            |
-| 67  | xhigh effort              | model-effort              | ✅     | `effortLevel=xhigh\|max`                                                                            | P                   |
-| 68  | Auto Mode + Parallel      | parallel                  | 📊     | composite (auto + parallel signals)                                                                 | P+E                 |
-| 69  | /fewer-permission-prompts | permissions               | ✅     | `allowListCount>=10` + `fewerPermsCommandUses>=1`                                                   | P                   |
-| 70  | Recaps                    | memory                    | ❌     | not probed                                                                                          | —                   |
-| 71  | Focus Mode                | customization             | ✅     | `focusCommandUses>=1`                                                                               | P                   |
-| 72  | Effort Mastery            | model-effort              | ✅     | `effortLevel`                                                                                       | P                   |
-| 73  | /go composite             | verification              | ✅     | `goCommandUses>=3` (+`hasVerifyAgent`); exec friction                                               | P+E                 |
-| 74  | 4.6→4.7 Shifts            | —                         | ❌     | meta/changelog — not tracked                                                                        | —                   |
-| 75  | Task Notifications        | automation/scheduled      | ✅     | `hasStopHookNotification`                                                                           | P                   |
+| #   | Topic                     | Dim                       | Status | Probe / signal                                                                                                      | Axis                |
+| --- | ------------------------- | ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| 1   | Parallel Execution        | parallel                  | ✅     | `parallelWorktreeAdoption`; exec `subagent`+`worktree`                                                              | P+E                 |
+| 2   | Model Selection           | model-effort              | ✅     | `effortLevel` (P) + exec `opusDominantSessionCount` (Opus-dominant ratio)                                           | P+E                 |
+| 3   | Plan Mode                 | planning                  | ✅     | exec `planModeSessionCount/multiTask`; `planThenLaunchSessions`                                                     | P+E                 |
+| 4   | CLAUDE.md                 | memory                    | ✅     | `claudeMdExists`                                                                                                    | P / exec unmeasured |
+| 5   | Skills & Slash Commands   | automation                | ✅     | `hasShipCommand` (+ skill/command counts)                                                                           | P                   |
+| 6   | Subagents                 | parallel                  | 📊     | exec `subagentSessionCount`; `personalAgents`                                                                       | P+E                 |
+| 7   | Hooks                     | automation                | ✅     | `hasFormatterHook`, `hasStopHook`; exec `hookFireCount`                                                             | P+E                 |
+| 8   | Permissions               | permissions               | 📊     | `allowListCount`, `skipDangerous`                                                                                   | P                   |
+| 9   | MCP Integrations          | integrations              | ✅     | `hasSlackPlugin`, `mcpServersConnected>=3`; exec `toolInvocationsByPlugin`                                          | P+E                 |
+| 10  | Prompting Tips            | verification              | 📊     | mapped to `shipVerifyStageRecent`                                                                                   | P                   |
+| 11  | Terminal Setup            | customization             | ✅     | `hasTerminalSetup` (deep-link / Option-as-Meta)                                                                     | P                   |
+| 12  | Bug Fixing                | —                         | ❌     | not referenced anywhere                                                                                             | —                   |
+| 13  | Long-Running Tasks        | automation\*              | ✅     | `hasStopHook`                                                                                                       | P                   |
+| 14  | Verification (#1)         | verification              | ✅     | `hasVerifyAgent`; exec friction rate                                                                                | P+E                 |
+| 15  | Learning with Claude      | learning                  | ✅     | `personalSkillNames~spaced`                                                                                         | P                   |
+| 16  | Terminal Config           | customization             | 📊     | `statuslineConfigured`/`keybindingsConfigured` (loose)                                                              | P                   |
+| 17  | Effort Level              | model-effort              | ✅     | `effortLevel` (effort facet; exec scorer measures the Opus facet, tip 2)                                            | P                   |
+| 18  | Plugins                   | integrations              | ✅     | `plugins.length`; exec `toolInvocationsByPlugin`                                                                    | P+E                 |
+| 19  | Custom Agents             | automation/parallel       | 📊     | `personalAgents`, `hasIsolatedAgent`                                                                                | P                   |
+| 20  | Permissions Management    | permissions               | ✅     | `hasWildcardAllow`, `allowListCount`                                                                                | P                   |
+| 21  | Sandboxing                | permissions               | ❌     | not separately probed                                                                                               | —                   |
+| 22  | Status Line               | customization             | 📊     | `statuslineConfigured`                                                                                              | P                   |
+| 23  | Keybindings               | customization             | 📊     | `keybindingsConfigured`                                                                                             | P                   |
+| 24  | Hooks (Advanced)          | automation                | 📊     | `hookTotalCount` (generic)                                                                                          | P                   |
+| 25  | Spinner Verbs             | customization             | ✅     | `hasCustomSpinnerVerbs`                                                                                             | P                   |
+| 26  | Output Styles             | customization/learning    | ✅     | `outputStyle`; exec `learningModeSessionCount`                                                                      | P+E                 |
+| 27  | Customize Everything      | customization             | ✅     | customization-breadth composite: ≥4 surfaces configured → +10 pts in Platform scorer                                | P                   |
+| 28  | Git Worktree Support      | parallel                  | ✅     | `hasIsolatedAgent`; exec `worktreeUsageSessionCount`                                                                | P+E                 |
+| 29  | /simplify                 | automation                | ✅     | `simplifyCommandUses>=1`                                                                                            | P                   |
+| 30  | /batch                    | parallel                  | ✅     | `batchCommandUses>=1`                                                                                               | P                   |
+| 31  | /loop                     | scheduled                 | ✅     | `loopCommandUses`                                                                                                   | P                   |
+| 32  | Code Review Agents        | (ver/intg)                | ✅     | `hasCodeReviewPlugin`                                                                                               | P                   |
+| 33  | /btw                      | memory                    | ✅     | `btwCommandUses>=1`                                                                                                 | P                   |
+| 34  | /effort max               | model-effort              | ✅     | `effortMaxAdopted` (settings `max` OR `/effort max` in ≥2 sessions)                                                 | P                   |
+| 35  | Remote Control            | remote                    | ✅     | `hasRemoteControl`; exec `remoteInvocationsTotal`                                                                   | P+E                 |
+| 36  | Voice                     | customization             | ✅     | `voiceCommandUses` (cited as tip 60)                                                                                | P                   |
+| 37  | Setup Scripts             | automation                | ✅     | `hasSessionStartHook` (+ generic `hookTotalCount`)                                                                  | P                   |
+| 38  | Session Naming (`--name`) | customization             | ❌     | `claude --name` not probed                                                                                          | —                   |
+| 39  | Auto Session Naming       | —                         | 🗣     | `aiTitlePresent` DETECTED (transcript `ai-title` entry) — info-only, not scored; non-discriminating (~universal)    | —                   |
+| 40  | /color                    | customization             | ✅     | `colorCommandUses>=1`                                                                                               | P                   |
+| 41  | PostCompact Hook          | automation                | ✅     | `hasPostCompactHook`; exec generic `hookTotalCount`                                                                 | P                   |
+| 42  | Auto Mode                 | permissions               | ✅     | `permissionsDefaultMode=auto & !skipDangerous`; exec `autoModeSessionCount`; permissions scorer +10                 | P+E                 |
+| 43  | /schedule                 | scheduled                 | ✅     | `scheduleCommandUses`; exec `scheduledInvocationsTotal`                                                             | P+E                 |
+| 44  | iMessage Plugin           | integrations/remote       | ✅     | `has.imessage`                                                                                                      | P                   |
+| 45  | Auto-Memory & Auto-Dream  | memory                    | ✅     | `autoMemoryEnabled`                                                                                                 | P / exec unmeasured |
+| 46  | Mobile App                | remote                    | 🗣     | `ios-task` next-action (unpredicated)                                                                               | coaching            |
+| 47  | Session Teleporting       | remote                    | ✅     | `hasRemoteControl`                                                                                                  | P                   |
+| 48  | /loop & /schedule         | scheduled                 | ✅     | `loopCommandUses`/`babysitLoopUses`                                                                                 | P                   |
+| 49  | Hooks Lifecycle           | automation                | 📊     | generic hooks                                                                                                       | P                   |
+| 50  | Cowork Dispatch           | parallel                  | ✅     | `coworkDispatchAdopted` (~/.claude.json#hasUsedAgentsFleet) — +15 adoption-credit in parallel Execution scorer      | E                   |
+| 51  | Chrome Extension          | verification/integrations | ✅     | `hasClaudeInChrome`                                                                                                 | P (+E reach)        |
+| 52  | Desktop App               | verification              | ✅     | `desktopSessionCount>=1` (transcript `entrypoint`)                                                                  | P                   |
+| 53  | Fork Sessions             | —                         | ❌     | not tracked                                                                                                         | —                   |
+| 54  | /btw (deep dive)          | memory                    | ✅     | `btwCommandUses`                                                                                                    | P                   |
+| 55  | Git Worktrees (deep)      | parallel                  | ✅     | worktree signals                                                                                                    | P+E                 |
+| 56  | /batch (deep)             | parallel                  | ✅     | `batchCommandUses`                                                                                                  | P                   |
+| 57  | --bare                    | —                         | ❌     | not tracked                                                                                                         | —                   |
+| 58  | --add-dir                 | integrations              | ❌     | not separately probed                                                                                               | —                   |
+| 59  | --agent                   | automation                | 📊     | `personalAgents`/`hasIsolatedAgent` (loose)                                                                         | P                   |
+| 60  | /voice                    | customization             | ✅     | `voiceCommandUses>=1`                                                                                               | P                   |
+| 61  | Routines                  | scheduled                 | ✅     | `scheduleCommandUses`; exec `scheduledInvocationsTotal`                                                             | P+E                 |
+| 62  | /rewind                   | memory                    | ✅     | `rewindCommandUses>=1`                                                                                              | P                   |
+| 63  | /compact vs /clear        | memory                    | ✅     | `compactCommandUses>=1` + `clearCommandUses>=1`                                                                     | P                   |
+| 64  | Auto-Compact Window       | model-effort              | ✅     | `autoCompactWindow` (effort facet; exec scorer measures the Opus facet, tip 2)                                      | P                   |
+| 65  | Delegation over Guidance  | planning                  | ✅     | `planThenLaunchSessions>=1`; exec plan ratio                                                                        | P+E                 |
+| 66  | Full Task Context Upfront | planning                  | 🗣     | `goal-constraints-template` (unpredicated)                                                                          | coaching            |
+| 67  | xhigh effort              | model-effort              | ✅     | `effortLevel=xhigh\|max`                                                                                            | P                   |
+| 68  | Auto Mode + Parallel      | parallel                  | 📊     | composite (auto + parallel signals)                                                                                 | P+E                 |
+| 69  | /fewer-permission-prompts | permissions               | ✅     | `allowListCount>=10` + `fewerPermsCommandUses>=1`                                                                   | P                   |
+| 70  | Recaps                    | memory                    | ❌     | not probed                                                                                                          | —                   |
+| 71  | Focus Mode                | customization             | ✅     | `focusCommandUses>=1`                                                                                               | P                   |
+| 72  | Effort Mastery            | model-effort              | ✅     | `effortLevel`                                                                                                       | P                   |
+| 73  | /go composite             | verification              | ✅     | `goCommandUses>=3` (+`hasVerifyAgent`); exec friction                                                               | P+E                 |
+| 74  | 4.6→4.7 Shifts            | model-effort              | 📊     | `opus47AwarenessAdopted` awareness proxy — +8 pts (capped-low) in model-effort Execution scorer; proxy, not mastery | E                   |
+| 75  | Task Notifications        | automation/scheduled      | ✅     | `hasStopHookNotification`                                                                                           | P                   |
 
-**Tally** (75 = 51 + 11 + 2 + 11): ✅ direct **51** · 📊 shared **11** ·
-🗣 coaching-only **2** (46, 66) ·
-❌ untracked **11** (12, 21, 27, 38, 39, 50, 53, 57, 58, 70, 74).
+**Tally** (75 = 53 + 12 + 3 + 7): ✅ direct **53** · 📊 shared **12** ·
+🗣 coaching-only **3** (39, 46, 66) ·
+❌ untracked **7** (12, 21, 38, 53, 57, 58, 70).
 
-### Untracked — two groups (triage 2026-05-25, see coverage-probes-37-11-52 spec)
+### Untracked — two groups (triage 2026-05-25, updated for runtime-adoption probes)
 
 **Blocked until a signal source ships** (instrumentable if a field/command appears):
-**21** Sandboxing · **38** `--name` · **50** Cowork Dispatch · **53** Fork Sessions ·
+**21** Sandboxing · **38** `--name` · **53** Fork Sessions ·
 **58** `--add-dir` · **70** Recaps — no matching settings key, slash command, or
 session-meta field exists today.
 
 **Permanently blocked** (no user-measurable signal):
-**12** Bug Fixing (generic) · **27** Customize Everything (umbrella) ·
-**39** Auto Session Naming (automatic) · **57** `--bare` (launch flag — no trace) ·
-**74** 4.6→4.7 Shifts (changelog). Launch flags (`--name`/`--bare`/`--add-dir`)
-configure the session at startup and leave no trace in any of the five layers.
+**12** Bug Fixing (generic) · **57** `--bare` (launch flag — no trace).
+Launch flags (`--name`/`--bare`/`--add-dir`) configure the session at startup
+and leave no trace in any of the five layers.
+
+_Previously permanently-blocked tips now reclassified:_ **27** Customize
+Everything — scored via customization-breadth composite (≥4 surfaces, Platform);
+**39** Auto Session Naming — detected via `aiTitlePresent` (info-only, 🗣);
+**50** Cowork Dispatch — scored via `coworkDispatchAdopted` adoption credit (Execution);
+**74** 4.6→4.7 Shifts — proxied via `opus47AwarenessAdopted` awareness signal (📊 Execution).
 
 ---
 
