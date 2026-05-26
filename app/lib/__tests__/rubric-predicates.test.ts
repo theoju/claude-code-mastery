@@ -39,6 +39,7 @@ const ALL_SATISFIED_SIGNALS = {
   hasIsolatedAgent: true,
   // model-effort
   effortLevel: "max",
+  effortMaxAdopted: true,
   autoCompactWindow: "400000",
   // customization
   hasCustomSpinnerVerbs: true,

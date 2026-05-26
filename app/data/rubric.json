@@ -117,7 +117,7 @@
           "id": "effort-max-reflex",
           "action": "Learn the /effort max reflex for debugging and architecture sessions — Boris tip 34",
           "effort": "5min",
-          "satisfiedWhen": "effortLevel=max",
+          "satisfiedWhen": "effortMaxAdopted",
           "borisTip": 34
         },
         {
