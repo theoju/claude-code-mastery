@@ -373,6 +373,45 @@ describe("gatherInsightsSignals", () => {
     expect(r.planModeSessionCount).toBe(1);
   });
 
+  it("planModeMultiTaskSessionCount counts only the multi_task∩plan_mode intersection", async () => {
+    // Regression guard for the 36/34 = 105.88% bug: the planning Exec scorer's
+    // numerator must count plan mode ONLY in multi_task sessions (the same
+    // interactive∩multi_task universe as its multiTaskSessionCount denominator),
+    // not across all interactive plan-mode sessions. Two interactive plan-mode
+    // sessions — one multi_task, one single_task — so the broad count is 2 but
+    // the intersection is 1. Dropping the multi_task gate at the source would
+    // make this 2 and reintroduce the >100% ratio.
+    writeMeta(dir, "mt-plan", { start_time: TWENTY_DAYS_AGO });
+    writeMeta(dir, "st-plan", { start_time: TWENTY_DAYS_AGO });
+    writeFacet(dir, "mt-plan", { session_type: "multi_task" });
+    writeFacet(dir, "st-plan", { session_type: "single_task" });
+    writeTranscript(dir, "proj-a", "mt-plan", [
+      {
+        type: "user",
+        entrypoint: "cli",
+        permissionMode: "plan",
+        timestamp: TWENTY_DAYS_AGO,
+      },
+    ]);
+    writeTranscript(dir, "proj-a", "st-plan", [
+      {
+        type: "user",
+        entrypoint: "cli",
+        permissionMode: "plan",
+        timestamp: TWENTY_DAYS_AGO,
+      },
+    ]);
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+    expect(r.planModeSessionCount).toBe(2);
+    expect(r.planModeMultiTaskSessionCount).toBe(1);
+    expect(r.multiTaskSessionCount).toBe(1);
+  });
+
   it("counts ★ Insight banners as learning-mode adoption when scanning transcripts", async () => {
     writeMeta(dir, "active", { start_time: TWENTY_DAYS_AGO });
     writeMeta(dir, "quiet", { start_time: TWENTY_DAYS_AGO });

@@ -183,6 +183,7 @@ export async function gatherInsightsSignals({
     autoModeSessionCount: null,
     bypassPermissionsSessionCount: null,
     planModeSessionCount: null,
+    planModeMultiTaskSessionCount: null,
     worktreeUsageSessionCount: null,
     learningModeSessionCount: null,
     learningModeMatchesTotal: null,
@@ -196,6 +197,7 @@ export async function gatherInsightsSignals({
     let autoModeSessionCount = 0;
     let bypassPermissionsSessionCount = 0;
     let planModeSessionCount = 0;
+    let planModeMultiTaskSessionCount = 0;
     let worktreeUsageSessionCount = 0;
     let learningModeSessionCount = 0;
     let learningModeMatchesTotal = 0;
@@ -229,7 +231,17 @@ export async function gatherInsightsSignals({
         // Union: native permissionMode === "plan" OR a planning-equivalent
         // skill invocation. Both routes are surfaced via modes.has("plan")
         // from scanTranscriptModes — see PLANNING_SKILL_COMMANDS there.
-        if (modes.has("plan")) planModeSessionCount += 1;
+        if (modes.has("plan")) {
+          planModeSessionCount += 1;
+          // The planning ratio's numerator must be the multi_task∩plan_mode
+          // intersection so it can't exceed its multiTaskSessionCount
+          // denominator. planModeSessionCount alone also counts plan mode in
+          // single-task sessions, which pushed the ratio past 100% (the
+          // 36/34 = 105.88% bug). multiTaskSessionCount uses the same
+          // facet.session_type === "multi_task" gate as the first loop.
+          if (facets.get(m.session_id)?.session_type === "multi_task")
+            planModeMultiTaskSessionCount += 1;
+        }
         if (hasWorktreeState) worktreeUsageSessionCount += 1;
         // Union: ★ Insight banners OR a learning-skill invocation. One
         // increment per session even if both fire (matchesTotal stays
@@ -257,6 +269,7 @@ export async function gatherInsightsSignals({
     result.autoModeSessionCount = autoModeSessionCount;
     result.bypassPermissionsSessionCount = bypassPermissionsSessionCount;
     result.planModeSessionCount = planModeSessionCount;
+    result.planModeMultiTaskSessionCount = planModeMultiTaskSessionCount;
     result.worktreeUsageSessionCount = worktreeUsageSessionCount;
     result.learningModeSessionCount = learningModeSessionCount;
     result.learningModeMatchesTotal = learningModeMatchesTotal;

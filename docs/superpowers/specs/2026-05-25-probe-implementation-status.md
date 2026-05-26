@@ -193,18 +193,18 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 These drive the **Execution** scorers (no `satisfiedWhen`; consumed directly in
 `EXECUTION_SCORERS`):
 
-| Signal                                                  | Execution scorer                       | Universe         |
-| ------------------------------------------------------- | -------------------------------------- | ---------------- |
-| `autoModeSessionCount`, `bypassPermissionsSessionCount` | permissions                            | interactive_only |
-| `frictionCounts.{buggy_code,wrong_approach}`            | verification                           | all_sessions     |
-| `subagentSessionCount`, `worktreeUsageSessionCount`     | parallel                               | interactive_only |
-| `planModeSessionCount`, `multiTaskSessionCount`         | planning                               | interactive_only |
-| `hookFireCount` (3-state warm/cold/null)                | automation                             | interactive_only |
-| `toolInvocationsByPlugin`                               | integrations (calls/session, target 2) | all_sessions     |
-| `scheduledInvocationsTotal`                             | scheduled (1→50, ≥3→100)               | all_sessions     |
-| `remoteInvocationsTotal`                                | remote (1→50, ≥3→100)                  | all_sessions     |
-| `learningModeSessionCount`, `learningModeMatchesTotal`  | learning (★ Insight banner ratio)      | interactive_only |
-| `opusDominantSessionCount`, `opusModelMatchesTotal`     | model-effort (Opus-dominant ratio)     | interactive_only |
+| Signal                                                   | Execution scorer                       | Universe         |
+| -------------------------------------------------------- | -------------------------------------- | ---------------- |
+| `autoModeSessionCount`, `bypassPermissionsSessionCount`  | permissions                            | interactive_only |
+| `frictionCounts.{buggy_code,wrong_approach}`             | verification                           | all_sessions     |
+| `subagentSessionCount`, `worktreeUsageSessionCount`      | parallel                               | interactive_only |
+| `planModeMultiTaskSessionCount`, `multiTaskSessionCount` | planning                               | interactive_only |
+| `hookFireCount` (3-state warm/cold/null)                 | automation                             | interactive_only |
+| `toolInvocationsByPlugin`                                | integrations (calls/session, target 2) | all_sessions     |
+| `scheduledInvocationsTotal`                              | scheduled (1→50, ≥3→100)               | all_sessions     |
+| `remoteInvocationsTotal`                                 | remote (1→50, ≥3→100)                  | all_sessions     |
+| `learningModeSessionCount`, `learningModeMatchesTotal`   | learning (★ Insight banner ratio)      | interactive_only |
+| `opusDominantSessionCount`, `opusModelMatchesTotal`      | model-effort (Opus-dominant ratio)     | interactive_only |
 
 **No Execution scorer (by design, `noTelemetry()`):** `memory`, `customization`
 — the relevant signals (memory-tool calls, client-side config) never reach
@@ -242,7 +242,7 @@ session denominator.
 | --- | ------------------------- | ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | 1   | Parallel Execution        | parallel                  | ✅     | `parallelWorktreeAdoption`; exec `subagent`+`worktree`                                                              | P+E                 |
 | 2   | Model Selection           | model-effort              | ✅     | `effortLevel` (P) + exec `opusDominantSessionCount` (Opus-dominant ratio)                                           | P+E                 |
-| 3   | Plan Mode                 | planning                  | ✅     | exec `planModeSessionCount/multiTask`; `planThenLaunchSessions`                                                     | P+E                 |
+| 3   | Plan Mode                 | planning                  | ✅     | exec `planModeMultiTaskSessionCount/multiTask`; `planThenLaunchSessions`                                            | P+E                 |
 | 4   | CLAUDE.md                 | memory                    | ✅     | `claudeMdExists`                                                                                                    | P / exec unmeasured |
 | 5   | Skills & Slash Commands   | automation                | ✅     | `hasShipCommand` (+ skill/command counts)                                                                           | P                   |
 | 6   | Subagents                 | parallel                  | 📊     | exec `subagentSessionCount`; `personalAgents`                                                                       | P+E                 |
