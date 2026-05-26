@@ -141,6 +141,28 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   `parseTargetSpec` actually accepts a bare path too. Cost: a follow-up PR
   to fix the docs. Pattern: _premature root-cause commitment_ —
   exactly the friction class the `/insights` report flags.
+- **Keep the probe tracker in sync with every probe change.** Any change to
+  the probe set — adding, removing, renaming, or re-gating a `satisfiedWhen`
+  signal; adding/removing a `probe-catalog.json` entry; or adding a scorer
+  signal in `_usage-data.mjs` / `buildSignalsSummary` — must update
+  `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` **in the
+  same PR**. The tracker's own header declares it a living doc; treat a probe
+  change with a stale tracker as an incomplete change. Update all of: the
+  Part 1 registry row(s) for the touched layer; the Part 2 tip-coverage row
+  (and the ✅/📊/🗣/❌ tally) if a tip's status or probe changed; and the
+  "Validated against" header counts — re-derive them, don't guess. Derive the
+  `signalsSummary` count by **invoking** `buildSignalsSummary(makeSignals())`
+  and counting `Object.keys(...)`, never by parsing the function source: a
+  regex over the body silently under-counts shorthand properties (e.g.
+  `hookEvents,`), which is how a wrong `65` briefly landed in this header.
+  Reference example: PR #85 / CCE-29 (the `/effort max` reflex probe
+  `effortMaxAdopted` + `effortMaxCommandUses`). The **five header counts are
+  now machine-enforced** by `scripts/__tests__/tracker-counts.test.mjs` (tips,
+  dimensions, next-actions, probe-catalog entries, `signalsSummary` keys) — a
+  stale number fails CI, so the header format is a tested contract. The
+  per-row / per-tip-status updates (Part 1 registry rows, Part 2 coverage row +
+  the ✅/📊/🗣/❌ tally) remain a contributor convention Claude must follow
+  per-change; only the cited counts are auto-checked.
 
 ## Conventions
 
