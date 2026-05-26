@@ -2,7 +2,15 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isSubstantive, detectTerminalSetup } from "../signals.mjs";
+import {
+  isSubstantive,
+  detectTerminalSetup,
+  detectCoworkDispatch,
+  detectOpus47Awareness,
+  detectBtwUseCount,
+  detectPlanModeRecencyDays,
+  detectSkillsUsedRecently,
+} from "../signals.mjs";
 
 let tmp;
 
@@ -84,5 +92,52 @@ describe("detectTerminalSetup (tip 11)", () => {
     expect(detectTerminalSetup({ deepLinkTerminal: "" })).toBe(false);
     expect(detectTerminalSetup({})).toBe(false);
     expect(detectTerminalSetup(null)).toBe(false);
+  });
+});
+
+describe("cliConfig adoption detectors", () => {
+  const NOW = Date.parse("2026-05-26T00:00:00.000Z");
+
+  it("detectCoworkDispatch reads hasUsedAgentsFleet", () => {
+    expect(detectCoworkDispatch({ hasUsedAgentsFleet: true })).toBe(true);
+    expect(detectCoworkDispatch({ hasUsedAgentsFleet: false })).toBe(false);
+    expect(detectCoworkDispatch({})).toBe(false);
+    expect(detectCoworkDispatch(null)).toBe(false);
+  });
+
+  it("detectOpus47Awareness is true when release notes or launch seen", () => {
+    expect(detectOpus47Awareness({ opus47LaunchSeenCount: 12 })).toBe(true);
+    expect(detectOpus47Awareness({ unpinOpus47LaunchEffort: true })).toBe(true);
+    expect(detectOpus47Awareness({ lastReleaseNotesSeen: "2.1.150" })).toBe(
+      true,
+    );
+    expect(detectOpus47Awareness({})).toBe(false);
+    expect(detectOpus47Awareness(null)).toBe(false);
+  });
+
+  it("detectBtwUseCount reads the counter, defaults 0", () => {
+    expect(detectBtwUseCount({ btwUseCount: 36 })).toBe(36);
+    expect(detectBtwUseCount({})).toBe(0);
+    expect(detectBtwUseCount(null)).toBe(0);
+  });
+
+  it("detectPlanModeRecencyDays returns whole days since lastPlanModeUse", () => {
+    const ts = "2026-05-23T00:00:00.000Z"; // 3 days before NOW
+    expect(detectPlanModeRecencyDays({ lastPlanModeUse: ts }, NOW)).toBe(3);
+    expect(detectPlanModeRecencyDays({}, NOW)).toBeNull();
+    expect(detectPlanModeRecencyDays(null, NOW)).toBeNull();
+  });
+
+  it("detectSkillsUsedRecently counts skills used within 30 days", () => {
+    const cfg = {
+      skillUsage: {
+        a: { lastUsedAt: "2026-05-20T00:00:00.000Z" }, // 6 days
+        b: { lastUsedAt: "2026-03-01T00:00:00.000Z" }, // >30 days
+        c: { lastUsedAt: "2026-05-25T00:00:00.000Z" }, // 1 day
+      },
+    };
+    expect(detectSkillsUsedRecently(cfg, NOW)).toBe(2);
+    expect(detectSkillsUsedRecently({}, NOW)).toBe(0);
+    expect(detectSkillsUsedRecently(null, NOW)).toBe(0);
   });
 });
