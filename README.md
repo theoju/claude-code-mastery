@@ -102,10 +102,13 @@ probe · 📊 shared/scorer signal · 🗣 behavioral coaching (not auto-detecte
 | Insights / cooked telemetry (`usage-data/`)                |      11 | E    |
 | **Total**                                                  |  **71** |      |
 
-Of the 71 signals, **45 carry `satisfiedWhen` predicates** — the catalog-backed
-probes surfaced on the dashboard's
-[`/methodology/probes`](http://localhost:3737/methodology/probes) page. Across
-the **75 canonical tips**: ✅ 51 · 📊 11 · 🗣 2 · ❌ 11.
+Of the 71 signals, **45 are catalog-backed probes**; **44 of them gate a
+`satisfiedWhen` next-action** — the predicate-backed checks the dashboard's
+[`/methodology/probes`](http://localhost:3737/methodology/probes) page renders
+(grouped there by raw source, so the command counters show under _history_ and
+cooked-telemetry signals aren't listed). The 45th catalog entry,
+`sessionsByKind`, is the session-universe classifier. Across the **75 canonical
+tips**: ✅ 51 · 📊 11 · 🗣 2 · ❌ 11.
 
 The full per-probe registry (every field, predicate, and axis) and the
 tip-by-tip coverage matrix live in the living tracker,

@@ -46,39 +46,48 @@ interface ProbeRow {
   currentValue: unknown;
 }
 
+// `axis` mirrors the probe tracker's taxonomy: P (config) for settings /
+// filesystem / plugins, P* (behavior) for transcript- and history-derived
+// usage signals. There is no E (Execution) source here — cooked-telemetry
+// signals aren't predicate-backed, so they never appear as probes.
 const SOURCE_META: Record<
   SourceKey,
-  { title: string; blurb: string; order: number }
+  { title: string; blurb: string; order: number; axis: "P" | "P*" }
 > = {
   settings: {
     title: "settings.json & CLI config",
     blurb:
       "Root-level config fields and derived booleans from hooks/permissions. Plus ~/.claude.json runtime state (MCP servers, browser/remote opt-ins).",
     order: 1,
+    axis: "P",
   },
   filesystem: {
     title: "~/.claude filesystem",
     blurb:
       "Personal-assets filesystem scans of agents, commands, skills, and project memory.",
     order: 2,
+    axis: "P",
   },
   plugins: {
     title: "Plugins & external tools",
     blurb:
       "enabledPlugins map (anchored regex match) plus PATH detection for external CLIs.",
     order: 3,
+    axis: "P",
   },
   transcripts: {
     title: "Transcripts (projects/*/*.jsonl)",
     blurb:
       "Session-derived behavioral signals computed by scanning past assistant turns. Requires --include-transcripts.",
     order: 4,
+    axis: "P*",
   },
   history: {
     title: "Shell command history (~/.claude/history.jsonl)",
     blurb:
       "Typed slash commands recorded by Claude Code. MAX-merged with transcript scans since /btw is side-channel and never lands in projects/*/*.jsonl.",
     order: 5,
+    axis: "P*",
   },
 };
 
@@ -207,6 +216,15 @@ export default function ProbesPage() {
           snapshot. Unpredicated actions ({coachingCount}) are behavioral
           coaching that can&apos;t be auto-detected.
         </p>
+        <p className="text-xs text-[color:var(--color-mute)] max-w-3xl leading-relaxed mt-3">
+          <span className="mono text-[color:var(--color-text)]">axis P</span>{" "}
+          (config — settings / filesystem / plugins) ·{" "}
+          <span className="mono text-[color:var(--color-text)]">axis P*</span>{" "}
+          (behavior — transcripts / shell history). Both feed the{" "}
+          <strong>Platform Setup</strong> score. Execution-axis signals (cooked
+          telemetry) aren&apos;t predicate-backed and drive the dashboard radar,
+          not this page.
+        </p>
       </header>
 
       <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm mb-12 border-b border-[color:var(--color-line)] pb-6">
@@ -294,6 +312,8 @@ export default function ProbesPage() {
         const sat = rows.filter((r) => r.satisfied).length;
         const orderLabel =
           source === "unclassified" ? "?" : String(SOURCE_META[source].order);
+        const axisLabel =
+          source === "unclassified" ? null : SOURCE_META[source].axis;
         return (
           <section key={source} className="mb-14">
             <div className="flex items-baseline gap-3 mb-2 border-b border-[color:var(--color-line)] pb-2">
@@ -303,6 +323,18 @@ export default function ProbesPage() {
               <h2 className="text-base font-semibold tracking-tight">
                 {meta.title}
               </h2>
+              {axisLabel && (
+                <span
+                  className="mono text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 border border-[color:var(--color-line)] rounded-sm text-[color:var(--color-mute)]"
+                  title={
+                    axisLabel === "P"
+                      ? "Platform Setup — config presence"
+                      : "Platform Setup — transcript-derived behavior"
+                  }
+                >
+                  axis {axisLabel}
+                </span>
+              )}
               <span className="ml-auto mono text-xs text-[color:var(--color-mute)]">
                 <span
                   style={{
