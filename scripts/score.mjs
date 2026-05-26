@@ -572,7 +572,7 @@ export function adoptionBonus({
   else if (kind === "recency")
     frac =
       typeof days === "number" && window > 0
-        ? Math.max(0, 1 - days / window)
+        ? Math.max(0, Math.min(1, 1 - days / window))
         : 0;
   else throw new Error(`adoptionBonus: unknown kind ${kind}`);
   const points = Math.round(cap * frac);
@@ -955,7 +955,7 @@ export const EXECUTION_SCORERS = {
           "Engaged with the 4.7 release surface (release notes / launch) — Boris tip 74 (awareness proxy)",
         gapText: null,
       });
-      score += awareness.points;
+      score = clamp(score + awareness.points);
       if (awareness.evidence) evidence.push(awareness.evidence);
       return { score, evidence, gaps, gapReason: null };
     },

@@ -1210,7 +1210,7 @@ describe("execution adoption credit (tips 74/33/planning/learning)", () => {
       }),
     ).score;
     expect(b).toBeGreaterThan(a);
-    expect(b - a).toBeLessThanOrEqual(30);
+    expect(b - a).toBe(8);
   });
   it("automation gains btw counter credit (tip 33)", () => {
     const a = EXECUTION_SCORERS.automation(
@@ -1272,6 +1272,13 @@ describe("adoptionBonus", () => {
       adoptionBonus({ days: null, kind: "recency", cap: 10, window: 30 })
         .points,
     ).toBe(0);
+    expect(
+      adoptionBonus({ days: -5, kind: "recency", cap: 10, window: 30 }).points,
+    ).toBe(10);
+    expect(
+      adoptionBonus({ days: -100, kind: "recency", cap: 10, window: 30 })
+        .points,
+    ).toBe(10);
   });
   it("emits evidence when credited, gap when not", () => {
     const hit = adoptionBonus({
