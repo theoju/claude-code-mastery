@@ -734,7 +734,7 @@ export const EXECUTION_SCORERS = {
       if (multiTaskSessionCount === 0)
         return unavailable(GAP_REASONS.NO_MULTI_TASK);
       const ratio = planModeSessionCount / multiTaskSessionCount;
-      const score = clamp(Math.round(ratio * COEFFS.planningRatioWeight));
+      let score = clamp(Math.round(ratio * COEFFS.planningRatioWeight));
       const evidence = [
         `Plan mode: ${planModeSessionCount}/${multiTaskSessionCount} multi-task sessions (${pct(ratio * 100)}%)`,
       ];
@@ -743,6 +743,17 @@ export const EXECUTION_SCORERS = {
         gaps.push(
           "Plan mode in fewer than half of multi-task sessions — Boris tip 65",
         );
+      const planRecency = adoptionBonus({
+        kind: "recency",
+        cap: 8,
+        days: s.settings?.planModeRecencyDays ?? null,
+        window: 30,
+        label: "behavioral",
+        evidenceText: `Plan mode used in the last ${s.settings?.planModeRecencyDays} day(s) — recency corroboration`,
+        gapText: null,
+      });
+      score = clamp(score + planRecency.points);
+      if (planRecency.evidence) evidence.push(planRecency.evidence);
       return { score, evidence, gaps, gapReason: null };
     },
   ),
@@ -768,6 +779,17 @@ export const EXECUTION_SCORERS = {
     const gaps = [];
     if (hookFireCount === 0)
       gaps.push("Zero hook fires in window — automation is dormant");
+    const btw = adoptionBonus({
+      kind: "counter",
+      cap: 10,
+      value: s.settings?.cliBtwUseCount ?? 0,
+      target: 10,
+      label: "behavioral",
+      evidenceText: `/btw side-channel adopted (${s.settings?.cliBtwUseCount ?? 0} uses) — Boris tip 33`,
+      gapText: null,
+    });
+    score += btw.points;
+    if (btw.evidence) evidence.push(btw.evidence);
     return { score: clamp(score), evidence, gaps, gapReason: null };
   }),
 
@@ -900,7 +922,7 @@ export const EXECUTION_SCORERS = {
       if (opusDominantSessionCount == null)
         return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
       const ratio = opusDominantSessionCount / interactiveSessionsAnalyzed;
-      const score = clamp(Math.round(ratio * 100));
+      let score = clamp(Math.round(ratio * 100));
       const evidence = [
         `Opus-dominant in ${opusDominantSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(ratio * 100)}%) — ${opusModelMatchesTotal} Opus assistant turns total`,
       ];
@@ -909,6 +931,17 @@ export const EXECUTION_SCORERS = {
         gaps.push(
           "Opus-dominant in fewer than half of interactive sessions — Boris tip 2",
         );
+      const awareness = adoptionBonus({
+        kind: "boolean",
+        cap: 8,
+        on: !!s.settings?.opus47AwarenessAdopted,
+        label: "awareness",
+        evidenceText:
+          "Engaged with the 4.7 release surface (release notes / launch) — Boris tip 74 (awareness proxy)",
+        gapText: null,
+      });
+      score += awareness.points;
+      if (awareness.evidence) evidence.push(awareness.evidence);
       return { score, evidence, gaps, gapReason: null };
     },
   ),
@@ -938,7 +971,7 @@ export const EXECUTION_SCORERS = {
       if (learningModeSessionCount == null)
         return unavailable(GAP_REASONS.NO_TRANSCRIPTS);
       const ratio = learningModeSessionCount / interactiveSessionsAnalyzed;
-      const score = clamp(Math.round(ratio * 100));
+      let score = clamp(Math.round(ratio * 100));
       const evidence = [
         `Explanatory-mode active in ${learningModeSessionCount}/${interactiveSessionsAnalyzed} interactive sessions (${pct(ratio * 100)}%) — ${learningModeMatchesTotal} ★ Insight banners total`,
       ];
@@ -948,6 +981,17 @@ export const EXECUTION_SCORERS = {
           "Explanatory mode active in <30% of interactive sessions — try /output-style explanatory for learning work",
         );
       }
+      const skillRecency = adoptionBonus({
+        kind: "counter",
+        cap: 10,
+        value: s.settings?.skillsUsedRecently ?? 0,
+        target: 3,
+        label: "behavioral",
+        evidenceText: `${s.settings?.skillsUsedRecently ?? 0} skill(s) used in the last 30 days — active self-improving toolkit`,
+        gapText: null,
+      });
+      score = clamp(score + skillRecency.points);
+      if (skillRecency.evidence) evidence.push(skillRecency.evidence);
       return { score, evidence, gaps, gapReason: null };
     },
   ),

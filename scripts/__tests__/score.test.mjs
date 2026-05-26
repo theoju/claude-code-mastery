@@ -1162,6 +1162,59 @@ describe("parallel execution — cowork adoption credit (tip 50)", () => {
   });
 });
 
+describe("execution adoption credit (tips 74/33/planning/learning)", () => {
+  const ins = () =>
+    makeInsights({
+      transcriptsScanned: true,
+      opusDominantSessionCount: 0,
+      planModeSessionCount: 0,
+      multiTaskSessionCount: 1,
+      hookFireCount: 0,
+      learningModeSessionCount: 0,
+    });
+
+  it("model-effort gains awareness credit (tip 74, capped low)", () => {
+    const a = EXECUTION_SCORERS["model-effort"](
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS["model-effort"](
+      makeSignals({
+        settings: { opus47AwarenessAdopted: true },
+        insights: ins(),
+      }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+    expect(b - a).toBeLessThanOrEqual(30);
+  });
+  it("automation gains btw counter credit (tip 33)", () => {
+    const a = EXECUTION_SCORERS.automation(
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS.automation(
+      makeSignals({ settings: { cliBtwUseCount: 36 }, insights: ins() }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+  });
+  it("planning gains plan-mode recency credit", () => {
+    const a = EXECUTION_SCORERS.planning(
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS.planning(
+      makeSignals({ settings: { planModeRecencyDays: 1 }, insights: ins() }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+  });
+  it("learning gains skill-recency credit", () => {
+    const a = EXECUTION_SCORERS.learning(
+      makeSignals({ insights: ins() }),
+    ).score;
+    const b = EXECUTION_SCORERS.learning(
+      makeSignals({ settings: { skillsUsedRecently: 3 }, insights: ins() }),
+    ).score;
+    expect(b).toBeGreaterThan(a);
+  });
+});
+
 describe("adoptionBonus", () => {
   it("boolean: full cap when on, zero when off", () => {
     expect(adoptionBonus({ on: true, kind: "boolean", cap: 15 }).points).toBe(
