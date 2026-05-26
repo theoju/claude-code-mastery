@@ -87,6 +87,10 @@ export function buildSignalsSummary(signals) {
     // enabledPlugins keys; here we just project the boolean through.
     hasCodeReviewPlugin: !!signals.hasCodeReviewPlugin,
     hasRemoteControl: !!signals.settings.hasRemoteControl,
+    coworkDispatchAdopted: !!signals.settings.coworkDispatchAdopted,
+    opus47AwarenessAdopted: !!signals.settings.opus47AwarenessAdopted,
+    planModeRecencyDays: signals.settings.planModeRecencyDays ?? null,
+    skillsUsedRecently: signals.settings.skillsUsedRecently ?? 0,
     hasShipCommand:
       signals.personalCommands.includes("ship.md") ||
       signals.projectCommands.includes("ship.md"),
@@ -135,7 +139,10 @@ export function buildSignalsSummary(signals) {
       signals.transcriptInvocations?.planThenLaunchSessions ?? 0,
     rewindCommandUses: signals.transcriptInvocations?.rewindCommandUses ?? 0,
     simplifyCommandUses: maxProbe(signals, "simplifyCommandUses"),
-    btwCommandUses: maxProbe(signals, "btwCommandUses"),
+    btwCommandUses: Math.max(
+      maxProbe(signals, "btwCommandUses"),
+      signals.settings.cliBtwUseCount ?? 0,
+    ),
     voiceCommandUses: maxProbe(signals, "voiceCommandUses"),
     clearCommandUses: maxProbe(signals, "clearCommandUses"),
     compactCommandUses: maxProbe(signals, "compactCommandUses"),
