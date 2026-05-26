@@ -93,7 +93,7 @@ app/
 ## Tests
 
 ```bash
-npx vitest run            # 539 tests across 38 files, ~5s
+npx vitest run            # 564 tests across 39 files, ~5s
 ```
 
 If a test fails after a scoring change, update the fixture in
