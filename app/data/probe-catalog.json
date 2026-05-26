@@ -1,12 +1,13 @@
 {
   "_meta": {
-    "generated": "Hand-maintained. Keyed by signalsSummary field name (the LHS of satisfiedWhen predicates in rubric.json). Each entry pairs a signal with its source category and a one-line plain-English description for the /methodology/probes page.",
+    "generated": "Hand-maintained. Keyed by signalsSummary field name (the LHS of satisfiedWhen predicates in rubric.json). Each entry pairs a signal with its source category and a one-line plain-English description for the /methodology/probes page. Note: 'runtime'-source signals are ~/.claude.json behavioral-adoption flags that feed the Execution axis (axis A), distinct from 'settings'-source ~/.claude.json fields which are Platform config posture.",
     "sourceCategories": [
       "settings",
       "filesystem",
       "plugins",
       "transcripts",
-      "history"
+      "history",
+      "runtime"
     ]
   },
   "outputStyle": {
@@ -233,5 +234,15 @@
     "source": "history",
     "path": "~/.claude/history.jsonl + transcript MAX-merge",
     "description": "Count of /fewer-permission-prompts invocations. Analyzes recent tool calls and proposes allowlist additions."
+  },
+  "coworkDispatchAdopted": {
+    "source": "runtime",
+    "path": "~/.claude.json → hasUsedAgentsFleet",
+    "description": "True once the user has dispatched a cowork / agents-fleet run. Durable 'has used' adoption flag (Boris tip 50). Axis A — feeds Execution adoption credit, not Platform Setup."
+  },
+  "opus47AwarenessAdopted": {
+    "source": "runtime",
+    "path": "~/.claude.json → opus47LaunchSeenCount / unpinOpus47LaunchEffort / lastReleaseNotesSeen",
+    "description": "True when the user has engaged the 4.7 release surface. Awareness proxy for the 4.6→4.7 workflow shifts (Boris tip 74), not behavioral mastery. Axis A."
   }
 }
