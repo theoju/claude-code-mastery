@@ -79,6 +79,7 @@ describe("buildSignalsSummary", () => {
       "hasStopHook",
       "hasPostToolHook",
       "hasPostCompactHook",
+      "hasSessionStartHook",
       "hasShipCommand",
       "hasVerifyAgent",
       "hasCodeReviewPlugin",
@@ -728,6 +729,25 @@ describe("buildSignalsSummary", () => {
     expect(buildSignalsSummary(withPC).hasPostCompactHook).toBe(true);
   });
 
+  it("sets hasSessionStartHook from hookEvents (tip 37)", () => {
+    const withHook = buildSignalsSummary(
+      makeSignals({
+        settings: {
+          ...makeSignals().settings,
+          hookEvents: ["SessionStart", "Stop"],
+        },
+      }),
+    );
+    expect(withHook.hasSessionStartHook).toBe(true);
+
+    const without = buildSignalsSummary(
+      makeSignals({
+        settings: { ...makeSignals().settings, hookEvents: ["Stop"] },
+      }),
+    );
+    expect(without.hasSessionStartHook).toBe(false);
+  });
+
   it("output keys form a stable contract — locked-in by snapshot", () => {
     const r = buildSignalsSummary(makeSignals());
     const sortedKeys = Object.keys(r).sort();
@@ -756,6 +776,7 @@ describe("buildSignalsSummary", () => {
         "hasPostCompactHook",
         "hasPostToolHook",
         "hasRemoteControl",
+        "hasSessionStartHook",
         "hasShipCommand",
         "hasSlackPlugin",
         "hasStopHook",

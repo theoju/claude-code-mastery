@@ -54,6 +54,11 @@
     "path": "~/.claude/settings.json → hooks.PostCompact",
     "description": "True if a PostCompact hook is defined (fires after context compaction to re-inject instructions), Boris tip 41."
   },
+  "hasSessionStartHook": {
+    "source": "settings",
+    "path": "~/.claude/settings.json → hooks.SessionStart",
+    "description": "True if a SessionStart hook is defined — the canonical setup-script mechanism, Boris tip 37."
+  },
   "hasFormatterHook": {
     "source": "settings",
     "path": "~/.claude/settings.json → hooks.PostToolUse (formatter detection)",

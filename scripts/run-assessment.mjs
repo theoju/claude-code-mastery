@@ -171,6 +171,11 @@ export function buildSignalsSummary(signals) {
     hasPostCompactHook: (signals.settings.hookEvents || []).includes(
       "PostCompact",
     ),
+    // Tip 37: a SessionStart hook is the canonical "setup script" mechanism.
+    // Derived from the already-parsed hookEvents key list (signals.mjs).
+    hasSessionStartHook: (signals.settings.hookEvents || []).includes(
+      "SessionStart",
+    ),
   };
 }
 

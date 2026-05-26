@@ -7,7 +7,7 @@
       "weight": 3,
       "target": 90,
       "rubricArea": "Codified workflow / compounding engineering",
-      "borisTips": "5, 7, 19, 24, 41, 49, 59, 75",
+      "borisTips": "5, 7, 19, 24, 37, 41, 49, 59, 75",
       "nextActions": [
         {
           "id": "hook-formatter",
@@ -50,6 +50,13 @@
           "effort": "15min",
           "satisfiedWhen": "hasPostCompactHook",
           "borisTip": 41
+        },
+        {
+          "id": "setup-script-hook",
+          "action": "Add a SessionStart hook to run your setup script on every session start — Boris tip 37",
+          "effort": "15min",
+          "satisfiedWhen": "hasSessionStartHook",
+          "borisTip": 37
         }
       ]
     },
