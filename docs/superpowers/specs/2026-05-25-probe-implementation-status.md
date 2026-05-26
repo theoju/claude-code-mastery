@@ -7,16 +7,21 @@
 the `_meta` sidecar), `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`),
 `scripts/_usage-data.mjs` (transcript scanners),
 `scripts/run-assessment.mjs#buildSignalsSummary` (71 `signalsSummary` keys).
-Snapshot current as of **main @ post-v0.9.12** — the `/effort max` reflex probe
-(`effortMaxAdopted` derived OR + `effortMaxCommandUses` transcript counter, tip 34)
-**shipped in #85 / CCE-29** (merged to `main`, pending release). The
-**runtime-adoption probes** branch adds `coworkDispatchAdopted` (tip 50, axis A →
+Snapshot current as of **main @ post-v0.9.17**. **v0.9.17** shipped two
+scoring-accuracy fixes (no probe-set change): the planning Execution scorer's
+ratio numerator switched to `planModeMultiTaskSessionCount`
+(interactive ∩ multi_task ∩ plan_mode) so the plan-mode ratio can no longer
+exceed 100% (#97), and `/color` is now counted from `history.jsonl`
+(#96, Boris tip 40). The **runtime-adoption probes** shipped in
+**v0.9.16 / #94**: `coworkDispatchAdopted` (tip 50, axis A →
 `parallel` Execution scorer) and `opus47AwarenessAdopted` (tip 74, awareness proxy
 → `model-effort` Execution scorer), plus four non-predicate runtime signals:
 `cliBtwUseCount` (tip 33 MAX-merge), `planModeRecencyDays` (planning recency),
-`skillsUsedRecently` (learning recency), and `aiTitlePresent` (tip 39, info-only).
-Also adds the tip-27 customization-breadth composite (≥4 surfaces → +10 pts in the
-`customization` Platform scorer). The prior
+`skillsUsedRecently` (learning recency), and `aiTitlePresent` (tip 39, info-only),
+and the tip-27 customization-breadth composite (≥4 surfaces → +10 pts in the
+`customization` Platform scorer). The `/effort max` reflex probe
+(`effortMaxAdopted` derived OR + `effortMaxCommandUses` transcript counter, tip 34)
+shipped earlier in **#85 / CCE-29**. The prior
 **v0.9.11** baseline added the three coverage probes `hasSessionStartHook`
 (tip 37), `hasTerminalSetup` (tip 11), `desktopSessionCount` (tip 52) in #79 / CCE-25.
 **v0.9.10** was the probe-coverage expansion (#72 `colorCommandUses`, #73 integrity
