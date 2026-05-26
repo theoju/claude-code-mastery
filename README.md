@@ -76,6 +76,39 @@ That's the whole loop. Everything else is optional polish.
 To retune targets or add a dimension, edit `app/data/rubric.json` and add a
 matching scorer in `scripts/score.mjs`. Frontend picks it up automatically.
 
+## Probe coverage
+
+Every score traces to a **probe** — a named signal read from your local Claude
+Code state. Probes sit on two axes:
+
+- **P (config)** — Settings / Filesystem / Plugins: _"is it installed/configured?"_ (Platform Setup)
+- **P\* (behavior)** — Transcripts: a usage signal (_"do you do it?"_) that still gates a Platform-Setup next-action, not the Execution radar
+- **E** — cooked telemetry: the Execution radar vertices (_"are you using it?"_)
+- **P+E** — scored on both axes
+
+…and each of Boris Cherny's 75 tips carries a tracking status: ✅ predicate-backed
+probe · 📊 shared/scorer signal · 🗣 behavioral coaching (not auto-detected) ·
+❌ not yet tracked.
+
+| Source layer                                               | Signals | Axis |
+| ---------------------------------------------------------- | ------: | ---- |
+| Settings (`~/.claude/settings.json`)                       |      23 | P    |
+| Filesystem (`agents` / `commands` / `skills` / `projects`) |      10 | P    |
+| Plugins (`enabledPlugins`, PATH)                           |       6 | P    |
+| Transcripts (`projects/*/*.jsonl`)                         |      21 | P\*  |
+| Insights / cooked telemetry (`usage-data/`)                |      11 | E    |
+| **Total**                                                  |  **71** |      |
+
+Of the 71 signals, **45 carry `satisfiedWhen` predicates** — the catalog-backed
+probes surfaced on the dashboard's
+[`/methodology/probes`](http://localhost:3737/methodology/probes) page. Across
+the **75 canonical tips**: ✅ 51 · 📊 11 · 🗣 2 · ❌ 11.
+
+The full per-probe registry (every field, predicate, and axis) and the
+tip-by-tip coverage matrix live in the living tracker,
+[`docs/superpowers/specs/2026-05-25-probe-implementation-status.md`](docs/superpowers/specs/2026-05-25-probe-implementation-status.md).
+Its header counts are CI-enforced by `scripts/__tests__/tracker-counts.test.mjs`.
+
 ## Slash commands
 
 Two slash commands ship in `.claude/commands/`:
