@@ -3,13 +3,16 @@
 **Date:** 2026-05-25
 **Status:** Living tracker — update on every probe add/remove.
 **Validated against:** `app/data/boris-tip-index.json` (75 tips), `app/data/rubric.json`
-(12 dimensions / 43 next-actions), `app/data/probe-catalog.json` (42 probes),
+(12 dimensions / 46 next-actions), `app/data/probe-catalog.json` (45 probes),
 `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`), `scripts/_usage-data.mjs`
 (transcript scanners), `scripts/run-assessment.mjs#buildSignalsSummary`
-(61 `signalsSummary` keys). Snapshot current as of **v0.9.10** — the probe-coverage
-expansion (#72 `colorCommandUses`, #73 integrity guards, #74 PostCompact +
-auto-mode, #75 Opus exec scorer) plus the radar hydration fix (#71), tracked as
-**CCE-24**.
+(64 `signalsSummary` keys). Snapshot reflects **v0.9.10** plus the three coverage
+probes on the `feat/coverage-probes-37-11-52` branch — `hasSessionStartHook`
+(tip 37), `hasTerminalSetup` (tip 11), `desktopSessionCount` (tip 52) —
+**unreleased, pending the next release**. The v0.9.10 baseline was the
+probe-coverage expansion (#72 `colorCommandUses`, #73 integrity guards, #74
+PostCompact + auto-mode, #75 Opus exec scorer) plus the radar hydration fix
+(#71), tracked as **CCE-24**.
 
 ## Purpose
 
@@ -178,7 +181,7 @@ cooked telemetry. `model-effort` is now **partially** measured: the model half
 | 8   | Permissions               | permissions               | 📊     | `allowListCount`, `skipDangerous`                                                                   | P                   |
 | 9   | MCP Integrations          | integrations              | ✅     | `hasSlackPlugin`, `mcpServersConnected>=3`; exec `toolInvocationsByPlugin`                          | P+E                 |
 | 10  | Prompting Tips            | verification              | 📊     | mapped to `shipVerifyStageRecent`                                                                   | P                   |
-| 11  | Terminal Setup            | customization             | ❌     | none specific (thematic)                                                                            | —                   |
+| 11  | Terminal Setup            | customization             | ✅     | `hasTerminalSetup` (deep-link / Option-as-Meta)                                                     | P                   |
 | 12  | Bug Fixing                | —                         | ❌     | not referenced anywhere                                                                             | —                   |
 | 13  | Long-Running Tasks        | automation\*              | ✅     | `hasStopHook`                                                                                       | P                   |
 | 14  | Verification (#1)         | verification              | ✅     | `hasVerifyAgent`; exec friction rate                                                                | P+E                 |
@@ -204,7 +207,7 @@ cooked telemetry. `model-effort` is now **partially** measured: the model half
 | 34  | /effort max               | model-effort              | ✅     | `effortLevel=max`                                                                                   | P                   |
 | 35  | Remote Control            | remote                    | ✅     | `hasRemoteControl`; exec `remoteInvocationsTotal`                                                   | P+E                 |
 | 36  | Voice                     | customization             | ✅     | `voiceCommandUses` (cited as tip 60)                                                                | P                   |
-| 37  | Setup Scripts             | —                         | ❌     | not tracked                                                                                         | —                   |
+| 37  | Setup Scripts             | automation                | ✅     | `hasSessionStartHook` (+ generic `hookTotalCount`)                                                  | P                   |
 | 38  | Session Naming (`--name`) | customization             | ❌     | `claude --name` not probed                                                                          | —                   |
 | 39  | Auto Session Naming       | —                         | ❌     | not tracked                                                                                         | —                   |
 | 40  | /color                    | customization             | ✅     | `colorCommandUses>=1`                                                                               | P                   |
@@ -219,7 +222,7 @@ cooked telemetry. `model-effort` is now **partially** measured: the model half
 | 49  | Hooks Lifecycle           | automation                | 📊     | generic hooks                                                                                       | P                   |
 | 50  | Cowork Dispatch           | remote                    | ❌     | not separately probed                                                                               | —                   |
 | 51  | Chrome Extension          | verification/integrations | ✅     | `hasClaudeInChrome`                                                                                 | P (+E reach)        |
-| 52  | Desktop App               | verification              | ❌     | not probed                                                                                          | —                   |
+| 52  | Desktop App               | verification              | ✅     | `desktopSessionCount>=1` (transcript `entrypoint`)                                                  | P                   |
 | 53  | Fork Sessions             | —                         | ❌     | not tracked                                                                                         | —                   |
 | 54  | /btw (deep dive)          | memory                    | ✅     | `btwCommandUses`                                                                                    | P                   |
 | 55  | Git Worktrees (deep)      | parallel                  | ✅     | worktree signals                                                                                    | P+E                 |
@@ -244,16 +247,22 @@ cooked telemetry. `model-effort` is now **partially** measured: the model half
 | 74  | 4.6→4.7 Shifts            | —                         | ❌     | meta/changelog — not tracked                                                                        | —                   |
 | 75  | Task Notifications        | automation/scheduled      | ✅     | `hasStopHookNotification`                                                                           | P                   |
 
-**Tally** (75 = 48 + 11 + 2 + 14): ✅ direct **48** · 📊 shared **11** ·
+**Tally** (75 = 51 + 11 + 2 + 11): ✅ direct **51** · 📊 shared **11** ·
 🗣 coaching-only **2** (46, 66) ·
-❌ untracked **14** (11, 12, 21, 27, 37, 38, 39, 50, 52, 53, 57, 58, 70, 74).
+❌ untracked **11** (12, 21, 27, 38, 39, 50, 53, 57, 58, 70, 74).
 
-### Entirely absent (no probe, no signal, no next-action, not in any `borisTips`)
+### Untracked — two groups (triage 2026-05-25, see coverage-probes-37-11-52 spec)
 
-**12** Bug Fixing · **37** Setup Scripts · **39** Auto Session Naming ·
-**53** Fork Sessions · **57** `--bare` · **74** 4.6→4.7 Shifts. Most are
-arguably un-trackable (12 generic, 74 changelog); 37/53/57 are concrete features
-that _could_ be instrumented if justified.
+**Blocked until a signal source ships** (instrumentable if a field/command appears):
+**21** Sandboxing · **38** `--name` · **50** Cowork Dispatch · **53** Fork Sessions ·
+**58** `--add-dir` · **70** Recaps — no matching settings key, slash command, or
+session-meta field exists today.
+
+**Permanently blocked** (no user-measurable signal):
+**12** Bug Fixing (generic) · **27** Customize Everything (umbrella) ·
+**39** Auto Session Naming (automatic) · **57** `--bare` (launch flag — no trace) ·
+**74** 4.6→4.7 Shifts (changelog). Launch flags (`--name`/`--bare`/`--add-dir`)
+configure the session at startup and leave no trace in any of the five layers.
 
 ---
 
