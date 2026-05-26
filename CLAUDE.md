@@ -127,7 +127,37 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   and silently dilute the numerator. Volume scorers (integrations,
   scheduled, remote) can use the broad `all_sessions` universe. Universe
   is declared on `withGates({ universe: … })` in `scripts/score.mjs` and
-  enforced at construction time.
+  enforced at construction time. **Corollary: a ratio's _numerator_ must
+  be a subset of its _denominator's_ universe**, or the ratio can exceed
+  100%. v0.9.17 / PR #97: the planning Execution scorer divided
+  `planModeSessionCount` (plan mode across _all_ interactive sessions) by
+  `multiTaskSessionCount` (interactive ∩ multi_task) — numerator universe
+  ⊋ denominator universe — producing `Plan mode: 36/34 multi-task sessions
+(105.88%)`. Fixed by introducing `planModeMultiTaskSessionCount`
+  (interactive ∩ multi_task ∩ plan_mode) as the numerator. When you add a
+  ratio scorer, assert the numerator's gates are a strict subset of the
+  denominator's, and back it with a source-level
+  `gatherInsightsSignals` test (not just a fixture-fed scorer test) so a
+  future gate-drop at the counting layer fails CI.
+- **Command counting has the same posture-vs-volume split as ratio
+  universes — don't blanket-exclude session kinds.** Commands feed two
+  kinds of scorers: _posture_ commands (`/color`, `/voice`, `/focus`,
+  `/btw`, `/clear`, `/compact`, `/simplify`, `/rewind`, fewer-perms) gate
+  interactive-only signals, but _volume_ commands (`/loop`, `/schedule`,
+  `/babysit`) feed the **scheduled volume scorer** (`all_sessions`).
+  v0.9.17 cycle: a blanket "exclude observer/sdk/subagent from
+  `scanTranscriptInvocations`" fix — intended to kill observer-session
+  false positives — regressed `scheduled` 75→63 by deleting genuine
+  autonomous-workflow signal (the user's `/loop`/`/schedule` usage in
+  SDK/observer sessions is _real_ volume, not noise). It was reverted; only
+  fix #1 (planning) shipped in v0.9.17. **Known limitation / deferred
+  follow-up:** observer sessions quote the primary session's
+  `<command-name>/cmd`, false-positiving _posture_ command probes. The
+  correct fix is a per-command partition (exclude non-interactive only for
+  posture commands, keep volume commands counting broadly) — design it,
+  don't rush an inline one-liner. Low urgency: the `/color` real-usage bug
+  is already fixed via history (#96), and the false-positive is masked by
+  the history MAX-merge for every history-list command.
 - **Never collapse the two axes on any rendering surface.** Platform Setup
   and Execution scores must each be presented separately on the dashboard,
   the methodology page, the console printer (`run-assessment.mjs`), and the
