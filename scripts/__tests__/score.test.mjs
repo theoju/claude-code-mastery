@@ -1065,6 +1065,32 @@ describe("SCORERS.parallel — v0.8 bonuses", () => {
   });
 });
 
+describe("customization breadth (tip 27)", () => {
+  it("rewards configuring many customization surfaces", () => {
+    const few = makeSignals({ statuslineConfigured: true });
+    const many = makeSignals({
+      statuslineConfigured: true,
+      keybindingsConfigured: true,
+      has: { explanatoryStyle: true },
+      settings: { customSpinnerVerbCount: 3, hasTerminalSetup: true },
+    });
+    expect(SCORERS.customization(many).score).toBeGreaterThan(
+      SCORERS.customization(few).score,
+    );
+  });
+  it("emits a 'customization surfaces' evidence line at breadth >= 4", () => {
+    const many = makeSignals({
+      statuslineConfigured: true,
+      keybindingsConfigured: true,
+      has: { explanatoryStyle: true },
+      settings: { customSpinnerVerbCount: 3, hasTerminalSetup: true },
+    });
+    expect(SCORERS.customization(many).evidence.join(" ")).toMatch(
+      /customization surface/,
+    );
+  });
+});
+
 describe("SCORERS — v0.8 small bonuses across remaining dims", () => {
   it("scheduled: +10 for babysitLoopUses, +5 for scheduleCommandUses", () => {
     const baseline = SCORERS.scheduled(makeSignals()).score;

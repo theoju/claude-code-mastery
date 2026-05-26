@@ -406,6 +406,21 @@ export const SCORERS = {
         "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
       );
     }
+    const surfaces = [
+      s.statuslineConfigured,
+      s.keybindingsConfigured,
+      s.has.explanatoryStyle,
+      (s.settings?.customSpinnerVerbCount || 0) > 0,
+      !!s.settings?.hasTerminalSetup,
+      (s.colorCommandUses ?? 0) > 0,
+      (s.voiceCommandUses ?? 0) > 0,
+    ].filter(Boolean).length;
+    if (surfaces >= 4) {
+      score += 10;
+      ev.push(
+        `${surfaces} customization surfaces configured — "customize everything" (Boris tip 27)`,
+      );
+    }
     return { score: clamp(score), evidence: ev, gaps };
   },
 
