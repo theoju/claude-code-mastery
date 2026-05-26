@@ -1280,6 +1280,24 @@ describe("adoptionBonus", () => {
         .points,
     ).toBe(10);
   });
+  it("non-finite value/days yield 0 points, never NaN", () => {
+    // counter: missing/NaN value must not propagate NaN into the score
+    expect(
+      adoptionBonus({ value: undefined, kind: "counter", cap: 10, target: 3 })
+        .points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ value: NaN, kind: "counter", cap: 10, target: 3 }).points,
+    ).toBe(0);
+    // recency: NaN/Infinity days must not propagate NaN
+    expect(
+      adoptionBonus({ days: NaN, kind: "recency", cap: 8, window: 30 }).points,
+    ).toBe(0);
+    expect(
+      adoptionBonus({ days: Infinity, kind: "recency", cap: 8, window: 30 })
+        .points,
+    ).toBe(0);
+  });
   it("emits evidence when credited, gap when not", () => {
     const hit = adoptionBonus({
       on: true,

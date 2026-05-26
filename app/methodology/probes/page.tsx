@@ -100,6 +100,17 @@ const SOURCE_META: Record<
   },
 };
 
+const AXIS_BADGE_BASE =
+  "mono text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 border border-[color:var(--color-line)] rounded-sm";
+// Full static class strings (not interpolated) so Tailwind's JIT scanner emits
+// each arbitrary-value color utility — interpolating the CSS var would only work
+// incidentally, when the literal happens to appear elsewhere in the source.
+const AXIS_TEXT_COLOR: Record<"P" | "P*" | "A", string> = {
+  P: "text-[color:var(--color-mute)]",
+  "P*": "text-[color:var(--color-accent)]",
+  A: "text-[color:var(--color-warn)]",
+};
+
 function extractPrimarySignal(predicate: string): string {
   const firstAtom = predicate.split("&")[0].trim().replace(/^!/, "").trim();
   const opMatch = firstAtom.match(/^([a-zA-Z_]+)/);
@@ -338,13 +349,7 @@ export default function ProbesPage() {
               </h2>
               {axisLabel && (
                 <span
-                  className={
-                    axisLabel === "P"
-                      ? "mono text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 border border-[color:var(--color-line)] rounded-sm text-[color:var(--color-mute)]"
-                      : axisLabel === "P*"
-                        ? "mono text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 border border-[color:var(--color-line)] rounded-sm text-[color:var(--color-accent)]"
-                        : "mono text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 border border-[color:var(--color-line)] rounded-sm text-[color:var(--color-warn)]"
-                  }
+                  className={`${AXIS_BADGE_BASE} ${AXIS_TEXT_COLOR[axisLabel]}`}
                   title={
                     axisLabel === "P"
                       ? "Platform Setup — config presence"

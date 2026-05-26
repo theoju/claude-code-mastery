@@ -406,6 +406,10 @@ export const SCORERS = {
         "Terminal configured (deep-link / Option-as-Meta) — Boris tip 11",
       );
     }
+    // Breadth bonus rewards configuring many surfaces on top of the per-surface
+    // depth credit above. The overlap (explanatory style + terminal setup count
+    // both here and individually) is intentional: tip 27 ("customize
+    // everything") is about breadth, so a broadly-configured setup earns both.
     const surfaces = [
       s.statuslineConfigured,
       s.keybindingsConfigured,
@@ -568,10 +572,11 @@ export function adoptionBonus({
   let frac;
   if (kind === "boolean") frac = on ? 1 : 0;
   else if (kind === "counter")
-    frac = target > 0 ? Math.min(value / target, 1) : 0;
+    frac =
+      target > 0 && Number.isFinite(value) ? Math.min(value / target, 1) : 0;
   else if (kind === "recency")
     frac =
-      typeof days === "number" && window > 0
+      Number.isFinite(days) && window > 0
         ? Math.max(0, Math.min(1, 1 - days / window))
         : 0;
   else throw new Error(`adoptionBonus: unknown kind ${kind}`);
