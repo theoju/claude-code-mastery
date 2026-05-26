@@ -285,6 +285,27 @@ all-docs` thresholds (the docs check is vacuous on an empty set) — so the
   tree before the commit keeps the fix in the same PR — e.g. the v0.9.11
   cycle's missing tip-11 scorer-credit test, flagged at Stage 2 and closed
   before commit, rather than deferred to a follow-up.
+- **"How many probes?" has several answers — name which one.** These counts
+  are distinct and easy to conflate (the source of the v0.9.15 README
+  off-by-one, where "45 carry predicates" was really 44):
+  1. **`probe-catalog.json` entries** — the catalog-backed probe set.
+  2. **`satisfiedWhen` predicate fields** — **one fewer** than the catalog,
+     because `sessionsByKind` is catalog-backed (it populates the
+     probes-page session census) but is the session-universe classifier, not
+     a predicate LHS. Re-derive from the rubric, not from the catalog size.
+  3. **Dashboard `/methodology/probes` "checks"** — one row per rubric
+     next-action that has a predicate (so it equals count #2's usage, not the
+     catalog), grouped by the catalog `source` field and axis-labeled P/P\*.
+  4. **Tracker spec Part 1 registry rows** — larger than all the above: it
+     also counts Insights/Execution signals and non-catalog `—` rows, and
+     groups by source _layer_.
+  5. **`buildSignalsSummary` keys** — yet another number (derive by invoking,
+     never by parsing — see the probe-tracker rule above).
+     Consequences worth remembering: the probes page's `history` source is **not**
+     the tracker's `Insights` layer, and cooked-telemetry signals appear in the
+     tracker + radar but **never** on the probes page (they aren't
+     predicate-backed). Always re-derive the specific count you mean from the live
+     files; never reuse one count where another is meant.
 
 ## Issue tracking
 
