@@ -59,7 +59,8 @@ scripts/
   insights-signals.mjs   # Execution signals (~/.claude/usage-data/)
   _usage-data.mjs        # facets/session-meta loaders + scanTranscriptModes()
   score.mjs              # rules → scores, normalize() per dim
-  progression.mjs        # milestone walker (first plan mode, first skill, etc)
+  progression.mjs        # telemetry milestone walker — self-dated from session start_time
+  config-progression.mjs # config milestone walker — firstSeenAt stamped at first run (see Conventions)
   run-assessment.mjs     # entry point (npm run assess)
   claude-md-audit.mjs    # report-only CLAUDE.md health audit
 app/
@@ -73,7 +74,7 @@ app/
   methodology/
     page.tsx             # full formula breakdown for each scorer (12-col editorial grid)
     probes/page.tsx      # predicate-backed checks; card layout grouped by signal source
-  progression/page.tsx   # milestones from /insights history (moved out of dashboard in v0.9.7)
+  progression/page.tsx   # renders app/data/progression.json via loadProgression (NOT /insights history); moved out of dashboard in v0.9.7
   dimensions/[id]/page.tsx # per-dimension drilldown
   tips/[n]/page.tsx      # Boris tip detail with prev/next nav
   docs/ship-pattern/page.tsx # renders docs/ship-pattern.md as a dashboard page (PR #58)
@@ -336,6 +337,29 @@ all-docs` thresholds (the docs check is vacuous on an empty set) — so the
      tracker + radar but **never** on the probes page (they aren't
      predicate-backed). Always re-derive the specific count you mean from the live
      files; never reuse one count where another is meant.
+- **The `/progression` timeline has two milestone sources and a coverage
+  gap — don't mistake a frozen timeline for a bug.** `app/progression/page.tsx`
+  reads `app/data/progression.json`, **rewritten on every `npm run assess`**
+  (so it _is_ updated per-run). That file merges (a) **telemetry milestones**
+  (`scripts/progression.mjs`, 9 detectors) self-dated from session
+  `start_time` over **full history** — it uses `--progression-lookback`
+  (default `null`), **independent of `--insights-lookback`**, which is why
+  April dates appear under a 30-day scoring window; and (b) **config
+  milestones** (`scripts/config-progression.mjs`, 8 detectors) read from the
+  signals snapshot, which has no embedded "when," so each `firstSeenAt` is
+  stamped at the **first run that observed it** and frozen in
+  `app/data/progression-config.json`. **First-run caveat (by design):**
+  every already-satisfied config signal gets `firstSeenAt = first-run date`
+  — that is why all 8 config milestones share the identical
+  `2026-05-09T08:37:16.111Z` (the dashboard's first run) rather than their
+  true adoption dates; it deliberately does **not** back-date from mtimes/git
+  ("fragile and lossy"). **Coverage gap:** the catalog only covers 8 of 12
+  scored dimensions (`automation, integrations, learning, memory,
+model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
+  and `verification` have no detector**, so heavy real usage there produces
+  no milestone and the timeline looks frozen past the first-run wall. Adding
+  telemetry-dated detectors for those three is filed as **CCE-33** (feature
+  work; design before implementing).
 
 ## Issue tracking
 
