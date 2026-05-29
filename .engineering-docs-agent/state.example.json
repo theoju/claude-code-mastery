@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "last_successful_run": {
+    "head_sha": "REPLACE_WITH_SEED_COMMIT_SHA",
+    "pr_number": 0
+  },
+  "dismissed_gap_flags": []
+}

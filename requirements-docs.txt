@@ -1,0 +1,8 @@
+# Docs-only Python deps. Pin lightly — major versions matter, patches
+# don't. Install with: pip install -r requirements-docs.txt
+#
+# Why a separate file: this is a JS/TS host. The Python tooling here is
+# isolated to docs-building so it doesn't bloat the Node toolchain.
+
+mkdocs>=1.6,<2
+mkdocs-material>=9.5,<10

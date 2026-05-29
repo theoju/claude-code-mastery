@@ -1,0 +1,144 @@
+name: docs-agent-nightly
+
+# Derived from theoju/engineering-docs-agent/.github/workflows/docs-agent-nightly.yml
+# (the dogfood's battle-tested workflow). NOT from the plugin's
+# templates/workflow-run.yml — that template is stale (deprecated
+# ANTHROPIC_API_KEY env var, missing CCE-45 App-token wiring, CCE-49
+# token validation, CCE-41 forensics upload, CCE-53 Jira wiring).
+# Refreshing the plugin template is tracked as plugin tech-debt.
+#
+# This is this repo's first .github/workflows/ file; the rest of the
+# repo runs Vitest + Playwright via package.json scripts (local + CI
+# elsewhere). This file is scoped to the docs-agent only.
+
+on:
+  schedule:
+    # Daily at 07:07 UTC — off-minute :07 per GitHub Actions guidance to
+    # avoid the :00 schedule pileup.
+    - cron: "7 7 * * *"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Optional reason for manual fire (shown in run summary)"
+        required: false
+        default: "manual run"
+
+permissions:
+  contents: write # commit + push docs-agent/YYYY-MM-DD branch
+  pull-requests: write # gh pr create + append-commit on existing PR
+  issues: read # gap-detector reads linked issues (no writes)
+
+concurrency:
+  group: docs-agent-nightly
+  cancel-in-progress: false
+
+jobs:
+  author:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+    steps:
+      - name: Generate GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.DOCS_AGENT_APP_ID }}
+          private-key: ${{ secrets.DOCS_AGENT_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Check out engineering-docs-agent plugin
+        # CCE-57: the host repo is not the plugin. Vendor the plugin's
+        # scripts/ into the runner workspace at .docs-agent-plugin so the
+        # orchestrator step can invoke it.
+        uses: actions/checkout@v5
+        with:
+          repository: theoju/engineering-docs-agent
+          ref: main
+          path: .docs-agent-plugin
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime dependencies
+        # mkdocs + mkdocs-material installed here so the agent's
+        # framework_build lint rule has the mkdocs CLI available when
+        # validating authored pages. requirements-docs.txt pins major
+        # versions; pyyaml + jsonschema are the orchestrator's own deps.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml jsonschema
+          python -m pip install -r requirements-docs.txt
+
+      - name: Install claude CLI
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          which claude || (echo "claude CLI not installed" && exit 1)
+
+      - name: Assert OAuth token is configured and well-formed
+        run: |
+          if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN is empty or unset. Did you set the repo secret?"
+            exit 1
+          fi
+          case "$CLAUDE_CODE_OAUTH_TOKEN" in
+            sk-ant-oat*) ;;
+            sk-ant-api*) echo "::error::CLAUDE_CODE_OAUTH_TOKEN looks like a console API key (sk-ant-api...). The Claude CLI reads the OAuth slot (sk-ant-oat...). Run 'claude setup-token' and paste that value."; exit 1 ;;
+            *) echo "::error::CLAUDE_CODE_OAUTH_TOKEN does not start with 'sk-ant-oat'. Got prefix: ${CLAUDE_CODE_OAUTH_TOKEN:0:10}... Run 'claude setup-token' to generate a valid OAuth token."; exit 1 ;;
+          esac
+          if [ ${#CLAUDE_CODE_OAUTH_TOKEN} -lt 32 ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN is suspiciously short (${#CLAUDE_CODE_OAUTH_TOKEN} chars; real tokens are >100). Likely truncated paste."
+            exit 1
+          fi
+
+      - name: Configure git identity
+        run: |
+          git config user.name "engineering-docs-agent[bot]"
+          git config user.email "engineering-docs-agent@users.noreply.github.com"
+
+      - name: Run nightly authoring
+        env:
+          DOCS_AGENT_DEBUG_DIR: ${{ runner.temp }}/docs-agent-debug
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: python3 .docs-agent-plugin/scripts/orchestrator_runner.py --repo-root "$GITHUB_WORKSPACE"
+
+      - name: Upload subagent forensics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: docs-agent-subagent-forensics-${{ github.run_id }}
+          path: ${{ runner.temp }}/docs-agent-debug/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Run summary
+        if: always()
+        env:
+          TRIGGER: ${{ github.event_name }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          {
+            echo "## docs-agent-nightly"
+            echo ""
+            echo "- **Run trigger:** \`$TRIGGER\`"
+            if [ "$TRIGGER" = "workflow_dispatch" ]; then
+              printf -- "- **Reason:** %s\n" "$REASON"
+            fi
+            echo "- **HEAD:** \`$(git rev-parse --short HEAD)\`"
+            echo "- **State file (post-run):**"
+            echo '  ```json'
+            if [ -f .engineering-docs-agent/state.json ]; then
+              jq -e '.' .engineering-docs-agent/state.json 2>/dev/null | sed 's/^/  /' || echo "  (invalid or empty state)"
+            else
+              echo "  (no state)"
+            fi
+            echo '  ```'
+          } >> "$GITHUB_STEP_SUMMARY"

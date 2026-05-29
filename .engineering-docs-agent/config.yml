@@ -1,0 +1,44 @@
+# engineering-docs-agent host config for theoju/claude-code-self-assessment (CCE-57).
+#
+# Host type: Next.js + TypeScript dashboard. Docs framework added in the
+# same PR as a minimal mkdocs scaffold (see mkdocs.yml). If you swap to
+# Docusaurus, update `docs.framework` here.
+
+docs:
+  framework: mkdocs
+  source_dir: docs
+  whats_new_file: docs/whats-new.md
+  agent_editable_paths:
+    - "docs/**"
+  lens_paths:
+    core: docs/
+
+sources:
+  git:
+    host: github
+  jira:
+    enabled: false # flip to true and set project_keys if linking to Jira
+
+voice:
+  sample_paths:
+    - README.md
+    - CLAUDE.md
+
+lint:
+  tier1: default
+
+publishing:
+  # No GitHub Pages publish workflow exists yet for this host. The
+  # publish-verifier stage will skip and the nightly's partial_reasons
+  # will list `verify_skipped` (or similar) until you add a docs-deploy
+  # workflow and update the fields below.
+  base_url: null
+  build_workflow: null
+  url_map_rule: standard
+  verify_timeout_seconds: 60
+
+notifications:
+  slack:
+    enabled: false
+  email:
+    enabled: false
