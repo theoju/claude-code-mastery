@@ -69,14 +69,13 @@ jobs:
           python-version: "3.11"
 
       - name: Install runtime dependencies
-        # mkdocs + mkdocs-material installed here so the agent's
-        # framework_build lint rule has the mkdocs CLI available when
-        # validating authored pages. requirements-docs.txt pins major
-        # versions; pyyaml + jsonschema are the orchestrator's own deps.
+        # framework=none host (CCE-64): no mkdocs/docusaurus toolchain
+        # needed. The framework_build lint rule skips cleanly for
+        # framework=none. Only pyyaml + jsonschema (orchestrator deps)
+        # are required.
         run: |
           python -m pip install --upgrade pip
           python -m pip install pyyaml jsonschema
-          python -m pip install -r requirements-docs.txt
 
       - name: Install claude CLI
         run: |
