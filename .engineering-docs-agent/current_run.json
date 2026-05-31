@@ -1,0 +1,21 @@
+{
+  "current_run": {
+    "started_at": "2026-05-31T22:58:32.221615+00:00",
+    "head_sha": "ee8f17d162acb5b199c084f4dc8210f3e5a92ee7",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: * lint_runner: runner crashed: python: can't open file '/home/runner/work/claude-code-self-assessment/claude-code-self-assessment/scripts/lint/lint_runner.py': [Errno 2] No such file or directory"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
