@@ -66,9 +66,9 @@ export default function MethodologyPage() {
         </p>
       </Section>
 
-      <Section title="What each Execution scorer measures (9 of 12 dimensions)">
+      <Section title="What each Execution scorer measures (11 of 12 dimensions)">
         <p>
-          Nine dimensions currently have execution scorers. Each formula is a
+          Eleven dimensions currently have execution scorers. Each formula is a
           deterministic function over the signals named below — open{" "}
           <span className="mono">scripts/score.mjs</span> to read the source.
           For the full inventory of <em>which</em> signals each predicate reads,
@@ -182,33 +182,79 @@ export default function MethodologyPage() {
               sessions).
             </span>
           </li>
+          <li>
+            <strong>Memory &amp; Context Management</strong> —{" "}
+            <span className="mono">
+              min(sum / interactiveOrUnknownSessionsAnalyzed, 1) × 100
+            </span>
+            , where <span className="mono">sum</span> is the inline MAX-merge of
+            transcript and history counts for <span className="mono">/btw</span>
+            , <span className="mono">/clear</span>,{" "}
+            <span className="mono">/compact</span>, and{" "}
+            <span className="mono">/rewind</span> (session-coverage hits — each
+            command contributes at most once per session). These are posture
+            commands, so the denominator must include the same session kinds the
+            numerator is counted from. Rubric target is 92; the radar vertex
+            displays{" "}
+            <span className="mono">clamp(round(rawScore / 92 × 100))</span>.
+            When <span className="mono">rawRatio &gt; 1</span> (multiple memory
+            commands per session), the score saturates at 100 and the evidence
+            string surfaces <em>&quot;capped from N%&quot;</em> so the
+            over-coverage stays visible rather than being silently truncated.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: <span className="mono">interactive_cli ∪ unknown</span>.
+              The numerator-subset-of-denominator hard rule applies: the
+              counters come from the conservative allowPosture branch
+              (interactive_cli plus unknown-classification sessions), so the
+              denominator must include both — using{" "}
+              <span className="mono">interactive_cli</span> alone would allow
+              the ratio to exceed 100% from unknown-session contributions.
+            </span>
+          </li>
+          <li>
+            <strong>Terminal &amp; Customization</strong> —{" "}
+            <span className="mono">
+              min(sum / interactiveOrUnknownSessionsAnalyzed, 1) × 100
+            </span>
+            , same shape as Memory but over <span className="mono">/color</span>
+            , <span className="mono">/voice</span>, and{" "}
+            <span className="mono">/focus</span>. Counters MAX-merge transcript
+            and history values so neither source is double-counted. Rubric
+            target is 80; the radar vertex displays{" "}
+            <span className="mono">clamp(round(rawScore / 80 × 100))</span>.
+            Like Memory, the cap surfaces in evidence as{" "}
+            <em>&quot;capped from N%&quot;</em> rather than being hidden by the{" "}
+            <span className="mono">Math.min</span>.
+            <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
+              Universe: <span className="mono">interactive_cli ∪ unknown</span>{" "}
+              (same rationale as Memory — posture commands counted via the
+              allowPosture branch require the denominator to include both
+              session kinds).
+            </span>
+          </li>
         </ul>
       </Section>
 
-      <Section title="Why the remaining 2 dimensions are unmeasured">
+      <Section title="The remaining partially-measured dimension">
         <p>
-          Two dimensions render with no Execution vertex. (Model &amp; Effort
-          Tuning is now <em>partially</em> measured — its Opus-usage half, Boris
-          tip 2, is scored from transcripts; effort level stays settings-only.)
-          Each remaining one has an explicit{" "}
-          <span className="mono">gapReason</span> visible on the per-dimension
-          card so users can tell <em>which</em> kind of unmeasured it is:
+          One dimension is still <em>partially</em> measured. Model &amp; Effort
+          Tuning scores its Opus-usage half (Boris tip 2) from transcripts, but
+          effort level itself never reaches transcripts or cooked telemetry — it
+          stays a settings-only signal. The per-dimension card carries an
+          explicit <span className="mono">gapReason</span> when the Execution
+          half is unavailable so users can tell <em>which</em> kind of
+          unmeasured it is.
         </p>
-        <ul>
-          <li>
-            <strong>Memory &amp; Context Management</strong> and
-            <strong> Terminal &amp; Customization</strong> —{" "}
-            <em>not feasible from /insights</em>. The relevant signals never
-            reach the cooked telemetry: memory-related tools do not appear in{" "}
-            <span className="mono">tool_counts</span>; terminal/IDE
-            customization (statusline, theme, keybindings) is purely client-side
-            configuration. Platform-Setup-only is the honest position.
-          </li>
-        </ul>
         <p>
-          The radar shows what is honestly measured. <em>Unmeasured</em> is not{" "}
-          <em>scored zero</em>, and the per-dimension card always tells you
-          which is which.
+          Memory &amp; Context Management and Terminal &amp; Customization
+          previously rendered as fully unmeasured under the same rationale (no
+          signal in <span className="mono">tool_counts</span>; customization is
+          client-side). That changed when their posture-command counters landed:
+          both are now measured via session-coverage counts (transcript and
+          history sources MAX-merged), and the formula details live in the
+          section above. <em>Unmeasured</em> is still not <em>scored zero</em>;
+          the radar marks an unmeasured vertex with an italic label and a
+          footnote rather than a 0.
         </p>
       </Section>
 
