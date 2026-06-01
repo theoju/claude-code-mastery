@@ -160,7 +160,7 @@ Expected: 4/4 PASS.
 - [ ] **Step 5: Run the full test suite to confirm no regression**
 
 Run: `npx vitest run`
-Expected: 622 + 4 = 626 PASS (or current baseline + 4). If a pre-existing test fails, stop — the assertion fired at module load and surfaces a real drift.
+Expected: current baseline + 4 PASS. If a pre-existing test fails, stop — the assertion fired at module load and surfaces a real drift.
 
 - [ ] **Step 6: Commit**
 
@@ -194,29 +194,49 @@ EOF
 
 - [ ] **Step 1: Write the failing fixture tests (Tests 1-6 + Test 8)**
 
+> **Note on TDD batching:** all seven `it` blocks below exercise the same
+> single-line `allowPosture` gate added in Step 3. Splitting them into
+> separate red-green cycles would force seven identical implementation
+> commits, so they share one cycle. The cycle still satisfies "test
+> first" — Step 2 confirms Tests 1 and 3 fail before any production
+> code is touched, and Step 4 confirms all seven pass after the gate
+> lands.
+
+> **Note on `scanTranscriptInvocations` signature:** the function takes
+> `{ projectsRoot, now, lookbackDays }` (see
+> [/Users/theo/Projects/claude-extensions/scripts/\_usage-data.mjs:260](/Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs:260)).
+> A VITEST guard at lines 257-259 silently returns empty `counts` if
+> `projectsRoot` is omitted under `process.env.VITEST` — DO NOT call
+> with `{ homeDir, cutoff }` or any other shape; tests will fake-pass
+> against an empty `counts` object.
+
 Append to `/Users/theo/Projects/claude-extensions/scripts/__tests__/_usage-data.test.mjs`:
 
 ```js
 import { scanTranscriptInvocations } from "../_usage-data.mjs";
 
 describe("scanTranscriptInvocations — per-command partition", () => {
-  let tmpHome2;
-
-  beforeEach(() => {
-    tmpHome2 = mkdtempSync(join(tmpdir(), "partition-test-"));
-  });
-
-  afterEach(() => {
-    rmSync(tmpHome2, { recursive: true, force: true });
-  });
+  // Reuses the module-level `tmpHome` already set up at the top of this
+  // file (beforeEach mkdtempSync, afterEach rmSync). projectsRoot is
+  // computed once per test.
+  const projectsRoot = () => join(tmpHome, "projects");
 
   function writeSessionFile(projectDirName, fileName, lines) {
-    const projectDir = join(tmpHome2, "projects", projectDirName);
+    const projectDir = join(projectsRoot(), projectDirName);
     mkdirSync(projectDir, { recursive: true });
     const path = join(projectDir, fileName);
     writeFileSync(path, lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
     return path;
   }
+
+  // Pin `now` and a wide lookbackDays so the 2026-05-30 fixture
+  // timestamps are always inside the window regardless of when the
+  // suite runs.
+  const scanArgs = () => ({
+    projectsRoot: projectsRoot(),
+    now: new Date("2026-06-01T00:00:00Z"),
+    lookbackDays: 365,
+  });
 
   it("Test 1: posture command in observer session does NOT count", async () => {
     writeSessionFile(
@@ -234,10 +254,7 @@ describe("scanTranscriptInvocations — per-command partition", () => {
         },
       ],
     );
-    const counts = await scanTranscriptInvocations({
-      homeDir: tmpHome2,
-      cutoff: null,
-    });
+    const counts = await scanTranscriptInvocations(scanArgs());
     expect(counts.colorCommandUses).toBe(0);
   });
 
@@ -257,10 +274,7 @@ describe("scanTranscriptInvocations — per-command partition", () => {
         },
       ],
     );
-    const counts = await scanTranscriptInvocations({
-      homeDir: tmpHome2,
-      cutoff: null,
-    });
+    const counts = await scanTranscriptInvocations(scanArgs());
     expect(counts.loopCommandUses).toBe(1);
   });
 
@@ -280,10 +294,7 @@ describe("scanTranscriptInvocations — per-command partition", () => {
         },
       ],
     );
-    const counts = await scanTranscriptInvocations({
-      homeDir: tmpHome2,
-      cutoff: null,
-    });
+    const counts = await scanTranscriptInvocations(scanArgs());
     expect(counts.colorCommandUses).toBe(0);
   });
 
@@ -303,10 +314,7 @@ describe("scanTranscriptInvocations — per-command partition", () => {
         },
       ],
     );
-    const counts = await scanTranscriptInvocations({
-      homeDir: tmpHome2,
-      cutoff: null,
-    });
+    const counts = await scanTranscriptInvocations(scanArgs());
     expect(counts.loopCommandUses).toBe(1);
   });
 
@@ -322,10 +330,7 @@ describe("scanTranscriptInvocations — per-command partition", () => {
         },
       },
     ]);
-    const counts = await scanTranscriptInvocations({
-      homeDir: tmpHome2,
-      cutoff: null,
-    });
+    const counts = await scanTranscriptInvocations(scanArgs());
     expect(counts.colorCommandUses).toBe(1);
   });
 
@@ -342,10 +347,7 @@ describe("scanTranscriptInvocations — per-command partition", () => {
         },
       },
     ]);
-    const counts = await scanTranscriptInvocations({
-      homeDir: tmpHome2,
-      cutoff: null,
-    });
+    const counts = await scanTranscriptInvocations(scanArgs());
     expect(counts.colorCommandUses).toBe(1);
   });
 
@@ -376,10 +378,7 @@ describe("scanTranscriptInvocations — per-command partition", () => {
         },
       },
     ]);
-    const counts = await scanTranscriptInvocations({
-      homeDir: tmpHome2,
-      cutoff: null,
-    });
+    const counts = await scanTranscriptInvocations(scanArgs());
     expect(counts.colorCommandUses).toBe(1);
     expect(counts.loopCommandUses).toBe(1);
     expect(counts.focusCommandUses).toBe(1);
@@ -457,7 +456,7 @@ Expected: 7/7 PASS (Tests 1, 2, 3, 4, 5, 6, 8).
 - [ ] **Step 5: Run the full test suite**
 
 Run: `npx vitest run`
-Expected: 626 + 7 = 633 PASS (or current baseline after Task 1 + 7). If any pre-existing test fails, stop and inspect — interactive fixtures should be unaffected (`entrypoint: "cli"` → `allowPosture = true`; missing entrypoint → `"unknown"` → `allowPosture = true`).
+Expected: current baseline + 7 PASS (the 7 fixture tests added in Step 1). If any pre-existing test fails, stop and inspect — interactive fixtures should be unaffected (`entrypoint: "cli"` → `allowPosture = true`; missing entrypoint → `"unknown"` → `allowPosture = true`).
 
 - [ ] **Step 6: Commit**
 
@@ -629,25 +628,44 @@ EOF
 
 - Read-only: `/Users/theo/Projects/claude-extensions/app/data/assessment.json` (gitignored, written by `npm run assess`)
 
-- [ ] **Step 1: Snapshot the pre-PR baseline**
+- [ ] **Step 1: Snapshot the pre-PR baseline (worktree-primary path)**
 
-The branch was created from a known-good main (PR #108 merged at `6de3da9`). Before this branch's changes land in production, `npm run assess` against current `~/.claude` reflects the **post-partition** state. To capture the pre-PR baseline, briefly stash the working-tree changes and run:
+By the time Task 5 runs, Tasks 1-2 have already committed
+`scripts/_usage-data.mjs` and `scripts/__tests__/_usage-data.test.mjs`,
+so `git stash` against those files is a no-op. Use a temporary
+worktree at `main` to measure the pre-partition state directly:
+
+```bash
+git worktree add /tmp/partition-baseline-wt main
+(cd /tmp/partition-baseline-wt && npm install --silent && npm run assess -- --include-transcripts --insights-lookback 30 --print --no-slack > /tmp/partition-baseline.txt 2>&1)
+git worktree remove /tmp/partition-baseline-wt
+```
+
+> **`npm run assess` flag forwarding:** the single `--` after `assess`
+> tells npm to pass everything after it directly to the script
+> (`node scripts/run-assessment.mjs`). Writing
+> `npm run assess --include-transcripts -- --print` would cause npm
+> to swallow `--include-transcripts` and only the post-`--` flags
+> would reach the script, silently invalidating the delta capture.
+
+(Stash-based fallback for the case where Task 5 ran BEFORE Tasks 1-2
+landed — included for completeness only. Skip this if Tasks 1-2 are
+already committed.
 
 ```bash
 git stash push -m "partition-task5-baseline" -- scripts/_usage-data.mjs scripts/__tests__/_usage-data.test.mjs
-npm run assess --include-transcripts --insights-lookback 30 -- --print --no-slack > /tmp/partition-baseline.txt 2>&1
+npm run assess -- --include-transcripts --insights-lookback 30 --print --no-slack > /tmp/partition-baseline.txt 2>&1
 git stash pop
 ```
 
-(If there's no actual diff vs main on `scripts/_usage-data.mjs` at this point in the plan — e.g., you've already committed Tasks 1-2 — instead checkout main into a worktree just for this measurement:
-`git worktree add /tmp/partition-baseline-wt main && cd /tmp/partition-baseline-wt && npm run assess --include-transcripts --insights-lookback 30 -- --print --no-slack > /tmp/partition-baseline.txt 2>&1 && cd - && git worktree remove /tmp/partition-baseline-wt`.)
+)
 
 - [ ] **Step 2: Snapshot the post-PR state**
 
 Run from the feature branch with Tasks 1-4 committed:
 
 ```bash
-npm run assess --include-transcripts --insights-lookback 30 -- --print --no-slack > /tmp/partition-post.txt 2>&1
+npm run assess -- --include-transcripts --insights-lookback 30 --print --no-slack > /tmp/partition-post.txt 2>&1
 ```
 
 - [ ] **Step 3: Extract and compare `rewindCommandUses` specifically**
@@ -755,9 +773,24 @@ The brainstorm session originated from CLAUDE.md "Known limitation"; the design 
 
 (b) Skip Jira; the design spec + PR description carry the institutional memory.
 
-- [ ] **Step 6: After PR merges, follow-up edit for PR #N placeholders**
+- [ ] **Step 6: Pre-merge: swap `PR #N` placeholders on the feature branch**
 
-The probe-tracker footnote and CLAUDE.md "Resolved in PR #N" both contain literal `#N` placeholders. After merge, edit those files on main to replace `#N` with the actual PR number, and commit as a single docs follow-up (do not include in this PR).
+The probe-tracker footnote (Task 3 Step 3) and the CLAUDE.md "Resolved
+in PR #N" line (Task 4 Step 2) both contain literal `PR #N`
+placeholders. Once `gh pr create` returns the PR number, run on the
+feature branch BEFORE the squash-merge:
+
+```bash
+PR_NUM=$(gh pr view --json number -q '.number')
+sed -i '' "s/PR #N/PR #${PR_NUM}/g" docs/superpowers/specs/2026-05-25-probe-implementation-status.md CLAUDE.md
+git add docs/superpowers/specs/2026-05-25-probe-implementation-status.md CLAUDE.md
+git commit -m "docs: replace PR #N placeholders with actual PR number"
+git push
+```
+
+This keeps the merged commit on main fully self-describing. Doing it
+post-merge would require a follow-up PR. Note: `sed -i ''` is the
+macOS/BSD form; if running on Linux, drop the `''` argument.
 
 ---
 
