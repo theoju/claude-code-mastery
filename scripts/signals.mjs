@@ -797,7 +797,9 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
 
   const mcpServers = await gatherMcpServers();
   const hasVercelCli = process.env.VITEST ? false : await detectVercelCli();
-  const shipJournal = await gatherShipJournal({ lookbackDays: 14 });
+  const shipJournal = await gatherShipJournal({
+    lookbackDays: insightsLookbackDays,
+  });
   const shellAliases = await gatherShellAliases();
   const transcriptInvocations = await scanTranscriptInvocations({
     projectsRoot: join(claudeHome(), "projects"),
