@@ -105,6 +105,8 @@ export async function gatherInsightsSignals({
     sessionsByKind[kind] += 1;
   }
   const interactiveSessionsAnalyzed = sessionsByKind.interactive_cli;
+  const interactiveOrUnknownSessionsAnalyzed =
+    sessionsByKind.interactive_cli + sessionsByKind.unknown;
 
   let subagentSessionCount = 0;
   let mcpSessionCount = 0;
@@ -164,6 +166,7 @@ export async function gatherInsightsSignals({
     sessionsAnalyzed: inWindow.length,
     sessionsByKind,
     interactiveSessionsAnalyzed,
+    interactiveOrUnknownSessionsAnalyzed,
     subagentSessionCount,
     mcpSessionCount,
     multiTaskSessionCount,

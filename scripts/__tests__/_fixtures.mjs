@@ -112,6 +112,7 @@ export function makeInsights(overrides = {}) {
     lookbackDays: 30,
     sessionsAnalyzed: 100,
     interactiveSessionsAnalyzed: 100,
+    interactiveOrUnknownSessionsAnalyzed: 100,
     sessionsByKind: {
       interactive_cli: 100,
       sdk_orchestrated: 0,
