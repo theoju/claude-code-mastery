@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { gatherShipJournal } from "../signals.mjs";
+import { gatherShipJournal, stageRanInEntry } from "../signals.mjs";
 
 let dir;
 beforeEach(() => {
@@ -72,11 +72,14 @@ describe("gatherShipJournal", () => {
   });
 });
 
-import { stageRanInEntry } from "../signals.mjs";
-
 describe("stageRanInEntry", () => {
   it("matches singular entry.stage equal to legacy number", () => {
     expect(stageRanInEntry({ stage: 3 }, 3, "simplify")).toBe(true);
+  });
+
+  it("matches singular entry.stage===0 (pre-flight, falsy-but-valid)", () => {
+    // Guards against a future refactor to `if (entry.stage)` truthy-check.
+    expect(stageRanInEntry({ stage: 0 }, 0, "pre-flight")).toBe(true);
   });
 
   it("rejects singular entry.stage that does not equal legacy number", () => {
