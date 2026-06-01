@@ -10,6 +10,10 @@ import {
   buildTranscriptIndex,
   scanTranscriptModes,
   classifySessionKind,
+  POSTURE_COMMANDS,
+  VOLUME_COMMANDS,
+  TARGET_COMMANDS,
+  assertCommandPartition,
 } from "../_usage-data.mjs";
 
 let tmpHome;
@@ -532,5 +536,44 @@ describe("classifySessionKind", () => {
     const path = join(dir, "session.jsonl");
     writeFileSync(path, "");
     expect(await classifySessionKind(path)).toBe("unknown");
+  });
+});
+
+describe("assertCommandPartition (Test 7)", () => {
+  it("throws when posture and volume overlap (disjointness violation)", () => {
+    const posture = new Set(["color", "loop"]); // 'loop' shouldn't be here
+    const volume = new Set(["loop", "schedule"]);
+    const target = new Set(["color", "loop", "schedule"]);
+    expect(() => assertCommandPartition(posture, volume, target)).toThrow(
+      /must be disjoint/,
+    );
+  });
+
+  it("throws when a TARGET_COMMANDS member is missing from the partition", () => {
+    const posture = new Set(["color"]);
+    const volume = new Set(["loop"]);
+    const target = new Set(["color", "loop", "voice"]); // 'voice' uncategorized
+    expect(() => assertCommandPartition(posture, volume, target)).toThrow(
+      /not classified as posture or volume/,
+    );
+  });
+
+  it("throws when a partition member is missing from TARGET_COMMANDS (dead classification)", () => {
+    const posture = new Set(["color", "obsolete-cmd"]); // 'obsolete-cmd' dead
+    const volume = new Set(["loop"]);
+    const target = new Set(["color", "loop"]);
+    expect(() => assertCommandPartition(posture, volume, target)).toThrow(
+      /dead classification/,
+    );
+  });
+
+  it("does not throw against the live Sets (happy path)", () => {
+    expect(() =>
+      assertCommandPartition(
+        POSTURE_COMMANDS,
+        VOLUME_COMMANDS,
+        TARGET_COMMANDS,
+      ),
+    ).not.toThrow();
   });
 });

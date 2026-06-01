@@ -96,7 +96,7 @@ function stripPluginPrefix(cmd) {
   return cmd.includes(":") ? cmd.slice(cmd.lastIndexOf(":") + 1) : cmd;
 }
 
-const TARGET_COMMANDS = new Set([
+export const TARGET_COMMANDS = new Set([
   "go",
   "batch",
   "focus",
@@ -396,6 +396,61 @@ export async function scanTranscriptInvocations(options = {}) {
   }
   return counts;
 }
+
+// Per-command partition (see docs/superpowers/specs/2026-05-31-per-command-partition-design.md).
+// POSTURE_COMMANDS are user-posture signals that observer/SDK sessions
+// frequently echo via <command-name> markup but did not actually invoke;
+// they are gated behind allowPosture in scanTranscriptInvocations.
+// VOLUME_COMMANDS represent autonomous-workflow volume that is real
+// regardless of who fired it (subagents/SDK runs etc.); they stay
+// unconditional.
+export const POSTURE_COMMANDS = new Set([
+  "color",
+  "voice",
+  "focus",
+  "btw",
+  "clear",
+  "compact",
+  "simplify",
+  "rewind",
+  "fewer-permission-prompts",
+]);
+export const VOLUME_COMMANDS = new Set([
+  "loop",
+  "schedule",
+  "babysit",
+  "go",
+  "batch",
+]);
+
+// Fail-loud module-load guard. Catches three drift cases:
+//   1. posture ∩ volume ≠ ∅ (overlap)
+//   2. TARGET ⊄ posture ∪ volume (uncategorized scanned command)
+//   3. posture ∪ volume ⊄ TARGET (dead classification — member not scanned)
+// Factored out as an exported function so vitest can test it against
+// forged Sets without import-cache games.
+export function assertCommandPartition(posture, volume, target) {
+  const union = new Set([...posture, ...volume]);
+  if (posture.size + volume.size !== union.size) {
+    throw new Error("POSTURE_COMMANDS and VOLUME_COMMANDS must be disjoint");
+  }
+  for (const cmd of target) {
+    if (!union.has(cmd)) {
+      throw new Error(
+        `TARGET_COMMANDS member "${cmd}" is not classified as posture or volume`,
+      );
+    }
+  }
+  for (const cmd of union) {
+    if (!target.has(cmd)) {
+      throw new Error(
+        `Partition member "${cmd}" is not in TARGET_COMMANDS — dead classification`,
+      );
+    }
+  }
+}
+
+assertCommandPartition(POSTURE_COMMANDS, VOLUME_COMMANDS, TARGET_COMMANDS);
 
 // Skill invocations that are structurally equivalent to native plan mode.
 // The Planning Setup scorer already credits the user for having these
