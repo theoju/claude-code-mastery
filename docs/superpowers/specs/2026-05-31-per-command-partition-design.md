@@ -1,7 +1,14 @@
+---
+status: shipped
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/110
+synthesized_into: []
+---
+
 # Per-command partition for observer-session false positives
 
-**Status:** Design approved 2026-05-31 (pending three-agent verification + user review)
-**Ticket:** To be filed as a new CCE-X issue; brainstorm session originated from CLAUDE.md "Known limitation / deferred follow-up"
+**Status:** Shipped — PR #110 (2026-05-31)
+**Ticket:** CCE-71
 **Related cycles:** v0.9.16 (`/color` from `history.jsonl` — `/Users/theo/Projects/claude-extensions/CLAUDE.md:160`-ish, PR #96), v0.9.17 (the blanket-fix that regressed `scheduled` 75→63 and was reverted)
 
 ## Goal
@@ -233,16 +240,16 @@ No new probes, catalog entries, or `signalsSummary` keys are added — so the fi
 
 ## Acceptance criteria
 
-- [ ] Two new module-level Sets in `scripts/_usage-data.mjs` (POSTURE_COMMANDS / VOLUME_COMMANDS) with the documented contents.
-- [ ] Boundary assertion factored into an exported helper (`assertCommandPartition`) and called at module load; runs the three checks from §Architecture §2.
-- [ ] Per-session loop calls `classifySessionKind(path)` once and computes `allowPosture = sessionKind === "interactive_cli" || sessionKind === "unknown"` (NOT `=== undefined` — the function returns the literal string).
-- [ ] Posture-command counters gated behind `allowPosture`.
-- [ ] Volume-command counters unchanged.
-- [ ] Net-new unit tests cover all seven cases in §Tests (Tests 1, 2, 3, 4, 5, 6, 8) plus the four `assertCommandPartition` cases in Test 7.
-- [ ] All pre-existing tests still pass (the partition is purposefully non-breaking for interactive fixtures — current baseline is 622 tests across 44 files; recount at implementation time).
-- [ ] `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` annotated with the partition footnote.
-- [ ] CLAUDE.md "Known limitation / deferred follow-up" paragraph rewritten per Implementation Order step 6.
-- [ ] Live `npm run assess --include-transcripts --insights-lookback 30` produces a console-printable score table; **posture commands trend down or stay flat**; volume commands stay flat. Capture the live `rewindCommandUses` value pre- and post-change for confidence on the `/rewind` regression-risk path.
+- [x] Two new module-level Sets in `scripts/_usage-data.mjs` (POSTURE_COMMANDS / VOLUME_COMMANDS) with the documented contents.
+- [x] Boundary assertion factored into an exported helper (`assertCommandPartition`) and called at module load; runs the three checks from §Architecture §2.
+- [x] Per-session loop calls `classifySessionKind(path)` once and computes `allowPosture = sessionKind === "interactive_cli" || sessionKind === "unknown"` (NOT `=== undefined` — the function returns the literal string).
+- [x] Posture-command counters gated behind `allowPosture`.
+- [x] Volume-command counters unchanged.
+- [x] Net-new unit tests cover all seven cases in §Tests (Tests 1, 2, 3, 4, 5, 6, 8) plus the four `assertCommandPartition` cases in Test 7.
+- [x] All pre-existing tests still pass (the partition is purposefully non-breaking for interactive fixtures — current baseline is 622 tests across 44 files; recount at implementation time).
+- [x] `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` annotated with the partition footnote.
+- [x] CLAUDE.md "Known limitation / deferred follow-up" paragraph rewritten per Implementation Order step 6.
+- [x] Live `npm run assess --include-transcripts --insights-lookback 30` produces a console-printable score table; **posture commands trend down or stay flat**; volume commands stay flat. Capture the live `rewindCommandUses` value pre- and post-change for confidence on the `/rewind` regression-risk path.
 
 ## Out of scope
 
@@ -268,6 +275,6 @@ No new probes, catalog entries, or `signalsSummary` keys are added — so the fi
 3. Gate each posture-command counter behind `allowPosture`.
 4. Append Tests 1-6 and Test 8 to `/Users/theo/Projects/claude-extensions/scripts/__tests__/_usage-data.test.mjs`.
 5. Update `/Users/theo/Projects/claude-extensions/docs/superpowers/specs/2026-05-25-probe-implementation-status.md` with the partition footnote on Part 1 Transcripts layer for posture-command rows.
-6. Rewrite the CLAUDE.md "Known limitation / deferred follow-up" paragraph (currently at `/Users/theo/Projects/claude-extensions/CLAUDE.md`, search for "Command counting has the same posture-vs-volume split"). Replace with a "Resolved in PR #N" pointer to the partition implementation that retains the historical v0.9.17 context as a one-paragraph summary (do NOT delete the v0.9.17 story — future readers triaging similar regressions need it). Add a one-liner under "Conventions" noting that `POSTURE_COMMANDS` / `VOLUME_COMMANDS` in `_usage-data.mjs` are the canonical partition source. Add an operational note: "If the LaunchAgent/cron `npm run assess` exits non-zero and no `assessment.json` is written, check stderr for partition-drift errors from the boundary assertion."
+6. Rewrite the CLAUDE.md "Known limitation / deferred follow-up" paragraph (currently at `/Users/theo/Projects/claude-extensions/CLAUDE.md`, search for "Command counting has the same posture-vs-volume split"). Replace with a "Resolved in PR #110" pointer to the partition implementation that retains the historical v0.9.17 context as a one-paragraph summary (do NOT delete the v0.9.17 story — future readers triaging similar regressions need it). Add a one-liner under "Conventions" noting that `POSTURE_COMMANDS` / `VOLUME_COMMANDS` in `_usage-data.mjs` are the canonical partition source. Add an operational note: "If the LaunchAgent/cron `npm run assess` exits non-zero and no `assessment.json` is written, check stderr for partition-drift errors from the boundary assertion."
 7. Live `npm run assess --include-transcripts --insights-lookback 30` for delta verification; capture `rewindCommandUses` and the top-3 priority list before and after the PR.
 8. `/ship` the PR.

@@ -1,8 +1,17 @@
+---
+status: draft
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/104
+synthesized_into: []
+---
+
 # Predicate evaluator + ranked next-actions — design
 
 **Date:** 2026-05-31
-**Status:** Approved (brainstorming → writing-plans next)
+**Status:** PR 1 (tactical) merged — PR 2 (structural) in planning
 **Triggering bug:** `/self-assessment` reported `Start with one loop: /loop 30m /babysit` as a top-3 priority despite `signalsSummary.loopCommandUses=14` satisfying its `satisfiedWhen` predicate (`loopCommandUses>=1`). Root cause: the skill instructs the model to "first filter, then rank" but the canonical DSL evaluator lives in `app/lib/assessment.ts` (TS-only, Next.js-coupled by location), and no Node-side caller exists. The model running the skill hand-wrote a filter that expected an object shape and skipped string predicates entirely.
+
+**PR #104 landed (2026-05-31):** Shipped the tactical SKILL.md grammar block (PR 1) plus this spec and the companion implementation plan (`docs/superpowers/plans/2026-05-31-predicate-ranker.md`). The structural extraction (PR 2) is the active work item.
 
 ## Goal
 
@@ -259,10 +268,10 @@ CLAUDE.md `## Hard rules` gains:
 
 ## Ship sequencing
 
-| #   | PR                                                                          | Stages                                                                             | Estimate   |
-| --- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------- |
-| 1   | T1 — SKILL.md DSL grammar                                                   | full `/ship` chain (test → verify → simplify → review → commit → push → PR → Jira) | ~10 min    |
-| 2   | S1 — Extract evaluator + bake `rankedNextActions` + delete T1 grammar block | full `/ship` chain                                                                 | ~45–60 min |
+| #   | PR                                                                          | Stages                                                                              | Estimate   | Status         |
+| --- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------- | -------------- |
+| 1   | T1 — SKILL.md DSL grammar                                                   | full `/ship` chain (test → verify → simplify → review → commit → push → PR → Jira) | ~10 min    | ✅ Merged PR #104 |
+| 2   | S1 — Extract evaluator + bake `rankedNextActions` + delete T1 grammar block | full `/ship` chain                                                                  | ~45–60 min | 🔲 In planning  |
 
 PR 2 explicitly removes the SKILL.md grammar block PR 1 added, so the SKILL.md surface settles to a tighter, lower-maintenance form. Both PRs go through `/ship`'s full chain including code review.
 
@@ -277,6 +286,6 @@ PR 2 explicitly removes the SKILL.md grammar block PR 1 added, so the SKILL.md s
 
 ## Done when
 
-- PR 1 merges and `/self-assessment` invocations report the DSL grammar inline.
+- ~~PR 1 merges and `/self-assessment` invocations report the DSL grammar inline.~~ ✅ **Done — PR #104.**
 - PR 2 merges and `/self-assessment` invocations report `assessment.json.rankedNextActions[0..2]` verbatim, with the SKILL.md grammar block gone.
 - Today's specific bug (`/loop 30m /babysit` in top 3 despite `loopCommandUses=14`) does not recur — proven by the named regression test in `rank-next-actions.test.mjs`.
