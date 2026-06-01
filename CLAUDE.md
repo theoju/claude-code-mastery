@@ -59,6 +59,8 @@ scripts/
   insights-signals.mjs   # Execution signals (~/.claude/usage-data/)
   _usage-data.mjs        # facets/session-meta loaders + scanTranscriptModes()
   score.mjs              # rules → scores, normalize() per dim
+  predicate.mjs          # canonical satisfiedWhen DSL evaluator (TS re-exports from here)
+  rank-next-actions.mjs  # filtered+sorted top-N next-actions; output goes into assessment.json
   progression.mjs        # telemetry milestone walker — self-dated from session start_time
   config-progression.mjs # config milestone walker — firstSeenAt stamped at first run (see Conventions)
   run-assessment.mjs     # entry point (npm run assess)
@@ -194,6 +196,18 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   per-row / per-tip-status updates (Part 1 registry rows, Part 2 coverage row +
   the ✅/📊/🗣/❌ tally) remain a contributor convention Claude must follow
   per-change; only the cited counts are auto-checked.
+- **DSL evaluator has one source.** `scripts/predicate.mjs` is canonical.
+  `app/lib/assessment.ts:evaluatePredicate` must remain a 1-line passthrough
+  re-export — never copy the implementation. Test
+  `app/lib/__tests__/predicate-passthrough.test.ts` asserts the two are
+  reference-equal; a duplicate fails CI. When the DSL grammar evolves, edit
+  `scripts/predicate.mjs` and the rubric `$schema` comment — never the TS file.
+- **Ranked next-actions live in `assessment.json.rankedNextActions`.** The
+  self-assessment skill must NEVER hand-implement the satisfiedWhen filter
+  or the weight×deficit ranking. Read the pre-computed top-10 from the
+  written file. The 2026-05-31 cycle landed this contract; surfacing a
+  satisfied action as a TODO again is a regression — fix the data layer,
+  not the report.
 
 ## Conventions
 
