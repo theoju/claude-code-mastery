@@ -522,6 +522,27 @@ export async function gatherShellAliases(options = {}) {
   };
 }
 
+// Detects whether a /ship stage RAN, regardless of journal format generation.
+// Three format generations exist in ~/.claude/ship/journal.jsonl:
+//   1. entry.stage === legacyNumber           (oldest, single-stage entries)
+//   2. entry.stages_run.includes(legacyNumber) (intermediate, numeric array)
+//   3. entry.stages_run.includes(newName)      (latest, string-named array)
+// Array.prototype.includes uses strict equality so a string "3" never
+// matches the integer 3 — no defensive code needed.
+//
+// Stage-number / -name mapping (canonical; future stages append to end):
+//   0 pre-flight | 1 test | 2 verify-agent | 3 simplify | 4 code-review
+//   5 commit     | 6 push-pr | 7 jira-update
+export function stageRanInEntry(entry, legacyNumber, newName) {
+  if (!entry || typeof entry !== "object") return false;
+  if (entry.stage === legacyNumber) return true;
+  const sr = entry.stages_run;
+  if (Array.isArray(sr)) {
+    return sr.includes(legacyNumber) || sr.includes(newName);
+  }
+  return false;
+}
+
 // Reads ~/.claude/ship/journal.jsonl line by line. Counts stage:2 entries
 // (verify-agent dispatches) and outcome:"shipped" entries within the
 // lookback window. Empty/missing file returns all zeros. Malformed lines

@@ -71,3 +71,45 @@ describe("gatherShipJournal", () => {
     expect(r.stage2Count).toBe(2);
   });
 });
+
+import { stageRanInEntry } from "../signals.mjs";
+
+describe("stageRanInEntry", () => {
+  it("matches singular entry.stage equal to legacy number", () => {
+    expect(stageRanInEntry({ stage: 3 }, 3, "simplify")).toBe(true);
+  });
+
+  it("rejects singular entry.stage that does not equal legacy number", () => {
+    expect(stageRanInEntry({ stage: 99 }, 3, "simplify")).toBe(false);
+  });
+
+  it("matches legacy-numeric stages_run array containing legacy number", () => {
+    expect(stageRanInEntry({ stages_run: [0, 1, 3, 4] }, 3, "simplify")).toBe(
+      true,
+    );
+  });
+
+  it("matches new-string stages_run array containing new name", () => {
+    expect(
+      stageRanInEntry(
+        { stages_run: ["test", "verify-agent", "simplify"] },
+        3,
+        "simplify",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects string '3' against integer 3 (type-strict includes)", () => {
+    expect(stageRanInEntry({ stages_run: ["3"] }, 3, "simplify")).toBe(false);
+  });
+
+  it("returns false for null / non-object / missing-fields input without throwing", () => {
+    expect(stageRanInEntry(null, 3, "simplify")).toBe(false);
+    expect(stageRanInEntry(undefined, 3, "simplify")).toBe(false);
+    expect(stageRanInEntry("not-an-object", 3, "simplify")).toBe(false);
+    expect(stageRanInEntry({}, 3, "simplify")).toBe(false);
+    expect(stageRanInEntry({ stages_run: "not-an-array" }, 3, "simplify")).toBe(
+      false,
+    );
+  });
+});
