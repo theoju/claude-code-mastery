@@ -1,0 +1,21 @@
+{
+  "current_run": {
+    "started_at": "2026-06-01T00:13:52.564163+00:00",
+    "head_sha": "ee8f17d162acb5b199c084f4dc8210f3e5a92ee7",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/2026-05-31-engineering-docs-agent-bootstrap.md markdown_hygiene_structure: heading hierarchy jumps from h1 to h3"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
