@@ -366,4 +366,37 @@ describe("detectMilestones", () => {
     expect(milestone.borisTip).toBe(35);
     expect(milestone.evidence).toMatch(/PushNotification \(2 calls\)/);
   });
+
+  it("emits verification milestone on first /go invocation", async () => {
+    writeMeta(dir, "no-go", { start_time: daysAgo(30) });
+    writeMeta(dir, "go-day", { start_time: daysAgo(12) });
+    writeMeta(dir, "later-go", { start_time: daysAgo(3) });
+    writeTranscript(dir, "p", "no-go", [
+      { type: "user", timestamp: daysAgo(30) },
+    ]);
+    writeTranscript(dir, "p", "go-day", [
+      {
+        type: "assistant",
+        message: { content: "<command-name>go</command-name>" },
+      },
+    ]);
+    writeTranscript(dir, "p", "later-go", [
+      {
+        type: "assistant",
+        message: { content: "<command-name>go</command-name>" },
+      },
+    ]);
+
+    const r = await detectMilestones({
+      claudeHome: dir,
+      now: NOW,
+      includeTranscripts: true,
+    });
+    const milestone = r.milestones.find((m) => m.dimension === "verification");
+    expect(milestone).toBeDefined();
+    expect(milestone.sessionId).toBe("go-day");
+    expect(milestone.milestone).toBe("First /go composite invocation");
+    expect(milestone.borisTip).toBe(73);
+    expect(milestone.evidence).toMatch(/\/go/);
+  });
 });

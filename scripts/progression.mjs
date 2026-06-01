@@ -240,6 +240,23 @@ const DETECTORS = [
       };
     },
   },
+  {
+    transcriptsRequired: true,
+    detect(sessions, _facets, transcripts) {
+      const m = sessions.find((s) =>
+        transcripts.get(s.session_id)?.commands?.has("go"),
+      );
+      if (!m) return null;
+      return {
+        timestamp: m.start_time,
+        dimension: "verification",
+        milestone: "First /go composite invocation",
+        borisTip: 73,
+        evidence: "First session invoking /go (the post-work review reflex)",
+        sessionId: m.session_id,
+      };
+    },
+  },
 ];
 
 export async function detectMilestones({
