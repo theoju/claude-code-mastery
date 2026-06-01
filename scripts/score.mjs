@@ -592,8 +592,9 @@ export function adoptionBonus({
 // Wraps an execution scorer with the standard insights/transcripts/sessions
 // gates so each scorer body only deals with the math, not data availability.
 // `universe` is mandatory and selects which denominator the session gate uses:
-//   - "interactive_only": s.insights.interactiveSessionsAnalyzed
-//   - "all_sessions":     s.insights.sessionsAnalyzed
+//   - "interactive_only":       s.insights.interactiveSessionsAnalyzed
+//   - "interactive_or_unknown": s.insights.interactiveOrUnknownSessionsAnalyzed
+//   - "all_sessions":           s.insights.sessionsAnalyzed
 // The choice is recorded on the wrapped function as `__universe` so tests
 // (and the methodology page) can audit the contract.
 export function withGates(opts, fn) {
