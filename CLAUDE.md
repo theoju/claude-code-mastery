@@ -211,6 +211,12 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
 
 ## Conventions
 
+- **Prefer absolute paths for file references** so Claude Code's terminal
+  auto-links them as clickable targets. Use `/absolute/path:line` rather than
+  `path` in chat-facing surfaces (design docs, /ship summaries, status tables,
+  brainstorm output, code review reports). Keeps the same `file:line` pattern
+  the built-in instructions already prescribe but pins it to absolute form so
+  the terminal renders it as a link.
 - Slash commands and Skills are reusable assets — when you ship a repeatable
   workflow (e.g. `/refresh-insights`), prefer creating it under
   `.claude/commands/` over leaving it as in-line instructions.
