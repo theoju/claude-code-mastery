@@ -751,3 +751,123 @@ describe("gatherInsightsSignals", () => {
     expect(r.subagentSessionCount).toBe(1);
   });
 });
+
+describe("interactiveOrUnknownSessionsAnalyzed (CCE-76)", () => {
+  it("equals interactive_cli + unknown from sessionsByKind", async () => {
+    // 3 interactive_cli sessions (entrypoint "cli")
+    for (const id of ["int-1", "int-2", "int-3"]) {
+      writeMeta(dir, id, { start_time: TWENTY_DAYS_AGO });
+      writeTranscript(dir, "-Users-x-Projects-app", id, [
+        { type: "user", entrypoint: "cli", permissionMode: "default" },
+      ]);
+    }
+    // 2 unknown sessions (meta exists but no transcript → falls back to "unknown")
+    for (const id of ["unk-1", "unk-2"]) {
+      writeMeta(dir, id, { start_time: TWENTY_DAYS_AGO });
+    }
+    // 1 observer session — should NOT contribute to the new denominator
+    writeMeta(dir, "obs-1", { start_time: TWENTY_DAYS_AGO });
+    writeTranscript(dir, "-Users-x--claude-mem-observer-sessions", "obs-1", [
+      { type: "user", entrypoint: "sdk-cli", permissionMode: "default" },
+    ]);
+
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+
+    expect(r.sessionsByKind.interactive_cli).toBe(3);
+    expect(r.sessionsByKind.unknown).toBe(2);
+    expect(r.sessionsByKind.observer).toBe(1);
+    expect(r.interactiveSessionsAnalyzed).toBe(3);
+    expect(r.interactiveOrUnknownSessionsAnalyzed).toBe(5); // 3 + 2
+  });
+
+  it("interactiveOrUnknownSessionsAnalyzed >= interactiveSessionsAnalyzed (numerator-subset-of-denominator invariant, CLAUDE.md hard rule from PR #97)", async () => {
+    // Case A: all interactive_cli, no unknown → new denom equals strict denom.
+    {
+      const subdir = mkdtempSync(join(tmpdir(), "insights-test-A-"));
+      try {
+        for (const id of ["a1", "a2"]) {
+          writeMeta(subdir, id, { start_time: TWENTY_DAYS_AGO });
+          writeTranscript(subdir, "-Users-x-Projects-app", id, [
+            { type: "user", entrypoint: "cli", permissionMode: "default" },
+          ]);
+        }
+        const r = await gatherInsightsSignals({
+          claudeHome: subdir,
+          now: NOW,
+          lookbackDays: 30,
+          includeTranscripts: true,
+        });
+        expect(r.sessionsByKind.interactive_cli).toBe(2);
+        expect(r.sessionsByKind.unknown).toBe(0);
+        expect(r.interactiveSessionsAnalyzed).toBe(2);
+        expect(r.interactiveOrUnknownSessionsAnalyzed).toBe(2);
+        expect(r.interactiveOrUnknownSessionsAnalyzed).toBeGreaterThanOrEqual(
+          r.interactiveSessionsAnalyzed,
+        );
+      } finally {
+        rmSync(subdir, { recursive: true, force: true });
+      }
+    }
+
+    // Case B: all unknown, no interactive_cli → new denom strictly greater.
+    {
+      const subdir = mkdtempSync(join(tmpdir(), "insights-test-B-"));
+      try {
+        for (const id of ["b1", "b2", "b3"]) {
+          writeMeta(subdir, id, { start_time: TWENTY_DAYS_AGO });
+        }
+        const r = await gatherInsightsSignals({
+          claudeHome: subdir,
+          now: NOW,
+          lookbackDays: 30,
+          includeTranscripts: true,
+        });
+        expect(r.sessionsByKind.interactive_cli).toBe(0);
+        expect(r.sessionsByKind.unknown).toBe(3);
+        expect(r.interactiveSessionsAnalyzed).toBe(0);
+        expect(r.interactiveOrUnknownSessionsAnalyzed).toBe(3);
+        expect(r.interactiveOrUnknownSessionsAnalyzed).toBeGreaterThanOrEqual(
+          r.interactiveSessionsAnalyzed,
+        );
+      } finally {
+        rmSync(subdir, { recursive: true, force: true });
+      }
+    }
+
+    // Case C: mixed (3 interactive_cli + 2 unknown).
+    {
+      const subdir = mkdtempSync(join(tmpdir(), "insights-test-C-"));
+      try {
+        for (const id of ["c-int-1", "c-int-2", "c-int-3"]) {
+          writeMeta(subdir, id, { start_time: TWENTY_DAYS_AGO });
+          writeTranscript(subdir, "-Users-x-Projects-app", id, [
+            { type: "user", entrypoint: "cli", permissionMode: "default" },
+          ]);
+        }
+        for (const id of ["c-unk-1", "c-unk-2"]) {
+          writeMeta(subdir, id, { start_time: TWENTY_DAYS_AGO });
+        }
+        const r = await gatherInsightsSignals({
+          claudeHome: subdir,
+          now: NOW,
+          lookbackDays: 30,
+          includeTranscripts: true,
+        });
+        expect(r.sessionsByKind.interactive_cli).toBe(3);
+        expect(r.sessionsByKind.unknown).toBe(2);
+        expect(r.interactiveSessionsAnalyzed).toBe(3);
+        expect(r.interactiveOrUnknownSessionsAnalyzed).toBe(5);
+        expect(r.interactiveOrUnknownSessionsAnalyzed).toBeGreaterThanOrEqual(
+          r.interactiveSessionsAnalyzed,
+        );
+      } finally {
+        rmSync(subdir, { recursive: true, force: true });
+      }
+    }
+  });
+});

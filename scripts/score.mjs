@@ -396,7 +396,7 @@ export const SCORERS = {
       s.focusCommandUses ?? s.transcriptInvocations?.focusCommandUses ?? 0;
     if (focusCommandUses >= 1) {
       score += 5;
-      ev.push(`/focus adopted (${focusCommandUses} use(s))`);
+      ev.push(`/focus adopted (${focusCommandUses} session(s))`);
     }
     const hasTerminalSetup =
       s.hasTerminalSetup ?? !!s.settings?.hasTerminalSetup;
@@ -527,28 +527,25 @@ export const GAP_REASONS = {
   NO_PLUGINS: "No plugins installed",
   NO_HOOK_FIRE_DATA:
     "~/.claude/hook-fires.jsonl absent — automation execution unmeasured (Claude Code does not emit this telemetry by default)",
-  // For dimensions where /insights data structurally cannot carry the signal
-  // (effort/model never logged to session-meta; memory tools never appear in
-  // tool_counts; terminal/IDE customization is purely client-side config).
-  // These render as "unmeasured" with a clear rationale instead of blank.
-  NO_TELEMETRY_FOR_DIMENSION:
-    "no /insights telemetry exists for this dimension — platform-setup-only by nature",
 };
 
 function unavailable(reason) {
   return { score: null, evidence: [], gaps: [], gapReason: reason };
 }
 
-// Platform-Setup-only scorers: always unavailable, but the universe
-// contract still applies. Universe value is inert here.
-function noTelemetry() {
-  const fn = () => unavailable(GAP_REASONS.NO_TELEMETRY_FOR_DIMENSION);
-  fn.__universe = "all_sessions";
-  return fn;
-}
-
 function pct(n) {
   return Math.round(n * 100) / 100;
+}
+
+// Read a probe from BOTH transcript and history scanners; return the max.
+// History has higher fidelity for side-channel commands that never reach the
+// session JSONL (/btw); transcripts have higher fidelity for transcript-only
+// signals (/loop fired by /ship). Math.max recovers whichever source saw it.
+export function maxProbe(signals, field) {
+  return Math.max(
+    signals.transcriptInvocations?.[field] ?? 0,
+    signals.historyInvocations?.[field] ?? 0,
+  );
 }
 
 // Capped adoption credit — a third scorer-contribution shape alongside the
@@ -592,15 +589,20 @@ export function adoptionBonus({
 // Wraps an execution scorer with the standard insights/transcripts/sessions
 // gates so each scorer body only deals with the math, not data availability.
 // `universe` is mandatory and selects which denominator the session gate uses:
-//   - "interactive_only": s.insights.interactiveSessionsAnalyzed
-//   - "all_sessions":     s.insights.sessionsAnalyzed
+//   - "interactive_only":       s.insights.interactiveSessionsAnalyzed
+//   - "interactive_or_unknown": s.insights.interactiveOrUnknownSessionsAnalyzed
+//   - "all_sessions":           s.insights.sessionsAnalyzed
 // The choice is recorded on the wrapped function as `__universe` so tests
 // (and the methodology page) can audit the contract.
-function withGates(opts, fn) {
+export function withGates(opts, fn) {
   const universe = opts.universe;
-  if (universe !== "interactive_only" && universe !== "all_sessions") {
+  if (
+    universe !== "interactive_only" &&
+    universe !== "interactive_or_unknown" &&
+    universe !== "all_sessions"
+  ) {
     throw new Error(
-      `withGates: universe must be 'interactive_only' or 'all_sessions', got ${universe}`,
+      `withGates: universe must be 'interactive_only', 'interactive_or_unknown', or 'all_sessions', got ${universe}`,
     );
   }
   const wrapped = (s) => {
@@ -611,7 +613,9 @@ function withGates(opts, fn) {
     const denom =
       universe === "interactive_only"
         ? s.insights.interactiveSessionsAnalyzed
-        : s.insights.sessionsAnalyzed;
+        : universe === "interactive_or_unknown"
+          ? s.insights.interactiveOrUnknownSessionsAnalyzed
+          : s.insights.sessionsAnalyzed;
     if (opts.requireSessions !== false && !denom) {
       return unavailable(GAP_REASONS.NO_SESSIONS);
     }
@@ -970,14 +974,59 @@ export const EXECUTION_SCORERS = {
     },
   ),
 
-  // Platform-Setup-only-by-nature dimensions. /insights data does not carry the
-  // relevant signal: memory-related tools never appear in tool_counts; terminal/IDE
-  // customization (statusline, keybindings, themes) is pure client config.
-  // Surface the rationale per dimension so users see "unmeasured because X"
-  // instead of a blank radar vertex that looks identical to a forgotten scorer.
-  // Universe is inert here (always unavailable) but the contract requires a value.
-  memory: noTelemetry(),
-  customization: noTelemetry(),
+  memory: withGates(
+    { transcripts: true, universe: "interactive_or_unknown" },
+    (s) => {
+      const denom = s.insights.interactiveOrUnknownSessionsAnalyzed;
+      const btw = maxProbe(s, "btwCommandUses");
+      const clear = maxProbe(s, "clearCommandUses");
+      const compact = maxProbe(s, "compactCommandUses");
+      const rewind = maxProbe(s, "rewindCommandUses");
+      const sum = btw + clear + compact + rewind;
+      const rawRatio = sum / denom;
+      const ratio = Math.min(rawRatio, 1);
+      const score = Math.round(ratio * 100);
+      const capSuffix =
+        rawRatio > 1
+          ? ` — capped from ${pct(rawRatio * 100)}% (multiple memory commands per session)`
+          : "";
+      const evidence = [
+        `Memory hygiene commands: ${sum} session-coverage hits across ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix}`,
+      ];
+      const gaps = [];
+      if (sum === 0) {
+        gaps.push(
+          "No /btw, /clear, /compact, or /rewind in any interactive session",
+        );
+      }
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
+  customization: withGates(
+    { transcripts: true, universe: "interactive_or_unknown" },
+    (s) => {
+      const denom = s.insights.interactiveOrUnknownSessionsAnalyzed;
+      const color = maxProbe(s, "colorCommandUses");
+      const voice = maxProbe(s, "voiceCommandUses");
+      const focus = maxProbe(s, "focusCommandUses");
+      const sum = color + voice + focus;
+      const rawRatio = sum / denom;
+      const ratio = Math.min(rawRatio, 1);
+      const score = Math.round(ratio * 100);
+      const capSuffix =
+        rawRatio > 1
+          ? ` — capped from ${pct(rawRatio * 100)}% (multiple customization commands per session)`
+          : "";
+      const evidence = [
+        `Customization commands: ${sum} session-coverage hits across ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix}`,
+      ];
+      const gaps = [];
+      if (sum === 0) {
+        gaps.push("No /color, /voice, or /focus in any interactive session");
+      }
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
 
   // Linear ratio of sessions emitting the `★ Insight ` banner — the rendered
   // signature of the explanatory-output-style plugin. Platform Setup already credits

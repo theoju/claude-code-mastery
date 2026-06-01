@@ -230,10 +230,11 @@ describe("scanTranscriptInvocations", () => {
     expect(r.effortMaxCommandUses).toBe(0);
   });
 
-  it("counts /rewind invocations (markup + start-of-line)", async () => {
+  it("counts sessions with at least one /rewind invocation (session-coverage)", async () => {
     // /rewind is a top-level slash invocation (Boris tip 62) — only the
-    // markup form and start-of-line form count, not mid-prose mentions
-    // (e.g. "I should /rewind here" in a planning prompt).
+    // markup form and start-of-line form count, not mid-prose mentions.
+    // Counter is session-coverage (CCE-76): one session with two /rewind
+    // messages contributes 1, not 2.
     writeSession("s1", [
       userMarkup("/rewind"),
       userText("/rewind"),
@@ -244,7 +245,7 @@ describe("scanTranscriptInvocations", () => {
       now: new Date("2026-05-10T00:00:00Z"),
       lookbackDays: 30,
     });
-    expect(r.rewindCommandUses).toBe(2);
+    expect(r.rewindCommandUses).toBe(1);
   });
 
   it("counts bare-text /go, /batch, /focus, /schedule at start of message", async () => {

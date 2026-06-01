@@ -65,12 +65,16 @@ self-assessment scores against the 75 canonical tips only. (See Finding F1.)
     the Platform-Setup score, _not_ the Execution radar vertex. So `effortMaxCommandUses`
     counts real usage yet is correctly **P\***, not E. (Marker used in the Part 1
     Transcripts table only; Part 2 keeps dimension-level P / E / P+E.)
-- **E** — Execution scorer (`EXECUTION_SCORERS[dim]`, cooked telemetry only): "do you
-  actually use it?" — the radar's Execution vertex.
+- **E** — Execution scorer present: a probe consumed by an `EXECUTION_SCORERS.<dim>`
+  body (sourced from cooked telemetry **and/or** transcript counters as appropriate).
+  "Do you actually use it?" — the radar's Execution vertex.
 - **P+E** — both axes scored.
-- **P / exec unmeasured** — dimension routes Execution to `noTelemetry()`
-  (`memory`, `customization`): the relevant signal never reaches
-  cooked telemetry, so Execution renders as _unmeasured_, not zero.
+- **P / exec unmeasured** — the specific signal is not consumed by any
+  `EXECUTION_SCORERS.<dim>` body, so Execution carries no information about
+  _this_ probe. Independent of whether the parent dim is E-scored on other
+  signals: e.g. tips 4 (`claudeMdExists`) and 45 (`autoMemoryEnabled`) live in
+  the now-E-scored `memory` dim, but the memory Execution scorer reads
+  btw/clear/compact/rewind, not these flags. Renders as _unmeasured_, not zero.
 
 ## Tracking-status legend
 
@@ -157,29 +161,29 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 
 ### Transcripts (`~/.claude/projects/*/*.jsonl`) — `_usage-data.mjs`[^partition]
 
-| Field                                          | Predicate / use                                                                                                          | Catalog | Axis |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- | ---- |
-| `parallelWorktreeAdoption`                     | `parallelWorktreeAdoption` (parallel)                                                                                    | ✅      | P\*  |
-| `effortMaxAdopted`                             | `effortMaxAdopted` (model-effort, tip 34) — derived OR: `effortLevel=max` OR `effortMaxCommandUses>=2`                   | ✅      | P\*  |
-| `effortMaxCommandUses`                         | `effortMaxAdopted` OR-input — per-session `/effort max` count (argument-aware; markup + start-anchored, transcript-only) | —       | P\*  |
-| `planThenLaunchSessions`                       | `planThenLaunchSessions>=1` (planning)                                                                                   | ✅      | P\*  |
-| `shipVerifyStageRecent`[^journal-stage-credit] | `shipVerifyStageRecent>=1` (verification)                                                                                | ✅      | P\*  |
-| `sessionsByKind`                               | universe classifier (gates posture ratios)                                                                               | ✅      | —    |
-| `goCommandUses`                                | `goCommandUses>=3` (verification)                                                                                        | ✅      | P\*  |
-| `batchCommandUses`                             | `batchCommandUses>=1` (parallel)                                                                                         | ✅      | P\*  |
-| `simplifyCommandUses`[^journal-stage-credit]   | `simplifyCommandUses>=1` (automation)                                                                                    | ✅      | P\*  |
-| `btwCommandUses`                               | `btwCommandUses>=1` (memory)                                                                                             | ✅      | P\*  |
-| `voiceCommandUses`                             | `voiceCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
-| `clearCommandUses`                             | `clearCommandUses>=1` (memory)                                                                                           | ✅      | P\*  |
-| `compactCommandUses`                           | `compactCommandUses>=1` (memory)                                                                                         | ✅      | P\*  |
-| `colorCommandUses`                             | `colorCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
-| `fewerPermsCommandUses`                        | `fewerPermsCommandUses>=1` (permissions)                                                                                 | ✅      | P\*  |
-| `focusCommandUses`                             | `focusCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
-| `scheduleCommandUses`                          | `scheduleCommandUses>=1` (scheduled)                                                                                     | ✅      | P\*  |
-| `loopCommandUses`                              | `loopCommandUses>=1` (scheduled)                                                                                         | ✅      | P\*  |
-| `babysitLoopUses`                              | scheduled scorer (`/loop /babysit`)                                                                                      | —       | P\*  |
-| `rewindCommandUses`                            | `rewindCommandUses>=1` (memory)                                                                                          | ✅      | P\*  |
-| `desktopSessionCount`                          | `desktopSessionCount>=1` (verification) — transcript `entrypoint == "claude-desktop"`, Boris tip 52                      | ✅      | P\*  |
+| Field                                            | Predicate / use                                                                                                          | Catalog | Axis |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ------- | ---- |
+| `parallelWorktreeAdoption`                       | `parallelWorktreeAdoption` (parallel)                                                                                    | ✅      | P\*  |
+| `effortMaxAdopted`                               | `effortMaxAdopted` (model-effort, tip 34) — derived OR: `effortLevel=max` OR `effortMaxCommandUses>=2`                   | ✅      | P\*  |
+| `effortMaxCommandUses`                           | `effortMaxAdopted` OR-input — per-session `/effort max` count (argument-aware; markup + start-anchored, transcript-only) | —       | P\*  |
+| `planThenLaunchSessions`                         | `planThenLaunchSessions>=1` (planning)                                                                                   | ✅      | P\*  |
+| `shipVerifyStageRecent`[^journal-stage-credit]   | `shipVerifyStageRecent>=1` (verification)                                                                                | ✅      | P\*  |
+| `sessionsByKind`                                 | universe classifier (gates posture ratios)                                                                               | ✅      | —    |
+| `goCommandUses`                                  | `goCommandUses>=3` (verification)                                                                                        | ✅      | P\*  |
+| `batchCommandUses`                               | `batchCommandUses>=1` (parallel)                                                                                         | ✅      | P\*  |
+| `simplifyCommandUses`[^journal-stage-credit]     | `simplifyCommandUses>=1` (automation)                                                                                    | ✅      | P\*  |
+| `btwCommandUses`[^memory-customization-exec]     | `btwCommandUses>=1` (memory)                                                                                             | ✅      | P\*  |
+| `voiceCommandUses`[^memory-customization-exec]   | `voiceCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
+| `clearCommandUses`[^memory-customization-exec]   | `clearCommandUses>=1` (memory)                                                                                           | ✅      | P\*  |
+| `compactCommandUses`[^memory-customization-exec] | `compactCommandUses>=1` (memory)                                                                                         | ✅      | P\*  |
+| `colorCommandUses`[^memory-customization-exec]   | `colorCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
+| `fewerPermsCommandUses`                          | `fewerPermsCommandUses>=1` (permissions)                                                                                 | ✅      | P\*  |
+| `focusCommandUses`[^memory-customization-exec]   | `focusCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
+| `scheduleCommandUses`                            | `scheduleCommandUses>=1` (scheduled)                                                                                     | ✅      | P\*  |
+| `loopCommandUses`                                | `loopCommandUses>=1` (scheduled)                                                                                         | ✅      | P\*  |
+| `babysitLoopUses`                                | scheduled scorer (`/loop /babysit`)                                                                                      | —       | P\*  |
+| `rewindCommandUses`[^memory-customization-exec]  | `rewindCommandUses>=1` (memory)                                                                                          | ✅      | P\*  |
+| `desktopSessionCount`                            | `desktopSessionCount>=1` (verification) — transcript `entrypoint == "claude-desktop"`, Boris tip 52                      | ✅      | P\*  |
 
 > All command counters are MAX-merged with `~/.claude/history.jsonl` in
 > `buildSignalsSummary` via `maxProbe(field)` and gated to the lookback window.
@@ -200,23 +204,31 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 These drive the **Execution** scorers (no `satisfiedWhen`; consumed directly in
 `EXECUTION_SCORERS`):
 
-| Signal                                                   | Execution scorer                       | Universe         |
-| -------------------------------------------------------- | -------------------------------------- | ---------------- |
-| `autoModeSessionCount`, `bypassPermissionsSessionCount`  | permissions                            | interactive_only |
-| `frictionCounts.{buggy_code,wrong_approach}`             | verification                           | all_sessions     |
-| `subagentSessionCount`, `worktreeUsageSessionCount`      | parallel                               | interactive_only |
-| `planModeMultiTaskSessionCount`, `multiTaskSessionCount` | planning                               | interactive_only |
-| `hookFireCount` (3-state warm/cold/null)                 | automation                             | interactive_only |
-| `toolInvocationsByPlugin`                                | integrations (calls/session, target 2) | all_sessions     |
-| `scheduledInvocationsTotal`                              | scheduled (1→50, ≥3→100)               | all_sessions     |
-| `remoteInvocationsTotal`                                 | remote (1→50, ≥3→100)                  | all_sessions     |
-| `learningModeSessionCount`, `learningModeMatchesTotal`   | learning (★ Insight banner ratio)      | interactive_only |
-| `opusDominantSessionCount`, `opusModelMatchesTotal`      | model-effort (Opus-dominant ratio)     | interactive_only |
+| Signal                                                             | Execution scorer                                                                     | Universe               |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ---------------------- |
+| `autoModeSessionCount`, `bypassPermissionsSessionCount`            | permissions                                                                          | interactive_only       |
+| `frictionCounts.{buggy_code,wrong_approach}`                       | verification                                                                         | all_sessions           |
+| `subagentSessionCount`, `worktreeUsageSessionCount`                | parallel                                                                             | interactive_only       |
+| `planModeMultiTaskSessionCount`, `multiTaskSessionCount`           | planning                                                                             | interactive_only       |
+| `hookFireCount` (3-state warm/cold/null)                           | automation                                                                           | interactive_only       |
+| `toolInvocationsByPlugin`                                          | integrations (calls/session, target 2)                                               | all_sessions           |
+| `scheduledInvocationsTotal`                                        | scheduled (1→50, ≥3→100)                                                             | all_sessions           |
+| `remoteInvocationsTotal`                                           | remote (1→50, ≥3→100)                                                                | all_sessions           |
+| `learningModeSessionCount`, `learningModeMatchesTotal`             | learning (★ Insight banner ratio)                                                    | interactive_only       |
+| `opusDominantSessionCount`, `opusModelMatchesTotal`                | model-effort (Opus-dominant ratio)                                                   | interactive_only       |
+| `interactiveOrUnknownSessionsAnalyzed`[^memory-customization-exec] | denominator universe for posture-gated Execution scorers (interactive_cli ∪ unknown) | interactive_or_unknown |
 
-**No Execution scorer (by design, `noTelemetry()`):** `memory`, `customization`
-— the relevant signals (memory-tool calls, client-side config) never reach
-cooked telemetry. `model-effort` is now **partially** measured: the model half
-(Opus usage, tip 2) is scored from transcripts; effort level stays settings-only.
+**No dimension currently routes Execution to `noTelemetry()`.** Post-CCE-76,
+`memory` and `customization` are transcript-derived Execution scorers
+(`scripts/score.mjs` — memory reads the four memory hygiene commands
+`/btw`+`/clear`+`/compact`+`/rewind`; customization reads `/color`+`/voice`+`/focus`).
+`model-effort` is **partially** measured: the model half (Opus usage, tip 2) is
+scored from transcripts; effort level stays settings-only. Individual _signals_
+inside a scored dimension may still be Execution-unmeasured when the scorer
+doesn't consume them (e.g. tips 4 / 45 — `claudeMdExists` / `autoMemoryEnabled`
+gate Platform-Setup memory next-actions but are not inputs to the memory
+Execution scorer); the dimension is E-scored, but those probes' axis annotation
+stays `P / exec unmeasured` because it reflects the **signal**, not the dim.
 
 ### Runtime (`~/.claude.json` behavioral-adoption flags) — `signals.mjs`
 
@@ -272,6 +284,8 @@ had no telemetry-dated detectors).
 
 [^journal-stage-credit]: As of PR #113 (CCE-72, spec 2026-06-01), `gatherShipJournal` counts stage execution across all three journal format generations: singular `entry.stage`, legacy-numeric `stages_run`, and new-string `stages_run`. `simplifyCommandUses` is MAX-merged with the journal's `simplifyStageCount` at the projection layer (`run-assessment.mjs`). `shipVerifyStageRecent` consumes the now-broader `stage2Count` automatically. The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).
 
+[^memory-customization-exec]: As of PR #116 (CCE-76, spec 2026-06-01), these posture-command counters and the new `interactiveOrUnknownSessionsAnalyzed` denominator feed the Memory and Customization Execution scorers. Both scorers gate on `transcripts: true` and the new `interactive_or_unknown` universe option in `withGates`. The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).
+
 ---
 
 ## Part 2 — Coverage of all 75 Boris tips
@@ -310,14 +324,14 @@ had no telemetry-dated detectors).
 | 30  | /batch                    | parallel                  | ✅     | `batchCommandUses>=1`                                                                                               | P                   |
 | 31  | /loop                     | scheduled                 | ✅     | `loopCommandUses`                                                                                                   | P                   |
 | 32  | Code Review Agents        | (ver/intg)                | ✅     | `hasCodeReviewPlugin`                                                                                               | P                   |
-| 33  | /btw                      | memory                    | ✅     | `btwCommandUses>=1`                                                                                                 | P                   |
+| 33  | /btw                      | memory                    | ✅     | `btwCommandUses>=1`                                                                                                 | P+E                 |
 | 34  | /effort max               | model-effort              | ✅     | `effortMaxAdopted` (settings `max` OR `/effort max` in ≥2 sessions)                                                 | P                   |
 | 35  | Remote Control            | remote                    | ✅     | `hasRemoteControl`; exec `remoteInvocationsTotal`; progression milestone (first remote-tool fire)                   | P+E                 |
-| 36  | Voice                     | customization             | ✅     | `voiceCommandUses` (cited as tip 60)                                                                                | P                   |
+| 36  | Voice                     | customization             | ✅     | `voiceCommandUses` (cited as tip 60)                                                                                | P+E                 |
 | 37  | Setup Scripts             | automation                | ✅     | `hasSessionStartHook` (+ generic `hookTotalCount`)                                                                  | P                   |
 | 38  | Session Naming (`--name`) | customization             | ❌     | `claude --name` not probed                                                                                          | —                   |
 | 39  | Auto Session Naming       | —                         | 🗣     | `aiTitlePresent` DETECTED (transcript `ai-title` entry) — info-only, not scored; non-discriminating (~universal)    | —                   |
-| 40  | /color                    | customization             | ✅     | `colorCommandUses>=1`                                                                                               | P                   |
+| 40  | /color                    | customization             | ✅     | `colorCommandUses>=1`                                                                                               | P+E                 |
 | 41  | PostCompact Hook          | automation                | ✅     | `hasPostCompactHook`; exec generic `hookTotalCount`                                                                 | P                   |
 | 42  | Auto Mode                 | permissions               | ✅     | `permissionsDefaultMode=auto & !skipDangerous`; exec `autoModeSessionCount`; permissions scorer +10                 | P+E                 |
 | 43  | /schedule                 | scheduled                 | ✅     | `scheduleCommandUses`; exec `scheduledInvocationsTotal`                                                             | P+E                 |
@@ -331,16 +345,16 @@ had no telemetry-dated detectors).
 | 51  | Chrome Extension          | verification/integrations | ✅     | `hasClaudeInChrome`                                                                                                 | P (+E reach)        |
 | 52  | Desktop App               | verification              | ✅     | `desktopSessionCount>=1` (transcript `entrypoint`)                                                                  | P                   |
 | 53  | Fork Sessions             | —                         | ❌     | not tracked                                                                                                         | —                   |
-| 54  | /btw (deep dive)          | memory                    | ✅     | `btwCommandUses`                                                                                                    | P                   |
+| 54  | /btw (deep dive)          | memory                    | ✅     | `btwCommandUses`                                                                                                    | P+E                 |
 | 55  | Git Worktrees (deep)      | parallel                  | ✅     | worktree signals                                                                                                    | P+E                 |
 | 56  | /batch (deep)             | parallel                  | ✅     | `batchCommandUses`                                                                                                  | P                   |
 | 57  | --bare                    | —                         | ❌     | not tracked                                                                                                         | —                   |
 | 58  | --add-dir                 | integrations              | ❌     | not separately probed                                                                                               | —                   |
 | 59  | --agent                   | automation                | 📊     | `personalAgents`/`hasIsolatedAgent` (loose)                                                                         | P                   |
-| 60  | /voice                    | customization             | ✅     | `voiceCommandUses>=1`                                                                                               | P                   |
+| 60  | /voice                    | customization             | ✅     | `voiceCommandUses>=1`                                                                                               | P+E                 |
 | 61  | Routines                  | scheduled                 | ✅     | `scheduleCommandUses`; exec `scheduledInvocationsTotal`                                                             | P+E                 |
-| 62  | /rewind                   | memory                    | ✅     | `rewindCommandUses>=1`                                                                                              | P                   |
-| 63  | /compact vs /clear        | memory                    | ✅     | `compactCommandUses>=1` + `clearCommandUses>=1`                                                                     | P                   |
+| 62  | /rewind                   | memory                    | ✅     | `rewindCommandUses>=1`                                                                                              | P+E                 |
+| 63  | /compact vs /clear        | memory                    | ✅     | `compactCommandUses>=1` + `clearCommandUses>=1`                                                                     | P+E                 |
 | 64  | Auto-Compact Window       | model-effort              | ✅     | `autoCompactWindow` (effort facet; exec scorer measures the Opus facet, tip 2)                                      | P                   |
 | 65  | Delegation over Guidance  | planning                  | ✅     | `planThenLaunchSessions>=1`; exec plan ratio                                                                        | P+E                 |
 | 66  | Full Task Context Upfront | planning                  | 🗣     | `goal-constraints-template` (unpredicated)                                                                          | coaching            |
@@ -348,7 +362,7 @@ had no telemetry-dated detectors).
 | 68  | Auto Mode + Parallel      | parallel                  | 📊     | composite (auto + parallel signals)                                                                                 | P+E                 |
 | 69  | /fewer-permission-prompts | permissions               | ✅     | `allowListCount>=10` + `fewerPermsCommandUses>=1`                                                                   | P                   |
 | 70  | Recaps                    | memory                    | ❌     | not probed                                                                                                          | —                   |
-| 71  | Focus Mode                | customization             | ✅     | `focusCommandUses>=1`                                                                                               | P                   |
+| 71  | Focus Mode                | customization             | ✅     | `focusCommandUses>=1`                                                                                               | P+E                 |
 | 72  | Effort Mastery            | model-effort              | ✅     | `effortLevel`                                                                                                       | P                   |
 | 73  | /go composite             | verification              | ✅     | `goCommandUses>=3` (+`hasVerifyAgent`); exec friction; progression milestone (first /go)                            | P+E                 |
 | 74  | 4.6→4.7 Shifts            | model-effort              | 📊     | `opus47AwarenessAdopted` awareness proxy — +8 pts (capped-low) in model-effort Execution scorer; proxy, not mastery | E                   |

@@ -8,6 +8,8 @@ import {
   computeTrends,
   DEFAULT_NOISE_FLOOR,
   adoptionBonus,
+  withGates,
+  GAP_REASONS,
 } from "../score.mjs";
 import { makeSignals, makeRubric, makeInsights } from "./_fixtures.mjs";
 
@@ -673,23 +675,10 @@ describe("EXECUTION_SCORERS", () => {
     });
   });
 
-  describe("platform-setup-only dimensions", () => {
-    it.each(["memory", "customization"])(
-      "%s returns null with NO_TELEMETRY_FOR_DIMENSION reason",
-      (id) => {
-        const r = EXECUTION_SCORERS[id](
-          makeSignals({ insights: makeInsights() }),
-        );
-        expect(r.score).toBeNull();
-        expect(r.gapReason).toMatch(/no \/insights telemetry/);
-      },
-    );
-  });
-
-  it("every scorer declares a universe option (interactive_only or all_sessions)", () => {
+  it("every scorer declares a universe option (interactive_only, interactive_or_unknown, or all_sessions)", () => {
     for (const [name, scorer] of Object.entries(EXECUTION_SCORERS)) {
       expect(scorer.__universe, `${name} must declare universe`).toMatch(
-        /^(interactive_only|all_sessions)$/,
+        /^(interactive_only|interactive_or_unknown|all_sessions)$/,
       );
     }
   });
@@ -1338,5 +1327,44 @@ describe("adoptionBonus", () => {
     });
     expect(miss.evidence).toBeNull();
     expect(miss.gap).toBe("G");
+  });
+});
+
+describe("withGates: interactive_or_unknown universe (CCE-76)", () => {
+  it("routes denominator to s.insights.interactiveOrUnknownSessionsAnalyzed", () => {
+    const fn = withGates({ universe: "interactive_or_unknown" }, (s) => ({
+      score: s.insights.interactiveOrUnknownSessionsAnalyzed * 10,
+      evidence: [],
+      gaps: [],
+      gapReason: null,
+    }));
+    const result = fn({
+      insights: {
+        interactiveSessionsAnalyzed: 80,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+    });
+    expect(result.score).toBe(1000); // 100 * 10
+    expect(fn.__universe).toBe("interactive_or_unknown");
+  });
+
+  it("returns unavailable(NO_SESSIONS) when interactiveOrUnknownSessionsAnalyzed is 0", () => {
+    const fn = withGates({ universe: "interactive_or_unknown" }, () => {
+      throw new Error("scorer body should not execute when denom is 0");
+    });
+    const result = fn({
+      insights: {
+        interactiveSessionsAnalyzed: 0,
+        interactiveOrUnknownSessionsAnalyzed: 0,
+      },
+    });
+    expect(result.gapReason).toBe(GAP_REASONS.NO_SESSIONS);
+  });
+
+  it("throws when universe option is unknown", () => {
+    expect(() => withGates({ universe: "bogus_universe" }, () => null)).toThrow(
+      /universe must be/,
+    );
   });
 });
