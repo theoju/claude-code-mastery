@@ -200,3 +200,12 @@ describe("EXECUTION_SCORERS.customization (CCE-76)", () => {
     expect(result.score).toBe(3);
   });
 });
+
+describe("EXECUTION_SCORERS universe contract (CCE-76)", () => {
+  it("Test 16: memory + customization both expose __universe === 'interactive_or_unknown'", () => {
+    expect(EXECUTION_SCORERS.memory.__universe).toBe("interactive_or_unknown");
+    expect(EXECUTION_SCORERS.customization.__universe).toBe(
+      "interactive_or_unknown",
+    );
+  });
+});
