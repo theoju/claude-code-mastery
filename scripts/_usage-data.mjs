@@ -96,7 +96,7 @@ function stripPluginPrefix(cmd) {
   return cmd.includes(":") ? cmd.slice(cmd.lastIndexOf(":") + 1) : cmd;
 }
 
-const TARGET_COMMANDS = new Set([
+export const TARGET_COMMANDS = new Set([
   "go",
   "batch",
   "focus",
@@ -287,6 +287,18 @@ export async function scanTranscriptInvocations(options = {}) {
   const WINDOW_SIZE = SCAN_BOUND + 1;
 
   for (const path of sessionFiles) {
+    // Per-command partition (spec 2026-05-31): observer and SDK-orchestrated
+    // sessions echo the primary session's <command-name> markup, falsely
+    // inflating posture counters. Volume commands stay unconditional —
+    // autonomous-workflow signal is real regardless of who fires it.
+    // Note: classifySessionKind also returns "subagent" for paths matching
+    // .../subagents/agent-*.jsonl, but the traversal at line 263-278 reads
+    // projectsRoot/*/*.jsonl (depth 2) and subagent transcripts live at
+    // depth 4, so they are unreachable here. A future traversal that
+    // recurses must add `if (sessionKind === "subagent") continue` here.
+    const sessionKind = await classifySessionKind(path);
+    const allowPosture =
+      sessionKind === "interactive_cli" || sessionKind === "unknown";
     let sessionHasLoop = false;
     let sessionHasBabysit = false;
     // P1 probes are 1-per-session (per Boris-tip semantics: adoption,
@@ -311,20 +323,26 @@ export async function scanTranscriptInvocations(options = {}) {
       const uText = userMessageText(line);
       if (uText) {
         const found = extractSlashCommands(uText);
+        // Volume commands — counted across all session kinds the scanner sees.
         if (found.has("go")) counts.goCommandUses++;
         if (found.has("batch")) counts.batchCommandUses++;
-        if (found.has("focus")) counts.focusCommandUses++;
         if (found.has("schedule")) counts.scheduleCommandUses++;
-        if (found.has("rewind")) counts.rewindCommandUses++;
         if (found.has("loop")) sessionHasLoop = true;
         if (found.has("babysit")) sessionHasBabysit = true;
-        if (found.has("simplify")) sessionHasSimplify = true;
-        if (found.has("btw")) sessionHasBtw = true;
-        if (found.has("voice")) sessionHasVoice = true;
-        if (found.has("clear")) sessionHasClear = true;
-        if (found.has("compact")) sessionHasCompact = true;
-        if (found.has("color")) sessionHasColor = true;
-        if (found.has("fewer-permission-prompts")) sessionHasFewerPerms = true;
+        // Posture commands — counted only when allowPosture is true
+        // (interactive_cli or unknown — the conservative fallback).
+        if (found.has("focus") && allowPosture) counts.focusCommandUses++;
+        if (found.has("rewind") && allowPosture) counts.rewindCommandUses++;
+        if (found.has("simplify") && allowPosture) sessionHasSimplify = true;
+        if (found.has("btw") && allowPosture) sessionHasBtw = true;
+        if (found.has("voice") && allowPosture) sessionHasVoice = true;
+        if (found.has("clear") && allowPosture) sessionHasClear = true;
+        if (found.has("compact") && allowPosture) sessionHasCompact = true;
+        if (found.has("color") && allowPosture) sessionHasColor = true;
+        if (found.has("fewer-permission-prompts") && allowPosture)
+          sessionHasFewerPerms = true;
+        // effortMax detection uses regex over the prompt text, not
+        // <command-name> markup, so it sits outside the partition.
         if (hasEffortMax(uText)) sessionHasEffortMax = true;
       }
 
@@ -396,6 +414,61 @@ export async function scanTranscriptInvocations(options = {}) {
   }
   return counts;
 }
+
+// Per-command partition (see docs/superpowers/specs/2026-05-31-per-command-partition-design.md).
+// POSTURE_COMMANDS are user-posture signals that observer/SDK sessions
+// frequently echo via <command-name> markup but did not actually invoke;
+// they are gated behind allowPosture in scanTranscriptInvocations.
+// VOLUME_COMMANDS represent autonomous-workflow volume that is real
+// regardless of who fired it (subagents/SDK runs etc.); they stay
+// unconditional.
+export const POSTURE_COMMANDS = new Set([
+  "color",
+  "voice",
+  "focus",
+  "btw",
+  "clear",
+  "compact",
+  "simplify",
+  "rewind",
+  "fewer-permission-prompts",
+]);
+export const VOLUME_COMMANDS = new Set([
+  "loop",
+  "schedule",
+  "babysit",
+  "go",
+  "batch",
+]);
+
+// Fail-loud module-load guard. Catches three drift cases:
+//   1. posture ∩ volume ≠ ∅ (overlap)
+//   2. TARGET ⊄ posture ∪ volume (uncategorized scanned command)
+//   3. posture ∪ volume ⊄ TARGET (dead classification — member not scanned)
+// Factored out as an exported function so vitest can test it against
+// forged Sets without import-cache games.
+export function assertCommandPartition(posture, volume, target) {
+  const union = new Set([...posture, ...volume]);
+  if (posture.size + volume.size !== union.size) {
+    throw new Error("POSTURE_COMMANDS and VOLUME_COMMANDS must be disjoint");
+  }
+  for (const cmd of target) {
+    if (!union.has(cmd)) {
+      throw new Error(
+        `TARGET_COMMANDS member "${cmd}" is not classified as posture or volume`,
+      );
+    }
+  }
+  for (const cmd of union) {
+    if (!target.has(cmd)) {
+      throw new Error(
+        `Partition member "${cmd}" is not in TARGET_COMMANDS — dead classification`,
+      );
+    }
+  }
+}
+
+assertCommandPartition(POSTURE_COMMANDS, VOLUME_COMMANDS, TARGET_COMMANDS);
 
 // Skill invocations that are structurally equivalent to native plan mode.
 // The Planning Setup scorer already credits the user for having these

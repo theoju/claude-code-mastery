@@ -10,6 +10,11 @@ import {
   buildTranscriptIndex,
   scanTranscriptModes,
   classifySessionKind,
+  scanTranscriptInvocations,
+  POSTURE_COMMANDS,
+  VOLUME_COMMANDS,
+  TARGET_COMMANDS,
+  assertCommandPartition,
 } from "../_usage-data.mjs";
 
 let tmpHome;
@@ -532,5 +537,214 @@ describe("classifySessionKind", () => {
     const path = join(dir, "session.jsonl");
     writeFileSync(path, "");
     expect(await classifySessionKind(path)).toBe("unknown");
+  });
+});
+
+describe("assertCommandPartition (Test 7)", () => {
+  it("throws when posture and volume overlap (disjointness violation)", () => {
+    const posture = new Set(["color", "loop"]); // 'loop' shouldn't be here
+    const volume = new Set(["loop", "schedule"]);
+    const target = new Set(["color", "loop", "schedule"]);
+    expect(() => assertCommandPartition(posture, volume, target)).toThrow(
+      /must be disjoint/,
+    );
+  });
+
+  it("throws when a TARGET_COMMANDS member is missing from the partition", () => {
+    const posture = new Set(["color"]);
+    const volume = new Set(["loop"]);
+    const target = new Set(["color", "loop", "voice"]); // 'voice' uncategorized
+    expect(() => assertCommandPartition(posture, volume, target)).toThrow(
+      /not classified as posture or volume/,
+    );
+  });
+
+  it("throws when a partition member is missing from TARGET_COMMANDS (dead classification)", () => {
+    const posture = new Set(["color", "obsolete-cmd"]); // 'obsolete-cmd' dead
+    const volume = new Set(["loop"]);
+    const target = new Set(["color", "loop"]);
+    expect(() => assertCommandPartition(posture, volume, target)).toThrow(
+      /dead classification/,
+    );
+  });
+
+  it("does not throw against the live Sets (happy path)", () => {
+    expect(() =>
+      assertCommandPartition(
+        POSTURE_COMMANDS,
+        VOLUME_COMMANDS,
+        TARGET_COMMANDS,
+      ),
+    ).not.toThrow();
+  });
+});
+
+describe("scanTranscriptInvocations — per-command partition", () => {
+  // Reuses the module-level `tmpHome` already set up at the top of this
+  // file (beforeEach mkdtempSync, afterEach rmSync).
+  const projectsRoot = () => join(tmpHome, "projects");
+
+  function writeSessionFile(projectDirName, fileName, lines) {
+    const projectDir = join(projectsRoot(), projectDirName);
+    mkdirSync(projectDir, { recursive: true });
+    const path = join(projectDir, fileName);
+    writeFileSync(path, lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
+    return path;
+  }
+
+  // Pin `now` and a wide lookbackDays so the 2026-05-30 fixture
+  // timestamps are always inside the window regardless of when the
+  // suite runs. The VITEST guard at scripts/_usage-data.mjs:257-259
+  // requires projectsRoot to be passed explicitly.
+  const scanArgs = () => ({
+    projectsRoot: projectsRoot(),
+    now: new Date("2026-06-01T00:00:00Z"),
+    lookbackDays: 365,
+  });
+
+  it("Test 1: posture command in observer session does NOT count", async () => {
+    writeSessionFile(
+      "-Users-theo--claude-mem-observer-sessions",
+      "obs1.jsonl",
+      [
+        { type: "user", entrypoint: "sdk-cli", userType: "external" },
+        {
+          type: "user",
+          timestamp: "2026-05-30T00:00:00Z",
+          message: {
+            role: "user",
+            content: "<command-name>/color</command-name>",
+          },
+        },
+      ],
+    );
+    const counts = await scanTranscriptInvocations(scanArgs());
+    expect(counts.colorCommandUses).toBe(0);
+  });
+
+  it("Test 2: volume command in observer session DOES count", async () => {
+    writeSessionFile(
+      "-Users-theo--claude-mem-observer-sessions",
+      "obs2.jsonl",
+      [
+        { type: "user", entrypoint: "sdk-cli", userType: "external" },
+        {
+          type: "user",
+          timestamp: "2026-05-30T00:00:00Z",
+          message: {
+            role: "user",
+            content: "<command-name>/loop</command-name>",
+          },
+        },
+      ],
+    );
+    const counts = await scanTranscriptInvocations(scanArgs());
+    expect(counts.loopCommandUses).toBe(1);
+  });
+
+  it("Test 3: posture command in SDK-orchestrated session does NOT count", async () => {
+    writeSessionFile(
+      "-Users-theo-Projects-engineering-docs-agent",
+      "sdk1.jsonl",
+      [
+        { type: "user", entrypoint: "sdk-cli", userType: "external" },
+        {
+          type: "user",
+          timestamp: "2026-05-30T00:00:00Z",
+          message: {
+            role: "user",
+            content: "<command-name>/color</command-name>",
+          },
+        },
+      ],
+    );
+    const counts = await scanTranscriptInvocations(scanArgs());
+    expect(counts.colorCommandUses).toBe(0);
+  });
+
+  it("Test 4: volume command in SDK-orchestrated session DOES count", async () => {
+    writeSessionFile(
+      "-Users-theo-Projects-engineering-docs-agent",
+      "sdk2.jsonl",
+      [
+        { type: "user", entrypoint: "sdk-cli", userType: "external" },
+        {
+          type: "user",
+          timestamp: "2026-05-30T00:00:00Z",
+          message: {
+            role: "user",
+            content: "<command-name>/loop</command-name>",
+          },
+        },
+      ],
+    );
+    const counts = await scanTranscriptInvocations(scanArgs());
+    expect(counts.loopCommandUses).toBe(1);
+  });
+
+  it("Test 5: posture command in interactive session DOES count", async () => {
+    writeSessionFile("-Users-theo-Projects-foo", "interactive1.jsonl", [
+      { type: "user", entrypoint: "cli", userType: "external" },
+      {
+        type: "user",
+        timestamp: "2026-05-30T00:00:00Z",
+        message: {
+          role: "user",
+          content: "<command-name>/color</command-name>",
+        },
+      },
+    ]);
+    const counts = await scanTranscriptInvocations(scanArgs());
+    expect(counts.colorCommandUses).toBe(1);
+  });
+
+  it("Test 6: unknown entrypoint falls back to interactive (posture counts)", async () => {
+    writeSessionFile("-Users-theo-Projects-bar", "unknown1.jsonl", [
+      { type: "noise", n: 0 },
+      { type: "noise", n: 1 },
+      {
+        type: "user",
+        timestamp: "2026-05-30T00:00:00Z",
+        message: {
+          role: "user",
+          content: "<command-name>/color</command-name>",
+        },
+      },
+    ]);
+    const counts = await scanTranscriptInvocations(scanArgs());
+    expect(counts.colorCommandUses).toBe(1);
+  });
+
+  it("Test 8: existing interactive fixtures retain expected counts (regression)", async () => {
+    // Two interactive sessions, one with /color + /loop, one with /focus.
+    // Pre-partition baseline: color=1, loop=1, focus=1.
+    // Post-partition (allowPosture=true for entrypoint=cli): identical.
+    writeSessionFile("-Users-theo-Projects-a", "a.jsonl", [
+      { type: "user", entrypoint: "cli", userType: "external" },
+      {
+        type: "user",
+        timestamp: "2026-05-30T00:00:00Z",
+        message: {
+          role: "user",
+          content:
+            "<command-name>/color</command-name> <command-name>/loop</command-name>",
+        },
+      },
+    ]);
+    writeSessionFile("-Users-theo-Projects-b", "b.jsonl", [
+      { type: "user", entrypoint: "cli", userType: "external" },
+      {
+        type: "user",
+        timestamp: "2026-05-30T00:00:00Z",
+        message: {
+          role: "user",
+          content: "<command-name>/focus</command-name>",
+        },
+      },
+    ]);
+    const counts = await scanTranscriptInvocations(scanArgs());
+    expect(counts.colorCommandUses).toBe(1);
+    expect(counts.loopCommandUses).toBe(1);
+    expect(counts.focusCommandUses).toBe(1);
   });
 });

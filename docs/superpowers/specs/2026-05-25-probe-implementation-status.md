@@ -155,7 +155,7 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 | `plugins`                                                                                                                                                  | integrations scorer (`len*3`, cap 70)     | —       | P    |
 | `has.{superpowers,karpathy,featureDev,skillCreator,semgrep,playwright,vercel,imessage,claudeMdMgmt,explanatoryStyle,ralphLoop,prReviewToolkit,codeReview}` | per-dimension plugin credit               | —       | P    |
 
-### Transcripts (`~/.claude/projects/*/*.jsonl`) — `_usage-data.mjs`
+### Transcripts (`~/.claude/projects/*/*.jsonl`) — `_usage-data.mjs`[^partition]
 
 | Field                      | Predicate / use                                                                                                          | Catalog | Axis |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- | ---- |
@@ -267,6 +267,8 @@ had no telemetry-dated detectors).
 > Setup axis). `remote` detects session-meta `tool_counts` (cooked telemetry), so
 > it is **E** (Execution flavor, consistent with the Insights / cooked telemetry
 > layer's conventions).
+
+[^partition]: As of PR #110 (spec 2026-05-31), the nine posture commands listed below (`color`, `voice`, `focus`, `btw`, `clear`, `compact`, `simplify`, `rewind`, `fewer-permission-prompts`) are counted from transcripts only when `classifySessionKind` returns `interactive_cli` or `unknown`. Observer and SDK-orchestrated sessions still echo the primary session's `<command-name>` markup but no longer inflate posture counters. The five volume commands (`loop`, `schedule`, `babysit`, `go`, `batch`) remain counted across every scanned session kind. See `scripts/_usage-data.mjs` `POSTURE_COMMANDS` / `VOLUME_COMMANDS` for the canonical partition.
 
 ---
 
