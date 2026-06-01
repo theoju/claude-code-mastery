@@ -287,6 +287,18 @@ export async function scanTranscriptInvocations(options = {}) {
   const WINDOW_SIZE = SCAN_BOUND + 1;
 
   for (const path of sessionFiles) {
+    // Per-command partition (spec 2026-05-31): observer and SDK-orchestrated
+    // sessions echo the primary session's <command-name> markup, falsely
+    // inflating posture counters. Volume commands stay unconditional —
+    // autonomous-workflow signal is real regardless of who fires it.
+    // Note: classifySessionKind also returns "subagent" for paths matching
+    // .../subagents/agent-*.jsonl, but the traversal at line 263-278 reads
+    // projectsRoot/*/*.jsonl (depth 2) and subagent transcripts live at
+    // depth 4, so they are unreachable here. A future traversal that
+    // recurses must add `if (sessionKind === "subagent") continue` here.
+    const sessionKind = await classifySessionKind(path);
+    const allowPosture =
+      sessionKind === "interactive_cli" || sessionKind === "unknown";
     let sessionHasLoop = false;
     let sessionHasBabysit = false;
     // P1 probes are 1-per-session (per Boris-tip semantics: adoption,
@@ -311,20 +323,26 @@ export async function scanTranscriptInvocations(options = {}) {
       const uText = userMessageText(line);
       if (uText) {
         const found = extractSlashCommands(uText);
+        // Volume commands — counted across all session kinds the scanner sees.
         if (found.has("go")) counts.goCommandUses++;
         if (found.has("batch")) counts.batchCommandUses++;
-        if (found.has("focus")) counts.focusCommandUses++;
         if (found.has("schedule")) counts.scheduleCommandUses++;
-        if (found.has("rewind")) counts.rewindCommandUses++;
         if (found.has("loop")) sessionHasLoop = true;
         if (found.has("babysit")) sessionHasBabysit = true;
-        if (found.has("simplify")) sessionHasSimplify = true;
-        if (found.has("btw")) sessionHasBtw = true;
-        if (found.has("voice")) sessionHasVoice = true;
-        if (found.has("clear")) sessionHasClear = true;
-        if (found.has("compact")) sessionHasCompact = true;
-        if (found.has("color")) sessionHasColor = true;
-        if (found.has("fewer-permission-prompts")) sessionHasFewerPerms = true;
+        // Posture commands — counted only when allowPosture is true
+        // (interactive_cli or unknown — the conservative fallback).
+        if (found.has("focus") && allowPosture) counts.focusCommandUses++;
+        if (found.has("rewind") && allowPosture) counts.rewindCommandUses++;
+        if (found.has("simplify") && allowPosture) sessionHasSimplify = true;
+        if (found.has("btw") && allowPosture) sessionHasBtw = true;
+        if (found.has("voice") && allowPosture) sessionHasVoice = true;
+        if (found.has("clear") && allowPosture) sessionHasClear = true;
+        if (found.has("compact") && allowPosture) sessionHasCompact = true;
+        if (found.has("color") && allowPosture) sessionHasColor = true;
+        if (found.has("fewer-permission-prompts") && allowPosture)
+          sessionHasFewerPerms = true;
+        // effortMax detection uses regex over the prompt text, not
+        // <command-name> markup, so it sits outside the partition.
         if (hasEffortMax(uText)) sessionHasEffortMax = true;
       }
 
