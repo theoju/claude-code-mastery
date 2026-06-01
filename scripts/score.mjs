@@ -596,11 +596,15 @@ export function adoptionBonus({
 //   - "all_sessions":     s.insights.sessionsAnalyzed
 // The choice is recorded on the wrapped function as `__universe` so tests
 // (and the methodology page) can audit the contract.
-function withGates(opts, fn) {
+export function withGates(opts, fn) {
   const universe = opts.universe;
-  if (universe !== "interactive_only" && universe !== "all_sessions") {
+  if (
+    universe !== "interactive_only" &&
+    universe !== "interactive_or_unknown" &&
+    universe !== "all_sessions"
+  ) {
     throw new Error(
-      `withGates: universe must be 'interactive_only' or 'all_sessions', got ${universe}`,
+      `withGates: universe must be 'interactive_only', 'interactive_or_unknown', or 'all_sessions', got ${universe}`,
     );
   }
   const wrapped = (s) => {
@@ -611,7 +615,9 @@ function withGates(opts, fn) {
     const denom =
       universe === "interactive_only"
         ? s.insights.interactiveSessionsAnalyzed
-        : s.insights.sessionsAnalyzed;
+        : universe === "interactive_or_unknown"
+          ? s.insights.interactiveOrUnknownSessionsAnalyzed
+          : s.insights.sessionsAnalyzed;
     if (opts.requireSessions !== false && !denom) {
       return unavailable(GAP_REASONS.NO_SESSIONS);
     }
