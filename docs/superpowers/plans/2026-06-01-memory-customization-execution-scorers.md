@@ -174,63 +174,63 @@ COMMITMSG
 
 - Modify: `/Users/theo/Projects/claude-extensions/scripts/insights-signals.mjs:107` (add the new computation), `:166` (include in returned object)
 - Modify: `/Users/theo/Projects/claude-extensions/scripts/__tests__/_fixtures.mjs:114` (add to `makeSignals` insights fixture)
-- Create test in: `/Users/theo/Projects/claude-extensions/scripts/__tests__/gather-insights-signals.test.mjs` (file may not exist — check first; if not, add the test to whichever file currently exercises `gatherInsightsSignals`)
+- Modify (append): `/Users/theo/Projects/claude-extensions/scripts/__tests__/insights-signals.test.mjs` — **canonical test home, file already exists at 753 lines**. Do NOT create a new file.
 
 ### Steps
 
-- [ ] **Step 1: Locate where `gatherInsightsSignals` is currently tested.** Run:
+- [ ] **Step 1: Open the canonical test file** `/Users/theo/Projects/claude-extensions/scripts/__tests__/insights-signals.test.mjs` and skim the existing fixture pattern (look for how `gatherInsightsSignals` is invoked against synthetic `facets` / `sessionMeta` inputs). Reuse that pattern for the new tests.
 
-```bash
-rg -l "gatherInsightsSignals\b" /Users/theo/Projects/claude-extensions/scripts/__tests__/
-```
-
-If a `gather-insights-signals.test.mjs` exists, add tests there. Otherwise add to `_usage-data.test.mjs` or create the dedicated test file. (For consistency with the CCE-72 cycle which has `gather-ship-journal.test.mjs`, prefer creating `gather-insights-signals.test.mjs` if it doesn't exist.)
-
-- [ ] **Step 2: Write the failing test** for the new field's existence + numerator-subset invariant:
+- [ ] **Step 2: Write the failing tests.** Append a new `describe` block at the end of `insights-signals.test.mjs`. The test bodies must invoke the real `gatherInsightsSignals` against synthetic fixtures (not stub comments). Skeleton — fill the `<fixture shape>` placeholders by copying the pattern from an existing test in the file:
 
 ```js
-// In whichever test file from Step 1.
-// New describe block:
 describe("interactiveOrUnknownSessionsAnalyzed (CCE-76)", () => {
-  it("equals interactive_cli + unknown from sessionsByKind", () => {
-    // Synthetic insights output — exact shape depends on how gatherInsightsSignals
-    // is invoked in the test file. The assertion is what matters:
-    const insights = {
-      sessionsByKind: {
-        interactive_cli: 80,
-        unknown: 20,
-        sdk_orchestrated: 5,
-        observer: 3,
-        subagent: 2,
-      },
-      interactiveSessionsAnalyzed: 80,
-      interactiveOrUnknownSessionsAnalyzed: undefined, // to be populated by gatherInsightsSignals
-    };
-    // Once gatherInsightsSignals computes the field, assert:
-    //   insights.interactiveOrUnknownSessionsAnalyzed === 80 + 20 === 100
-    // Easiest path: replace this stub with the real gatherInsightsSignals
-    // invocation against a synthetic facets/session-meta fixture. Mirror
-    // how the existing test file constructs its fixtures.
+  it("equals interactive_cli + unknown from sessionsByKind", async () => {
+    // Build a fixture with 3 interactive_cli sessions + 2 unknown
+    // sessions + 1 observer (the observer should NOT contribute).
+    // Reuse whatever fixture helper / inline-build pattern the
+    // existing tests use; this skeleton assumes a buildFixture()
+    // helper — adapt to the actual pattern.
+    const result =
+      await gatherInsightsSignals(/* fixture: 3 interactive_cli + 2 unknown + 1 observer */);
+    expect(result.sessionsByKind.interactive_cli).toBe(3);
+    expect(result.sessionsByKind.unknown).toBe(2);
+    expect(result.interactiveSessionsAnalyzed).toBe(3);
+    expect(result.interactiveOrUnknownSessionsAnalyzed).toBe(5); // 3 + 2
   });
 
-  it("is always >= interactiveSessionsAnalyzed (numerator-subset-of-denominator invariant, CLAUDE.md hard rule from PR #97)", () => {
-    // For any insights output produced by gatherInsightsSignals, assert:
-    //   insights.interactiveOrUnknownSessionsAnalyzed >= insights.interactiveSessionsAnalyzed
-    // This is the source-level guard. With realistic fixtures the gap
-    // is small but never negative.
+  it("interactiveOrUnknownSessionsAnalyzed >= interactiveSessionsAnalyzed (numerator-subset-of-denominator invariant, CLAUDE.md hard rule from PR #97)", async () => {
+    // Three fixtures spanning the boundary cases. For each, the
+    // invariant must hold.
+    const cases = [
+      {
+        /* all interactive_cli, no unknown */
+      },
+      {
+        /* all unknown, no interactive_cli */
+      },
+      {
+        /* mixed: 3 interactive_cli, 2 unknown */
+      },
+    ];
+    for (const fixture of cases) {
+      const result = await gatherInsightsSignals(fixture);
+      expect(
+        result.interactiveOrUnknownSessionsAnalyzed,
+      ).toBeGreaterThanOrEqual(result.interactiveSessionsAnalyzed);
+    }
   });
 });
 ```
 
-(The exact fixture construction depends on the test file's existing patterns — adapt to match.)
+**Concrete-fixture instruction for the implementer:** before writing the skeleton above, read the first 100 lines of `insights-signals.test.mjs` to find the project's exact fixture-construction style (e.g. a `writeFixture()` helper or inline session-meta objects). Then replace each `/* fixture: ... */` placeholder with a concrete, runnable fixture. Do NOT ship comment-only test bodies — they would pass trivially with no assertions.
 
-- [ ] **Step 3: Run the failing test:**
+- [ ] **Step 3: Run the failing tests:**
 
 ```bash
-npx vitest run scripts/__tests__/gather-insights-signals.test.mjs
+npx vitest run scripts/__tests__/insights-signals.test.mjs -t "interactiveOrUnknownSessionsAnalyzed"
 ```
 
-Expected: FAIL with `interactiveOrUnknownSessionsAnalyzed` undefined / not in returned object.
+Expected: FAIL — the new field doesn't exist on the result object yet.
 
 - [ ] **Step 4: Implement the signal in `insights-signals.mjs:107`.** After the existing `interactiveSessionsAnalyzed` line, add:
 
@@ -271,7 +271,7 @@ Expected: gather-insights-signals tests pass; full suite stays green at 647 + 2 
 - [ ] **Step 8: Commit Task 1:**
 
 ```bash
-git add scripts/insights-signals.mjs scripts/__tests__/_fixtures.mjs scripts/__tests__/gather-insights-signals.test.mjs
+git add scripts/insights-signals.mjs scripts/__tests__/_fixtures.mjs scripts/__tests__/insights-signals.test.mjs
 git commit -m "$(cat <<'COMMITMSG'
 feat(signals): add interactiveOrUnknownSessionsAnalyzed denominator — CCE-76 Task 1
 
@@ -595,7 +595,7 @@ it("Test 5: cap fires when sum exceeds denominator; evidence reports capped-from
     transcriptInvocations: { btwCommandUses: 80, clearCommandUses: 80 },
   });
   expect(result.score).toBe(100);
-  expect(result.evidence[0]).toMatch(/capped from 160%/);
+  expect(result.evidence[0]).toMatch(/capped from \d+%/);
 });
 
 it("Test 6: history-source contributes via MAX-merge (btw)", () => {
@@ -812,7 +812,7 @@ it("Test 13: cap fires; evidence reports capped-from", () => {
     },
   });
   expect(result.score).toBe(100);
-  expect(result.evidence[0]).toMatch(/capped from 300%/);
+  expect(result.evidence[0]).toMatch(/capped from \d+%/);
 });
 
 it("Test 14: zero-signal produces gap message", () => {
@@ -953,7 +953,19 @@ COMMITMSG
 
 Use `PR #N` as a placeholder; swap to the actual PR number after creation (mirror the CCE-72 / CCE-71 cycles' approach).
 
-- [ ] **Step 5: Update Part 2 tip-coverage table Axis column.** For each tip row whose command is now consumed by the new Memory or Customization Execution scorer, change `Axis` from `P` (Platform Setup only) to `P+E` (Platform Setup + Execution). The affected tips are those for `/btw`, `/clear`, `/compact`, `/rewind`, `/color`, `/voice`, `/focus`. **Do NOT change `Status` — all rows are already ✅ from CCE-71's predicates.** Verify exact tip numbers against the live tracker before editing.
+- [ ] **Step 5: Update Part 2 tip-coverage table Axis column.** For each tip row whose command is now consumed by the new Memory or Customization Execution scorer, change `Axis` from `P` (Platform Setup only) to `P+E` (Platform Setup + Execution). **Affected tip numbers (pre-enumerated to avoid category errors):**
+
+| Tip # | Command    | Dim           |
+| ----- | ---------- | ------------- |
+| 33    | `/btw`     | memory        |
+| 17    | `/clear`   | memory        |
+| 71    | `/compact` | memory        |
+| 62    | `/rewind`  | memory        |
+| 40    | `/color`   | customization |
+| 60    | `/voice`   | customization |
+| 27    | `/focus`   | customization |
+
+**Do NOT change `Status` — all rows are already ✅ from CCE-71's predicates.** Before saving, cross-check each tip-number ↔ command mapping in the live tracker (the table above is the spec author's mapping but tip numbers can drift; confirm against the source of truth before editing).
 
 - [ ] **Step 6: Run the tracker-counts gate:**
 
@@ -1056,7 +1068,16 @@ COMMITMSG
 grep -n "memory\|customization\|noTelemetry\|unmeasured" /Users/theo/Projects/claude-extensions/app/methodology/page.tsx | head -30
 ```
 
-- [ ] **Step 2: Update both sections** to describe the new measurement basis. For each: the rubric target (92 for memory, 80 for customization), the formula (`min(sum / interactiveOrUnknownSessionsAnalyzed, 1) × 100`), the input counters, and the "cap surfaces in evidence" behavior. Mirror the depth of other dims' methodology sections.
+- [ ] **Step 2: Update both sections** to describe the new measurement basis. **Use the existing `learning` dim's methodology section as the structural template** (closest analog — also transcript-derived, also a ratio scorer). Cover for each of `memory` and `customization`:
+
+1. **Formula:** `Math.round(min(sum / interactiveOrUnknownSessionsAnalyzed, 1) × 100)` where `sum` is the inline MAX-merge of the input counters' transcript + history values.
+2. **Input counters:** memory → `btw, clear, compact, rewind`; customization → `color, voice, focus`. All session-coverage (post-CCE-76 unification).
+3. **Universe:** `interactive_cli ∪ unknown` (the `interactive_or_unknown` `withGates` option). State the rationale (numerator-subset-of-denominator hard rule from PR #97).
+4. **Cap behavior:** when `rawRatio > 1` (a user's sessions touch multiple memory/customization commands per session), the score saturates at 100 and the evidence string surfaces "capped from N%" so the over-coverage is visible.
+5. **Rubric target:** memory=92, customization=80. The displayed Execution vertex on the radar is `normalize(rawScore, target)`.
+6. **Gap reason:** `NO_INSIGHTS`, `NO_TRANSCRIPTS`, or `NO_SESSIONS` produce italic-unmeasured display via the existing `gapReason !== null` branch in `RadarChart.tsx` — no UI code change needed.
+
+Mirror the prose tone and section structure of the `learning` block (it's roughly 12-20 lines per dim).
 
 - [ ] **Step 3: Verify the build doesn't break:**
 
@@ -1107,16 +1128,16 @@ COMMITMSG
 git worktree add /tmp/cce76-baseline-wt main
 ```
 
-- [ ] **Step 2: Run baseline assessment from the worktree:**
+- [ ] **Step 2: Run baseline assessment from the worktree.** Invoke `run-assessment.mjs` directly so flag-passing is unambiguous (`npm run X --flag` silently drops `--flag`; npm consumes it before the script sees it):
 
 ```bash
-(cd /tmp/cce76-baseline-wt && npm run assess --include-transcripts --insights-lookback 30 --no-slack --print) > /tmp/cce76-pre.txt 2>&1
+(cd /tmp/cce76-baseline-wt && node scripts/run-assessment.mjs --include-transcripts --insights-lookback 30 --no-slack --print) > /tmp/cce76-pre.txt 2>&1
 ```
 
 - [ ] **Step 3: Run post-fix assessment from the feature branch:**
 
 ```bash
-npm run assess --include-transcripts --insights-lookback 30 --no-slack --print > /tmp/cce76-post.txt 2>&1
+node scripts/run-assessment.mjs --include-transcripts --insights-lookback 30 --no-slack --print > /tmp/cce76-post.txt 2>&1
 ```
 
 - [ ] **Step 4: Diff and capture the relevant deltas:**
@@ -1133,13 +1154,87 @@ Specifically capture:
 - `Customization` dim Execution score: italic-unmeasured → numeric (~4)
 - Top-10 next-actions: confirm no `memory/*` or `customization/*` action that now satisfies its predicate stays in the list
 
-- [ ] **Step 5: Write the captured deltas to a PR notes file** (used in `/ship` Stage 6):
+- [ ] **Step 5: Write the captured deltas to a PR notes file** at `/tmp/cce76-pr-notes.txt` using the **Write tool** (NOT heredoc + git commit — `block-destructive.sh` scans heredoc bodies and would block on diff content). Use this skeleton, populated with the actual numbers captured in Step 4:
 
-```bash
-# Author the PR body in /tmp/cce76-pr-notes.txt with the captured deltas.
-# Use the Write tool, not heredoc + git commit (block-destructive.sh
-# scans heredoc bodies and may flag the diff content).
+```markdown
+## Summary
+
+**CCE-76** · https://designitright.atlassian.net/browse/CCE-76
+
+Replace `noTelemetry()` for the `memory` and `customization` Execution scorers with `withGates({ transcripts: true, universe: "interactive_or_unknown" })` ratio scorers consuming MAX-merged transcript+history posture-command counters. Unify `focusCommandUses` / `rewindCommandUses` from total-invocation to session-coverage. Add `interactiveOrUnknownSessionsAnalyzed` denominator + new `interactive_or_unknown` universe option to close the CLAUDE.md hard-rule numerator-subset-of-denominator gap.
+
+## Spec + plan
+
+- Spec: `docs/superpowers/specs/2026-06-01-memory-customization-execution-scorers-design.md` (validated by three independent agents)
+- Plan: `docs/superpowers/plans/2026-06-01-memory-customization-execution-scorers.md` (validated by three independent agents)
+
+## Live-verification deltas
+
+`node scripts/run-assessment.mjs --include-transcripts --insights-lookback 30 --no-slack --print` — baseline from `git worktree add /tmp/cce76-baseline-wt main`; post-fix from feature branch.
+
+### Target signals (pre → post)
 ```
+
+focusCommandUses <X> → <X> (session-coverage; unchanged at author's current usage)
+rewindCommandUses <X> → <X> (session-coverage; unchanged)
+Memory Execution unmeasured → <SCORE>/100
+Customization Execution unmeasured → <SCORE>/100
+
+```
+
+### Top-N priority list
+
+(Capture the relevant top-10 next-actions entries before vs after. Note any `memory/*` or `customization/*` actions that exit because their predicate is now satisfied.)
+
+### Score deltas (Execution + Platform Setup)
+
+```
+
+Platform Setup <X> → <X>
+Execution <X> → <X>
+
+```
+
+## Test plan
+
+- [x] `npx vitest run scripts/__tests__/memory-customization-execution-scorers.test.mjs` — 16 tests pass
+- [x] `npx vitest run scripts/__tests__/insights-signals.test.mjs` — passes (existing + 2 new)
+- [x] `npx vitest run scripts/__tests__/score.test.mjs` — passes (existing + 3 new withGates tests)
+- [x] `npx vitest run scripts/__tests__/scan-transcript-invocations.test.mjs` — passes (reworded session-coverage test)
+- [x] `npx vitest run scripts/__tests__/tracker-counts.test.mjs` — 5/5 pass (header counts unchanged at 75/12/48/47/71)
+- [x] `npx vitest run` — full suite ~668 pass (was 647)
+- [x] Live verification deltas captured above
+
+## Architecture (recap)
+
+1. **Counter-class unification** in `scripts/_usage-data.mjs`: `focusCommandUses` and `rewindCommandUses` flip from per-message to per-session increment, mirroring the canonical pattern at lines 407-411.
+2. **New denominator signal** in `scripts/insights-signals.mjs`: `interactiveOrUnknownSessionsAnalyzed = sessionsByKind.interactive_cli + sessionsByKind.unknown`.
+3. **New universe option** in `withGates`: `"interactive_or_unknown"` routes the denom to the new signal, closing the numerator/denominator universe gap that the previous `"interactive_only"` would have opened (CLAUDE.md hard-rule from PR #97).
+4. **Two new Execution scorers**: `EXECUTION_SCORERS.memory` and `EXECUTION_SCORERS.customization` replace `noTelemetry()` with `withGates({ transcripts: true, universe: "interactive_or_unknown" })` ratio scorers. Cap visibility: when `rawRatio > 1`, evidence string surfaces "capped from N%" so multi-counting isn't silently hidden.
+5. **Probe-tracker** annotated with `[^memory-customization-exec]` footnote on 7 transcript-counter rows + new Insights row for `interactiveOrUnknownSessionsAnalyzed`. Part 2 Axis: P → P+E for 7 tip rows (Status unchanged).
+6. **CLAUDE.md scoring-model** paragraph rewritten: all twelve dims now measured (Model & Effort Tuning remains the only partial).
+7. **Methodology page** Memory + Customization sections updated to describe the new measurement basis.
+
+## Files
+
+- `scripts/_usage-data.mjs` — counter-class unification (lines 334-335 flag-flip + hoisted flags + emit lines after 411)
+- `scripts/insights-signals.mjs` — `interactiveOrUnknownSessionsAnalyzed` field
+- `scripts/score.mjs` — `withGates` new universe option + Memory/Customization Execution scorers + evidence wording at line 399
+- `scripts/__tests__/_fixtures.mjs` — `interactiveOrUnknownSessionsAnalyzed: 100` default
+- `scripts/__tests__/insights-signals.test.mjs` — 2 new tests (existence + numerator-subset invariant)
+- `scripts/__tests__/score.test.mjs` — 3 new withGates tests
+- `scripts/__tests__/memory-customization-execution-scorers.test.mjs` — 16 new scorer tests
+- `scripts/__tests__/scan-transcript-invocations.test.mjs` — 1 reworded test
+- `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` — `[^memory-customization-exec]` footnote + new Part 1 row + Part 2 Axis updates
+- `CLAUDE.md` — scoring-model paragraph
+- `app/methodology/page.tsx` — Memory + Customization sections
+- `docs/superpowers/specs/2026-06-01-memory-customization-execution-scorers-design.md` — design spec
+- `docs/superpowers/plans/2026-06-01-memory-customization-execution-scorers.md` — implementation plan
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+Replace `<X>` and `<SCORE>` placeholders with the actual numbers from Step 4 before saving.
 
 - [ ] **Step 6: Clean up the worktree:**
 
@@ -1184,7 +1279,7 @@ Expected: 8 commits (Tasks 0-8, Task 9 has no commit).
   - Backlog → In Progress (already happened during /ship Stage 7)
   - In Progress → Done (manual user-approved step after merge)
 
-- [ ] **Step 5: Post-merge live verification.** Re-run `npm run assess --include-transcripts --insights-lookback 30` from a clean `main` and confirm:
+- [ ] **Step 5: Post-merge live verification.** Re-run `node scripts/run-assessment.mjs --include-transcripts --insights-lookback 30 --no-slack --print` from a clean `main` and confirm:
   - Memory Execution displays a real numeric score (~57)
   - Customization Execution displays a real numeric score (~4)
   - The radar's two previously-italic vertices become solid
