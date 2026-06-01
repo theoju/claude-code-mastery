@@ -7,7 +7,9 @@
 the `_meta` sidecar), `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`),
 `scripts/_usage-data.mjs` (transcript scanners),
 `scripts/run-assessment.mjs#buildSignalsSummary` (71 `signalsSummary` keys).
-Snapshot current as of **main @ post-v0.9.17**. **v0.9.17** shipped two
+Snapshot current as of **CCE-33 branch** (adds three progression milestone detectors for
+`scheduled` tip 48, `remote` tip 35, `verification` tip 73 — no probe-set change,
+no count changes). **v0.9.17** shipped two
 scoring-accuracy fixes (no probe-set change): the planning Execution scorer's
 ratio numerator switched to `planModeMultiTaskSessionCount`
 (interactive ∩ multi_task ∩ plan_mode) so the plan-mode ratio can no longer
@@ -239,6 +241,33 @@ session denominator.
 > at the dimension level. The runtime signals compose into Execution scorers, so
 > their tip rows appear as ✅ or 📊 on the E or P+E dimension axis.
 
+### Progression milestones (`scripts/progression.mjs`) — timeline events
+
+These are **behavioral-milestone detectors** that walk session-meta and (optionally)
+raw transcripts to emit `{timestamp, dimension, milestone, borisTip, evidence}`
+events for the `/progression` timeline page. They do **not** add `satisfiedWhen`
+predicates, `probe-catalog.json` entries, or new `signalsSummary` keys — they
+augment the timeline's coverage of dimensions that previously had no detector.
+
+The first nine detectors (subagents, MCP, multi-task, auto-mode, plan-mode,
+worktree, explanatory-output, first-skill, stopped-bypass) were part of the
+original progression implementation. The three below were added in **CCE-33** to
+close the coverage gap cited in CLAUDE.md (`scheduled`, `remote`, `verification`
+had no telemetry-dated detectors).
+
+| Detector (milestone)                       | Dimension    | Evidence source                                                             | Boris tip | Axis |
+| ------------------------------------------ | ------------ | --------------------------------------------------------------------------- | --------- | ---- |
+| First `/loop`\|`/schedule`\|`/babysit` use | scheduled    | transcript `commands` Set                                                   | 48        | P\*  |
+| First remote-tool invocation               | remote       | session-meta `tool_counts` (RemoteTrigger / PushNotification / SendMessage) | 35        | E    |
+| First `/go` composite invocation           | verification | transcript `commands` Set                                                   | 73        | P\*  |
+
+> **Axis rationale.** `scheduled` and `verification` detect transcript-level slash
+> commands — the same `commands` Set introduced for the `scanTranscriptModes`
+> extension — so they are **P\*** (transcript-derived behavior, feeds the Platform
+> Setup axis). `remote` detects session-meta `tool_counts` (cooked telemetry), so
+> it is **E** (Execution flavor, consistent with the Insights / cooked telemetry
+> layer's conventions).
+
 ---
 
 ## Part 2 — Coverage of all 75 Boris tips
@@ -279,7 +308,7 @@ session denominator.
 | 32  | Code Review Agents        | (ver/intg)                | ✅     | `hasCodeReviewPlugin`                                                                                               | P                   |
 | 33  | /btw                      | memory                    | ✅     | `btwCommandUses>=1`                                                                                                 | P                   |
 | 34  | /effort max               | model-effort              | ✅     | `effortMaxAdopted` (settings `max` OR `/effort max` in ≥2 sessions)                                                 | P                   |
-| 35  | Remote Control            | remote                    | ✅     | `hasRemoteControl`; exec `remoteInvocationsTotal`                                                                   | P+E                 |
+| 35  | Remote Control            | remote                    | ✅     | `hasRemoteControl`; exec `remoteInvocationsTotal`; progression milestone (first remote-tool fire)                   | P+E                 |
 | 36  | Voice                     | customization             | ✅     | `voiceCommandUses` (cited as tip 60)                                                                                | P                   |
 | 37  | Setup Scripts             | automation                | ✅     | `hasSessionStartHook` (+ generic `hookTotalCount`)                                                                  | P                   |
 | 38  | Session Naming (`--name`) | customization             | ❌     | `claude --name` not probed                                                                                          | —                   |
@@ -292,7 +321,7 @@ session denominator.
 | 45  | Auto-Memory & Auto-Dream  | memory                    | ✅     | `autoMemoryEnabled`                                                                                                 | P / exec unmeasured |
 | 46  | Mobile App                | remote                    | 🗣     | `ios-task` next-action (unpredicated)                                                                               | coaching            |
 | 47  | Session Teleporting       | remote                    | ✅     | `hasRemoteControl`                                                                                                  | P                   |
-| 48  | /loop & /schedule         | scheduled                 | ✅     | `loopCommandUses`/`babysitLoopUses`                                                                                 | P                   |
+| 48  | /loop & /schedule         | scheduled                 | ✅     | `loopCommandUses`/`babysitLoopUses`; progression milestone (first /loop\|/schedule\|/babysit)                       | P                   |
 | 49  | Hooks Lifecycle           | automation                | 📊     | generic hooks                                                                                                       | P                   |
 | 50  | Cowork Dispatch           | parallel                  | ✅     | `coworkDispatchAdopted` (~/.claude.json#hasUsedAgentsFleet) — +15 adoption-credit in parallel Execution scorer      | E                   |
 | 51  | Chrome Extension          | verification/integrations | ✅     | `hasClaudeInChrome`                                                                                                 | P (+E reach)        |
@@ -317,7 +346,7 @@ session denominator.
 | 70  | Recaps                    | memory                    | ❌     | not probed                                                                                                          | —                   |
 | 71  | Focus Mode                | customization             | ✅     | `focusCommandUses>=1`                                                                                               | P                   |
 | 72  | Effort Mastery            | model-effort              | ✅     | `effortLevel`                                                                                                       | P                   |
-| 73  | /go composite             | verification              | ✅     | `goCommandUses>=3` (+`hasVerifyAgent`); exec friction                                                               | P+E                 |
+| 73  | /go composite             | verification              | ✅     | `goCommandUses>=3` (+`hasVerifyAgent`); exec friction; progression milestone (first /go)                            | P+E                 |
 | 74  | 4.6→4.7 Shifts            | model-effort              | 📊     | `opus47AwarenessAdopted` awareness proxy — +8 pts (capped-low) in model-effort Execution scorer; proxy, not mastery | E                   |
 | 75  | Task Notifications        | automation/scheduled      | ✅     | `hasStopHookNotification`                                                                                           | P                   |
 
