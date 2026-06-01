@@ -384,6 +384,16 @@ model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
   no milestone and the timeline looks frozen past the first-run wall. Adding
   telemetry-dated detectors for those three is filed as **CCE-33** (feature
   work; design before implementing).
+- **Ship-journal counters use `stageRanInEntry()` to detect stage
+  execution across all three journal format generations** (singular
+  `entry.stage`, legacy-numeric `stages_run`, new-string `stages_run`).
+  Adding a new stage counter follows this pattern — see CCE-72 / PR #113
+  for the reference implementation. The canonical stage-number /
+  -name mapping lives inline in `scripts/signals.mjs::stageRanInEntry`
+  (stages 0–7: pre-flight, test, verify-agent, simplify, code-review,
+  commit, push-pr, jira-update). New stages append to the end of the
+  workflow, never insert in the middle, so the numeric detector arm
+  stays stable.
 
 ## Issue tracking
 

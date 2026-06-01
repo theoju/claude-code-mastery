@@ -131,18 +131,18 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 
 ### Filesystem (`~/.claude/{agents,commands,skills,projects}`) — `signals.mjs`
 
-| Field                                                    | Predicate / use                                       | Catalog | Axis |
-| -------------------------------------------------------- | ----------------------------------------------------- | ------- | ---- |
-| `claudeMdExists`                                         | `claudeMdExists` (memory)                             | ✅      | P    |
-| `personalSkillNames`                                     | `personalSkillNames~spaced\|repetition\|…` (learning) | ✅      | P    |
-| `hasShipCommand`                                         | `hasShipCommand` (automation)                         | ✅      | P    |
-| `hasVerifyAgent`                                         | `hasVerifyAgent` (automation)                         | ✅      | P    |
-| `hasIsolatedAgent`                                       | `hasIsolatedAgent` (parallel)                         | ✅      | P    |
-| `personalAgents` / `personalCommands` / `personalSkills` | automation + parallel scorer counts                   | —       | P    |
-| `projectsWithMemory`                                     | memory scorer                                         | —       | P    |
-| `shipsRecent` / `shipVerifyStageRecent`                  | automation / verification scorer (`shipJournal`)      | —       | P    |
-| `worktreeAliasCount` / `worktreeShortcutCount`           | `parallelWorktreeAdoption` OR-inputs                  | —       | P    |
-| (`plansCount`)                                           | memory + planning scorer (`>=10`)                     | —       | P    |
+| Field                                                          | Predicate / use                                       | Catalog | Axis |
+| -------------------------------------------------------------- | ----------------------------------------------------- | ------- | ---- |
+| `claudeMdExists`                                               | `claudeMdExists` (memory)                             | ✅      | P    |
+| `personalSkillNames`                                           | `personalSkillNames~spaced\|repetition\|…` (learning) | ✅      | P    |
+| `hasShipCommand`                                               | `hasShipCommand` (automation)                         | ✅      | P    |
+| `hasVerifyAgent`                                               | `hasVerifyAgent` (automation)                         | ✅      | P    |
+| `hasIsolatedAgent`                                             | `hasIsolatedAgent` (parallel)                         | ✅      | P    |
+| `personalAgents` / `personalCommands` / `personalSkills`       | automation + parallel scorer counts                   | —       | P    |
+| `projectsWithMemory`                                           | memory scorer                                         | —       | P    |
+| `shipsRecent` / `shipVerifyStageRecent`[^journal-stage-credit] | automation / verification scorer (`shipJournal`)      | —       | P    |
+| `worktreeAliasCount` / `worktreeShortcutCount`                 | `parallelWorktreeAdoption` OR-inputs                  | —       | P    |
+| (`plansCount`)                                                 | memory + planning scorer (`>=10`)                     | —       | P    |
 
 ### Plugins (`enabledPlugins`, PATH) — `signals.mjs`
 
@@ -157,29 +157,29 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 
 ### Transcripts (`~/.claude/projects/*/*.jsonl`) — `_usage-data.mjs`[^partition]
 
-| Field                      | Predicate / use                                                                                                          | Catalog | Axis |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- | ---- |
-| `parallelWorktreeAdoption` | `parallelWorktreeAdoption` (parallel)                                                                                    | ✅      | P\*  |
-| `effortMaxAdopted`         | `effortMaxAdopted` (model-effort, tip 34) — derived OR: `effortLevel=max` OR `effortMaxCommandUses>=2`                   | ✅      | P\*  |
-| `effortMaxCommandUses`     | `effortMaxAdopted` OR-input — per-session `/effort max` count (argument-aware; markup + start-anchored, transcript-only) | —       | P\*  |
-| `planThenLaunchSessions`   | `planThenLaunchSessions>=1` (planning)                                                                                   | ✅      | P\*  |
-| `shipVerifyStageRecent`    | `shipVerifyStageRecent>=1` (verification)                                                                                | ✅      | P\*  |
-| `sessionsByKind`           | universe classifier (gates posture ratios)                                                                               | ✅      | —    |
-| `goCommandUses`            | `goCommandUses>=3` (verification)                                                                                        | ✅      | P\*  |
-| `batchCommandUses`         | `batchCommandUses>=1` (parallel)                                                                                         | ✅      | P\*  |
-| `simplifyCommandUses`      | `simplifyCommandUses>=1` (automation)                                                                                    | ✅      | P\*  |
-| `btwCommandUses`           | `btwCommandUses>=1` (memory)                                                                                             | ✅      | P\*  |
-| `voiceCommandUses`         | `voiceCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
-| `clearCommandUses`         | `clearCommandUses>=1` (memory)                                                                                           | ✅      | P\*  |
-| `compactCommandUses`       | `compactCommandUses>=1` (memory)                                                                                         | ✅      | P\*  |
-| `colorCommandUses`         | `colorCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
-| `fewerPermsCommandUses`    | `fewerPermsCommandUses>=1` (permissions)                                                                                 | ✅      | P\*  |
-| `focusCommandUses`         | `focusCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
-| `scheduleCommandUses`      | `scheduleCommandUses>=1` (scheduled)                                                                                     | ✅      | P\*  |
-| `loopCommandUses`          | `loopCommandUses>=1` (scheduled)                                                                                         | ✅      | P\*  |
-| `babysitLoopUses`          | scheduled scorer (`/loop /babysit`)                                                                                      | —       | P\*  |
-| `rewindCommandUses`        | `rewindCommandUses>=1` (memory)                                                                                          | ✅      | P\*  |
-| `desktopSessionCount`      | `desktopSessionCount>=1` (verification) — transcript `entrypoint == "claude-desktop"`, Boris tip 52                      | ✅      | P\*  |
+| Field                                          | Predicate / use                                                                                                          | Catalog | Axis |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- | ---- |
+| `parallelWorktreeAdoption`                     | `parallelWorktreeAdoption` (parallel)                                                                                    | ✅      | P\*  |
+| `effortMaxAdopted`                             | `effortMaxAdopted` (model-effort, tip 34) — derived OR: `effortLevel=max` OR `effortMaxCommandUses>=2`                   | ✅      | P\*  |
+| `effortMaxCommandUses`                         | `effortMaxAdopted` OR-input — per-session `/effort max` count (argument-aware; markup + start-anchored, transcript-only) | —       | P\*  |
+| `planThenLaunchSessions`                       | `planThenLaunchSessions>=1` (planning)                                                                                   | ✅      | P\*  |
+| `shipVerifyStageRecent`[^journal-stage-credit] | `shipVerifyStageRecent>=1` (verification)                                                                                | ✅      | P\*  |
+| `sessionsByKind`                               | universe classifier (gates posture ratios)                                                                               | ✅      | —    |
+| `goCommandUses`                                | `goCommandUses>=3` (verification)                                                                                        | ✅      | P\*  |
+| `batchCommandUses`                             | `batchCommandUses>=1` (parallel)                                                                                         | ✅      | P\*  |
+| `simplifyCommandUses`[^journal-stage-credit]   | `simplifyCommandUses>=1` (automation)                                                                                    | ✅      | P\*  |
+| `btwCommandUses`                               | `btwCommandUses>=1` (memory)                                                                                             | ✅      | P\*  |
+| `voiceCommandUses`                             | `voiceCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
+| `clearCommandUses`                             | `clearCommandUses>=1` (memory)                                                                                           | ✅      | P\*  |
+| `compactCommandUses`                           | `compactCommandUses>=1` (memory)                                                                                         | ✅      | P\*  |
+| `colorCommandUses`                             | `colorCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
+| `fewerPermsCommandUses`                        | `fewerPermsCommandUses>=1` (permissions)                                                                                 | ✅      | P\*  |
+| `focusCommandUses`                             | `focusCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
+| `scheduleCommandUses`                          | `scheduleCommandUses>=1` (scheduled)                                                                                     | ✅      | P\*  |
+| `loopCommandUses`                              | `loopCommandUses>=1` (scheduled)                                                                                         | ✅      | P\*  |
+| `babysitLoopUses`                              | scheduled scorer (`/loop /babysit`)                                                                                      | —       | P\*  |
+| `rewindCommandUses`                            | `rewindCommandUses>=1` (memory)                                                                                          | ✅      | P\*  |
+| `desktopSessionCount`                          | `desktopSessionCount>=1` (verification) — transcript `entrypoint == "claude-desktop"`, Boris tip 52                      | ✅      | P\*  |
 
 > All command counters are MAX-merged with `~/.claude/history.jsonl` in
 > `buildSignalsSummary` via `maxProbe(field)` and gated to the lookback window.
@@ -269,6 +269,8 @@ had no telemetry-dated detectors).
 > layer's conventions).
 
 [^partition]: As of PR #110 (spec 2026-05-31), the nine posture commands listed below (`color`, `voice`, `focus`, `btw`, `clear`, `compact`, `simplify`, `rewind`, `fewer-permission-prompts`) are counted from transcripts only when `classifySessionKind` returns `interactive_cli` or `unknown`. Observer and SDK-orchestrated sessions still echo the primary session's `<command-name>` markup but no longer inflate posture counters. The five volume commands (`loop`, `schedule`, `babysit`, `go`, `batch`) remain counted across every scanned session kind. See `scripts/_usage-data.mjs` `POSTURE_COMMANDS` / `VOLUME_COMMANDS` for the canonical partition.
+
+[^journal-stage-credit]: As of PR #113 (CCE-72, spec 2026-06-01), `gatherShipJournal` counts stage execution across all three journal format generations: singular `entry.stage`, legacy-numeric `stages_run`, and new-string `stages_run`. `simplifyCommandUses` is MAX-merged with the journal's `simplifyStageCount` at the projection layer (`run-assessment.mjs`). `shipVerifyStageRecent` consumes the now-broader `stage2Count` automatically. The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).
 
 ---
 

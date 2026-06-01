@@ -522,10 +522,33 @@ export async function gatherShellAliases(options = {}) {
   };
 }
 
-// Reads ~/.claude/ship/journal.jsonl line by line. Counts stage:2 entries
-// (verify-agent dispatches) and outcome:"shipped" entries within the
-// lookback window. Empty/missing file returns all zeros. Malformed lines
-// are skipped silently — same fault tolerance as parseJournalLine.
+// Detects whether a /ship stage RAN, regardless of journal format generation.
+// Three format generations exist in ~/.claude/ship/journal.jsonl:
+//   1. entry.stage === legacyNumber           (oldest, single-stage entries)
+//   2. entry.stages_run.includes(legacyNumber) (intermediate, numeric array)
+//   3. entry.stages_run.includes(newName)      (latest, string-named array)
+// Array.prototype.includes uses strict equality so a string "3" never
+// matches the integer 3 — no defensive code needed.
+//
+// Stage-number / -name mapping (canonical; future stages append to end):
+//   0 pre-flight | 1 test | 2 verify-agent | 3 simplify | 4 code-review
+//   5 commit     | 6 push-pr | 7 jira-update
+export function stageRanInEntry(entry, legacyNumber, newName) {
+  if (!entry || typeof entry !== "object") return false;
+  if (entry.stage === legacyNumber) return true;
+  const sr = entry.stages_run;
+  if (Array.isArray(sr)) {
+    return sr.includes(legacyNumber) || sr.includes(newName);
+  }
+  return false;
+}
+
+// Reads ~/.claude/ship/journal.jsonl line by line. Counts stage 2
+// (verify-agent) and stage 3 (simplify) executions and outcome:"shipped"
+// entries within the lookback window. Stage execution is detected across
+// all three journal format generations via stageRanInEntry. Empty/missing
+// file returns all zeros. Malformed lines are skipped silently — same
+// fault tolerance as parseJournalLine.
 //
 // Inputs are injected (journalPath, now) so tests can drive temp files
 // without monkey-patching globals.
@@ -533,7 +556,12 @@ export async function gatherShipJournal(options = {}) {
   // Vitest skip: when integration tests run gatherSignals without injecting
   // journalPath, don't read the developer's real ~/.claude/ship/journal.jsonl.
   if (process.env.VITEST && !options.journalPath) {
-    return { stage2Count: 0, totalRuns: 0, lastRunAt: null };
+    return {
+      stage2Count: 0,
+      simplifyStageCount: 0,
+      totalRuns: 0,
+      lastRunAt: null,
+    };
   }
   const {
     journalPath = join(claudeHome(), "ship", "journal.jsonl"),
@@ -544,10 +572,16 @@ export async function gatherShipJournal(options = {}) {
   try {
     raw = await readFile(journalPath, "utf8");
   } catch {
-    return { stage2Count: 0, totalRuns: 0, lastRunAt: null };
+    return {
+      stage2Count: 0,
+      simplifyStageCount: 0,
+      totalRuns: 0,
+      lastRunAt: null,
+    };
   }
   const cutoff = now.getTime() - lookbackDays * 24 * 60 * 60 * 1000;
   let stage2Count = 0;
+  let simplifyStageCount = 0;
   let totalRuns = 0;
   let lastRunAt = null;
   for (const line of raw.split("\n")) {
@@ -555,13 +589,14 @@ export async function gatherShipJournal(options = {}) {
     if (!entry || typeof entry.ts !== "string") continue;
     const t = Date.parse(entry.ts);
     if (Number.isNaN(t) || t < cutoff) continue;
-    if (entry.stage === 2) stage2Count++;
+    if (stageRanInEntry(entry, 2, "verify-agent")) stage2Count++;
+    if (stageRanInEntry(entry, 3, "simplify")) simplifyStageCount++;
     if (entry.outcome === "shipped") {
       totalRuns++;
       if (!lastRunAt || entry.ts > lastRunAt) lastRunAt = entry.ts;
     }
   }
-  return { stage2Count, totalRuns, lastRunAt };
+  return { stage2Count, simplifyStageCount, totalRuns, lastRunAt };
 }
 
 // Parse a single JSONL line from ~/.claude/ship/journal.jsonl. Returns the
@@ -762,7 +797,9 @@ export async function gatherSignals(projectRoot = process.cwd(), options = {}) {
 
   const mcpServers = await gatherMcpServers();
   const hasVercelCli = process.env.VITEST ? false : await detectVercelCli();
-  const shipJournal = await gatherShipJournal({ lookbackDays: 14 });
+  const shipJournal = await gatherShipJournal({
+    lookbackDays: insightsLookbackDays,
+  });
   const shellAliases = await gatherShellAliases();
   const transcriptInvocations = await scanTranscriptInvocations({
     projectsRoot: join(claudeHome(), "projects"),

@@ -139,7 +139,10 @@ export function buildSignalsSummary(signals) {
     planThenLaunchSessions:
       signals.transcriptInvocations?.planThenLaunchSessions ?? 0,
     rewindCommandUses: signals.transcriptInvocations?.rewindCommandUses ?? 0,
-    simplifyCommandUses: maxProbe(signals, "simplifyCommandUses"),
+    simplifyCommandUses: Math.max(
+      maxProbe(signals, "simplifyCommandUses"),
+      signals.shipJournal?.simplifyStageCount ?? 0,
+    ),
     btwCommandUses: Math.max(
       maxProbe(signals, "btwCommandUses"),
       signals.settings.cliBtwUseCount ?? 0,
