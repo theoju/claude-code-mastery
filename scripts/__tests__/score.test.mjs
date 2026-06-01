@@ -675,19 +675,6 @@ describe("EXECUTION_SCORERS", () => {
     });
   });
 
-  describe("platform-setup-only dimensions", () => {
-    it.each(["customization"])(
-      "%s returns null with NO_TELEMETRY_FOR_DIMENSION reason",
-      (id) => {
-        const r = EXECUTION_SCORERS[id](
-          makeSignals({ insights: makeInsights() }),
-        );
-        expect(r.score).toBeNull();
-        expect(r.gapReason).toMatch(/no \/insights telemetry/);
-      },
-    );
-  });
-
   it("every scorer declares a universe option (interactive_only, interactive_or_unknown, or all_sessions)", () => {
     for (const [name, scorer] of Object.entries(EXECUTION_SCORERS)) {
       expect(scorer.__universe, `${name} must declare universe`).toMatch(

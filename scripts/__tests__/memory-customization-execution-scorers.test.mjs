@@ -140,3 +140,63 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
     expect(result.score).toBe(37);
   });
 });
+
+describe("EXECUTION_SCORERS.customization (CCE-76)", () => {
+  it("Test 12: perfect ratio", () => {
+    const result = EXECUTION_SCORERS.customization({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: { colorCommandUses: 100 },
+    });
+    expect(result.score).toBe(100);
+  });
+
+  it("Test 13: cap fires; evidence reports capped-from", () => {
+    const result = EXECUTION_SCORERS.customization({
+      insights: {
+        interactiveSessionsAnalyzed: 10,
+        interactiveOrUnknownSessionsAnalyzed: 10,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {
+        colorCommandUses: 10,
+        voiceCommandUses: 10,
+        focusCommandUses: 10,
+      },
+    });
+    expect(result.score).toBe(100);
+    expect(result.evidence[0]).toMatch(/capped from \d+%/);
+  });
+
+  it("Test 14: zero-signal produces gap message", () => {
+    const result = EXECUTION_SCORERS.customization({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {},
+    });
+    expect(result.score).toBe(0);
+    expect(result.gaps[0]).toMatch(/No \/color, \/voice, or \/focus/);
+  });
+
+  it("Test 15: realistic mixed input (author baseline)", () => {
+    const result = EXECUTION_SCORERS.customization({
+      insights: {
+        interactiveSessionsAnalyzed: 120,
+        interactiveOrUnknownSessionsAnalyzed: 120,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {
+        colorCommandUses: 3,
+        voiceCommandUses: 0,
+        focusCommandUses: 1,
+      },
+    });
+    expect(result.score).toBe(3);
+  });
+});

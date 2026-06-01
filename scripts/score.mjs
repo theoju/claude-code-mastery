@@ -1016,7 +1016,36 @@ export const EXECUTION_SCORERS = {
       return { score, evidence, gaps, gapReason: null };
     },
   ),
-  customization: noTelemetry(),
+  customization: withGates(
+    { transcripts: true, universe: "interactive_or_unknown" },
+    (s) => {
+      const denom = s.insights.interactiveOrUnknownSessionsAnalyzed;
+      const merge = (field) =>
+        Math.max(
+          s.transcriptInvocations?.[field] ?? 0,
+          s.historyInvocations?.[field] ?? 0,
+        );
+      const color = merge("colorCommandUses");
+      const voice = merge("voiceCommandUses");
+      const focus = merge("focusCommandUses");
+      const sum = color + voice + focus;
+      const rawRatio = sum / denom;
+      const ratio = Math.min(rawRatio, 1);
+      const score = Math.round(ratio * 100);
+      const capSuffix =
+        rawRatio > 1
+          ? ` — capped from ${pct(rawRatio * 100)}% (multiple customization commands per session)`
+          : "";
+      const evidence = [
+        `Customization commands: ${sum} session-coverage hits across ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix}`,
+      ];
+      const gaps = [];
+      if (sum === 0) {
+        gaps.push("No /color, /voice, or /focus in any interactive session");
+      }
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
 
   // Linear ratio of sessions emitting the `★ Insight ` banner — the rendered
   // signature of the explanatory-output-style plugin. Platform Setup already credits
