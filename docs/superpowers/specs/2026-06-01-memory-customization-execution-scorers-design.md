@@ -1,38 +1,64 @@
 # Memory + Customization Execution scorers (transcript-derived)
 
-**Status:** Design approved 2026-06-01 (user, pending review of written spec)
+**Status:** Design approved 2026-06-01 (user; updated to fold in counter-class unification, pending second review)
 **Ticket:** [CCE-76](https://designitright.atlassian.net/browse/CCE-76)
 **Related:** CCE-71 (per-command partition gating that makes these signals trustworthy); CCE-72 (just-shipped ship-journal stage credit — same fidelity-improvement pattern); v0.9.16 / `/color` history MAX-merge (the projection pattern this scorer pair re-uses inline).
 
 ## Goal
 
-Replace `noTelemetry()` for the `memory` and `customization` Execution scorers in [/Users/theo/Projects/claude-extensions/scripts/score.mjs:979-980](/Users/theo/Projects/claude-extensions/scripts/score.mjs:979) with real ratio scorers over the `interactive_cli` session universe. Two italic-unmeasured dimensions become real Execution vertices using signals already collected and partition-gated by CCE-71. No new probes / no new catalog entries / no new `signalsSummary` keys — the five machine-enforced header counts stay at 75/12/48/47/71.
+Two changes shipped in one PR:
+
+1. **Replace `noTelemetry()`** for the `memory` and `customization` Execution scorers in [/Users/theo/Projects/claude-extensions/scripts/score.mjs:979-980](/Users/theo/Projects/claude-extensions/scripts/score.mjs:979) with real ratio scorers over the `interactive_cli` session universe.
+2. **Unify the counting class** for `focusCommandUses` and `rewindCommandUses` from total-invocation (`scripts/_usage-data.mjs` lines 334-335) to session-coverage, mirroring the canonical pattern at lines 407-411 used by the other five posture counters (`btw`, `voice`, `clear`, `compact`, `color`).
+
+Two italic-unmeasured dimensions become real Execution vertices using signals already collected and partition-gated by CCE-71. The unification removes the heterogeneity that would otherwise have shown up as a calibration risk in the new scorers. No new probes / no new catalog entries / no new `signalsSummary` keys — the five machine-enforced header counts stay at 75/12/48/47/71.
 
 ## Context
 
 CLAUDE.md's current hard rule says these two dimensions "route Execution to `noTelemetry()` via `gapReason` because the relevant signals never reach the cooked telemetry. Unmeasured ≠ scored zero — the radar marks unmeasured dims with italic labels and a footnote." That rule is **correct as written about cooked telemetry** (`~/.claude/usage-data/{facets,session-meta}/*.json` never contains command-invocation breakdowns), but it implicitly conflates "cooked telemetry" with "Execution." Other dimensions (`learning` via `★ Insight` banner scan, `parallel` via worktree-usage transcript scan) already mix transcript signals into Execution scoring through `withGates({ transcripts: true, … })`. So this design extends an existing pattern, not invents a new one.
 
-The transcript signals exist. **Two counting classes** exist in `scanTranscriptInvocations` — both partition-gated to `interactive_cli ∪ "unknown"`, but with different semantics:
+The transcript signals exist as **partition-gated posture-command counters** in `scanTranscriptInvocations`. **After the counter-class unification in this PR**, all seven become session-coverage counters — incremented once per session that used the command at least once. Max value = number of interactive sessions scanned. Mirrors the canonical pattern at [scripts/\_usage-data.mjs:407-411](/Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs:407).
 
-- **Session-coverage counters** (line 407-411: `if (sessionHasX) counts.XCommandUses++` — incremented once per session that used the command at least once; max value = number of interactive sessions scanned):
-  - `btwCommandUses` — `/btw` mid-session context recovery (Boris tip 33, memory)
-  - `clearCommandUses` — `/clear` to reset context (tip 17, memory)
-  - `compactCommandUses` — manual `/compact` (memory)
-  - `colorCommandUses` — `/color` theme (tip 40, customization)
-  - `voiceCommandUses` — `/voice` dictation (tip 60, customization)
+- **Memory inputs** (Boris tips 17, 33, 62):
+  - `btwCommandUses` — `/btw` mid-session context recovery (tip 33)
+  - `clearCommandUses` — `/clear` to reset context (tip 17)
+  - `compactCommandUses` — manual `/compact`
+  - `rewindCommandUses` — `/rewind` to remove failed attempts (tip 62) — _re-classified in this PR_
 
-- **Total-invocation counters** (line 334-335: `counts.XCommandUses++` — incremented once per message; one heavy session can contribute many):
-  - `rewindCommandUses` — `/rewind` to remove failed attempts (tip 62, memory)
-  - `focusCommandUses` — `/focus` mode (tip 27, customization)
+- **Customization inputs** (Boris tips 27, 40, 60):
+  - `colorCommandUses` — `/color` theme (tip 40)
+  - `voiceCommandUses` — `/voice` dictation (tip 60)
+  - `focusCommandUses` — `/focus` mode (tip 27) — _re-classified in this PR_
 
-All seven counters are partition-gated to `interactive_cli ∪ "unknown"` session kinds via `allowPosture` (CCE-71); observer/SDK echo inflation is already eliminated.
+All seven are partition-gated to `interactive_cli ∪ "unknown"` session kinds via `allowPosture` (CCE-71); observer/SDK echo inflation is already eliminated.
 
-**The counting-class mismatch is the design's calibration risk.** When the scorer sums `btw + clear + compact + rewind` over a denominator of `interactive_cli` session count:
+### Counter-class unification — what changes and why it's safe
 
-- The session-coverage terms (`btw + clear + compact`) each contribute at most one per session that used them; their sum can exceed `denom` only via multi-command sessions (double-counting).
-- The total-invocation term (`rewind`) can saturate the numerator entirely from a single heavy session repeatedly using `/rewind`. A user who hits `/rewind` 50 times across 5 sessions contributes 50 to the numerator over a 5-session "rewind footprint."
+Today, `focusCommandUses` and `rewindCommandUses` increment per-message at lines 334-335 of `_usage-data.mjs`, while the other five increment per-session at lines 407-411. The mismatch is an artifact of when each counter was added — the per-message pattern came first (Bucket B detection framework, PR #40, May 2026), and the per-session pattern was introduced later for posture-command coverage signals but never retrofitted to the originals.
 
-The `Math.min(ratio, 1)` cap bounds the displayed score to [0, 100] but doesn't fix the heterogeneity. A follow-up PR (see Out of Scope) would: either re-classify `rewindCommandUses` / `focusCommandUses` as session-coverage in `_usage-data.mjs`, OR introduce a single `sessionsWithAnyMemoryCommand` / `sessionsWithAnyCustomizationCommand` aggregate.
+This PR retrofits. Lines 334-335 become flag sets:
+
+```js
+// before
+if (found.has("focus") && allowPosture) counts.focusCommandUses++;
+if (found.has("rewind") && allowPosture) counts.rewindCommandUses++;
+
+// after
+if (found.has("focus") && allowPosture) sessionHasFocus = true;
+if (found.has("rewind") && allowPosture) sessionHasRewind = true;
+```
+
+with `let sessionHasFocus = false; let sessionHasRewind = false;` hoisted to the per-session reset and matching emit lines `if (sessionHasFocus) counts.focusCommandUses++; if (sessionHasRewind) counts.rewindCommandUses++;` joined to the existing emit block.
+
+**Safety verified across every reference:**
+
+- Predicates `rewindCommandUses>=1` / `focusCommandUses>=1` in [/Users/theo/Projects/claude-extensions/app/data/rubric.json:241,361](/Users/theo/Projects/claude-extensions/app/data/rubric.json) — invariant under either counting class (a session that used the command at least once still produces ≥1).
+- `score.mjs:395-399` evidence string `/focus adopted (N use(s))` — cosmetic wording polish ("use(s)" → "session(s)") to reflect the new semantic.
+- Persistent storage — none. `assessment.json` regenerates each run.
+- Tests — only one assertion changes: [`scripts/__tests__/scan-transcript-invocations.test.mjs:247`](/Users/theo/Projects/claude-extensions/scripts/__tests__/scan-transcript-invocations.test.mjs:247) writes one session with two `/rewind` messages and asserts `toBe(2)`; under session-coverage this becomes `toBe(1)` with a corresponding test-name reword.
+- Fixture-based MAX-merge tests in `build-signals-summary.test.mjs` use values 1, 3, 99 in signal-merge plumbing — agnostic to the scanner's counting semantic; they stay green.
+
+After the unification, the scorer math is genuinely correct (all numerator terms have the same units as the denominator), and the heterogeneity that an earlier draft of this spec called out as Risk 1b disappears entirely.
 
 ### Empirical baseline (author's environment, post-CCE-72)
 
@@ -179,10 +205,12 @@ normalize(rawScore, d.target)  →  displayed Execution vertex on the radar
 
 - **I/O.** Zero new reads. The seven counters and the `interactiveSessionsAnalyzed` denominator are already collected at signal-gather time.
 - **CPU.** Eight `Math.max` ops + two `Math.min` ops + two rounds. Negligible.
+- **Counter-class unification surface.** `_usage-data.mjs` ~6 lines (2 flag-set conversions + 2 hoisted declarations + 2 emit lines), `scan-transcript-invocations.test.mjs:247` 1 value flip + name reword, `score.mjs:399` 1 wording polish. Trivial diff.
 - **Score deltas.** Two dims flip from italic-unmeasured to measured. For the author:
   - Memory Execution: italic-unmeasured → **52/100** (heavy /btw user; sub-saturation because not every session needs memory hygiene)
   - Customization Execution: italic-unmeasured → **3/100** (real gap; flag for behavioral coaching)
   - Two-axis Execution overall: small mixed effect. Predict +1 or +2 net.
+  - `focusCommandUses` and `rewindCommandUses` magnitudes unchanged for the author (current values 1 and 0; semantic shift is invisible at low counts).
 - **No new probe-catalog entries / signalsSummary keys / satisfiedWhen predicates.** Five machine-enforced header counts stay at 75/12/48/47/71.
 
 ## Tests
@@ -232,41 +260,41 @@ Per the hard rule, the probe-tracker spec MUST be updated in the same PR. No new
 
 ## Acceptance criteria
 
+- [ ] **Counter-class unification:** `scripts/_usage-data.mjs` lines 334-335 produce session-coverage counts. `let sessionHasFocus = false; let sessionHasRewind = false;` flags hoisted to the per-session reset; matching `if (sessionHasFocus) counts.focusCommandUses++; if (sessionHasRewind) counts.rewindCommandUses++;` joined to the existing emit block (after line 411).
+- [ ] **Test alignment:** `scripts/__tests__/scan-transcript-invocations.test.mjs:247` assertion flips from `toBe(2)` to `toBe(1)`; test name/comment reworded to reflect "counts sessions with at least one /rewind invocation."
+- [ ] **Evidence wording:** `scripts/score.mjs:399` evidence string updated from `/focus adopted (${n} use(s))` to `/focus adopted (${n} session(s))`.
 - [ ] `EXECUTION_SCORERS.memory` replaces `noTelemetry()` with a `withGates({ universe: "interactive_only" })` scorer that consumes inline MAX-merged counts of `btw`, `clear`, `compact`, `rewind` over `interactiveSessionsAnalyzed`.
 - [ ] `EXECUTION_SCORERS.customization` same shape, consuming `color`, `voice`, `focus`.
 - [ ] Both scorers return `unavailable(...)` when interactive session count is 0 (via `withGates`).
 - [ ] Both scorers' `__universe === "interactive_only"` (contract from CCE-71 partition discipline).
-- [ ] 12 new tests pass.
+- [ ] 12 new scorer tests pass.
 - [ ] Full suite passes.
 - [ ] Probe-tracker spec annotated with the `[^memory-customization-exec]` footnote; Part 2 tip coverage tally re-derived; `tracker-counts.test.mjs` 5/5 pass.
 - [ ] CLAUDE.md scoring-model paragraph rewritten to reflect twelve measured dims (with Model & Effort Tuning as the only remaining partial).
 - [ ] Live `npm run assess --include-transcripts --insights-lookback 30` captures pre/post deltas:
   - Pre: Memory Execution + Customization Execution display italic-unmeasured.
   - Post: Memory Execution and Customization Execution display real numeric scores; the radar's two italic vertices become solid.
+  - `focusCommandUses` and `rewindCommandUses` shift to session-coverage magnitudes (invisible at the author's current usage; visible for users with multi-invocation single sessions).
 
 ## Out of scope (deferred)
 
-- **Counter-class unification.** Two follow-up paths address Risk §1's heterogeneity:
-  - **Path A (preferred, smaller surface)**: Re-classify `rewindCommandUses` and `focusCommandUses` from total-invocation to session-coverage in `_usage-data.mjs` (mirror the `sessionHasFoo → counts.fooCommandUses++` pattern at lines 407-411). One small refactor + test updates; the probe-tracker rows already exist.
-  - **Path B (richer signal)**: Introduce per-session boolean aggregates (`sessionsWithAnyMemoryCommand`, `sessionsWithAnyCustomizationCommand`) at the scanner layer for true union counting (no double-counting at all).
-    Either is deferred to a v2 PR.
+- **Per-session aggregate signals.** Even after the counter-class unification, summing `btw + clear + compact + rewind` over a session count multi-counts sessions that used more than one memory command (Risk §1 below). A future PR could introduce `sessionsWithAnyMemoryCommand` / `sessionsWithAnyCustomizationCommand` aggregates at the scanner layer for true union counting (no double-counting at all). Deferred to a v2 PR.
 - **Target tuning.** The current normalize step uses `d.target = 100` for both dims (the Platform Setup target value). After live observation, a reasonable Execution target might be 50 ("perfect at half-session coverage"). Calibration follows data — open as a v2 follow-up if the displayed scores miscalibrate against the user's intuition.
 - **B2 action-card "why" expansion** (predicate LHS + current value + threshold display). Separate, queued behind this PR per the brainstorm stack-rank.
 - **A2 verify-strength predicate.** Cross-repo work touching `~/.claude/skills/ship/`. Higher-ceiling fidelity play; defer until A5 + B2 land.
 
 ## Risks and mitigations
 
-1. **Heterogeneous counter classes in the numerator.** Five of the seven inputs (`btw`, `clear`, `compact`, `color`, `voice`) are session-coverage counters; two (`rewind`, `focus`) are total-invocation counters. Two side effects:
-   - **(1a) Multi-counting.** A session using `/btw` + `/clear` contributes to both counters; summing them double-counts that session.
-   - **(1b) Single-user saturation.** One heavy user firing `/rewind` 50 times can contribute 50 to the memory numerator (where the other terms cap at one per session each), letting a single user pull the denominator's worth of "credit." Same for `/focus` in customization.
-     _Mitigation:_ the `Math.min(ratio, 1)` cap bounds the displayed score to [0, 100]. The cap absorbs both effects without rewarding session-internal redundancy or single-session saturation, but it hides the heterogeneity. _Follow-up:_ a v2 PR either re-classifies `rewindCommandUses` / `focusCommandUses` as session-coverage in `_usage-data.mjs` (the cleaner fix; small refactor) OR introduces aggregate `sessionsWithAnyMemoryCommand` / `sessionsWithAnyCustomizationCommand` signals. Both deferred. The user-approved A5 explicitly accepts this imperfection for v1.
+1. **Numerator multi-counts sessions that used multiple memory or customization commands.** All seven inputs are session-coverage after the unification, but a session using both `/btw` and `/clear` still contributes 1 to each counter — summing them double-counts that session. _Mitigation:_ the `Math.min(ratio, 1)` cap bounds the displayed score to [0, 100] without rewarding session-internal redundancy. The cleaner fix (a single `sessionsWithAnyMemoryCommand` aggregate at the scanner layer) is deferred to a v2 PR (see Out of Scope). v1 explicitly accepts the cap as an acceptable approximation — a heavy user landing at "ratio = 1.0" is fine because the score saturates.
 2. **NaN propagation** if a counter is non-numeric (data-layer bug elsewhere). _Mitigation:_ `?? 0` for null/undefined; tests cover the missing-counter case. Beyond that we trust the upstream partition assertions.
 3. **CLAUDE.md hard-rule rewrite.** The "Memory + Customization → unmeasured" rule is a documented contract. Changing it requires explicit acknowledgement in the commit message. _Mitigation:_ the commit explicitly cites CCE-76 and the new contract; the methodology page (`app/methodology/page.tsx`) describes the new measurement basis.
 4. **Calibration tuning required after observation.** The author's predicted post-PR scores (52, 3) are based on a 30-day snapshot — if the typical user pattern differs, the displayed numbers might miscalibrate. _Mitigation:_ target tuning is out of scope; deferred to a v2 calibration PR once we have live data from this run.
-5. **Tracker Part 2 tip-coverage re-derivation.** The Status transitions (🗣 → ✅ for affected tips) and the ✅/📊/🗣/❌ tally update are easy to get wrong by visual inspection. _Mitigation:_ implement Step 4 of Task 4 with `npx vitest run scripts/__tests__/tracker-counts.test.mjs` as the gating check — header counts are machine-enforced, per-tip-row Status is contributor convention but visible in diff.
+5. **Counter-class unification touches a hot data-layer path.** The flag-set pattern is mechanically straightforward, but `_usage-data.mjs` is the single source of truth for transcript-derived signals; a regression here breaks scoring across many dimensions. _Mitigation:_ the unification mirrors the existing pattern at lines 407-411 byte-for-byte; the assertion flip at `scan-transcript-invocations.test.mjs:247` is the lone behavioral test that asserts the old semantic; full suite runs in the implementation plan's verification step before commit.
+6. **Tracker Part 2 tip-coverage re-derivation.** The Status transitions (🗣 → ✅ for affected tips) and the ✅/📊/🗣/❌ tally update are easy to get wrong by visual inspection. _Mitigation:_ implement Step 4 of Task 4 with `npx vitest run scripts/__tests__/tracker-counts.test.mjs` as the gating check — header counts are machine-enforced, per-tip-row Status is contributor convention but visible in diff.
 
 ## Implementation order (preview for writing-plans handoff)
 
+0. **Counter-class unification (foundation).** In `scripts/_usage-data.mjs`: hoist `let sessionHasFocus = false; let sessionHasRewind = false;` to the per-session reset; flip lines 334-335 to flag-sets; append `if (sessionHasFocus) counts.focusCommandUses++; if (sessionHasRewind) counts.rewindCommandUses++;` to the emit block after line 411. Update `scripts/__tests__/scan-transcript-invocations.test.mjs:247` (`toBe(2)` → `toBe(1)` + test-name reword). Update `scripts/score.mjs:399` evidence wording ("use(s)" → "session(s)"). Run the full suite — expect green.
 1. Add `EXECUTION_SCORERS.memory` body with `withGates` + inline MAX-merge of 4 counters; 7 tests for the memory scorer.
 2. Add `EXECUTION_SCORERS.customization` body with `withGates` + inline MAX-merge of 3 counters; 4 tests for the customization scorer.
 3. Add the cross-cutting `__universe` contract test (Test 12).
