@@ -35,10 +35,11 @@ describe("evaluatePredicate — operator coverage", () => {
     expect(evaluatePredicate("x<=0", {})).toBe(false);
   });
 
-  it("= : exact equality (string and numeric)", () => {
+  it("= : exact equality (string and numeric, cross-type via String() coercion)", () => {
     expect(evaluatePredicate("x=foo", { x: "foo" })).toBe(true);
     expect(evaluatePredicate("x=foo", { x: "bar" })).toBe(false);
     expect(evaluatePredicate("x=5", { x: 5 })).toBe(true);
+    expect(evaluatePredicate("x=5", { x: "5" })).toBe(true);
   });
 
   it("= : alternation with |", () => {

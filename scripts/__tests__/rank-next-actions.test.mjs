@@ -166,4 +166,29 @@ describe("rankNextActions", () => {
     // Only automation actions appear (scheduled and remote skipped).
     expect(result.every((a) => a.dimId === "automation")).toBe(true);
   });
+
+  it("axis ordering buckets unknown axis values with 'either' (tier 2)", () => {
+    // Spec-pinning regression for the internal axisOrder() mapping.
+    // platform=0, execution=1, either=2 — and anything else also falls to 2,
+    // so an unknown axis sorts adjacent to "either", not ahead of "platform".
+    const fixture = {
+      dimensions: [
+        {
+          id: "a",
+          weight: 1,
+          nextActions: [
+            { id: "platform-action", action: "p", axis: "platform" },
+            { id: "unknown-action", action: "u", axis: "novel-tier" },
+          ],
+        },
+      ],
+    };
+    const scoreMap = new Map([["a", { score: 50, executionScore: 50 }]]);
+    const result = rankNextActions(fixture, scoreMap, {}, 10);
+    // Both rank=1*50=50; axis tiebreak: platform(0) before novel-tier(2).
+    expect(result.map((r) => r.actionId)).toEqual([
+      "platform-action",
+      "unknown-action",
+    ]);
+  });
 });
