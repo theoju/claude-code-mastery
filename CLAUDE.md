@@ -142,25 +142,29 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   denominator's, and back it with a source-level
   `gatherInsightsSignals` test (not just a fixture-fed scorer test) so a
   future gate-drop at the counting layer fails CI.
-- **Command counting has the same posture-vs-volume split as ratio
-  universes — don't blanket-exclude session kinds.** Commands feed two
-  kinds of scorers: _posture_ commands (`/color`, `/voice`, `/focus`,
-  `/btw`, `/clear`, `/compact`, `/simplify`, `/rewind`, fewer-perms) gate
-  interactive-only signals, but _volume_ commands (`/loop`, `/schedule`,
-  `/babysit`) feed the **scheduled volume scorer** (`all_sessions`).
-  v0.9.17 cycle: a blanket "exclude observer/sdk/subagent from
-  `scanTranscriptInvocations`" fix — intended to kill observer-session
-  false positives — regressed `scheduled` 75→63 by deleting genuine
-  autonomous-workflow signal (the user's `/loop`/`/schedule` usage in
-  SDK/observer sessions is _real_ volume, not noise). It was reverted; only
-  fix #1 (planning) shipped in v0.9.17. **Known limitation / deferred
-  follow-up:** observer sessions quote the primary session's
-  `<command-name>/cmd`, false-positiving _posture_ command probes. The
-  correct fix is a per-command partition (exclude non-interactive only for
-  posture commands, keep volume commands counting broadly) — design it,
-  don't rush an inline one-liner. Low urgency: the `/color` real-usage bug
-  is already fixed via history (#96), and the false-positive is masked by
-  the history MAX-merge for every history-list command.
+- **Command counting honors the posture-vs-volume partition** —
+  `POSTURE_COMMANDS` / `VOLUME_COMMANDS` in
+  [/Users/theo/Projects/claude-extensions/scripts/\_usage-data.mjs](/Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs)
+  are the canonical source of truth. Posture commands (`/color`,
+  `/voice`, `/focus`, `/btw`, `/clear`, `/compact`, `/simplify`,
+  `/rewind`, `/fewer-permission-prompts`) are counted from transcripts
+  only when `classifySessionKind` returns `interactive_cli` or
+  `"unknown"` (the conservative fallback). Volume commands (`/loop`,
+  `/schedule`, `/babysit`, `/go`, `/batch`) are counted across every
+  scanned session kind — autonomous-workflow signal is real regardless
+  of which session emitted it. A fail-loud `assertCommandPartition`
+  runs at module load and catches drift (disjointness, missing
+  classification, dead classification). **Historical context (do not
+  delete — future readers triaging similar regressions need it):**
+  v0.9.17 originally attempted a blanket "exclude observer/sdk/subagent
+  from `scanTranscriptInvocations`" fix and regressed `scheduled` 75→63
+  by deleting genuine autonomous-workflow signal. It was reverted; the
+  per-command partition (PR #N) is the correct shape — posture is
+  filtered, volume is preserved. **Operational note:** if
+  `npm run assess` exits non-zero with no `assessment.json` written,
+  check stderr for `POSTURE_COMMANDS` / `VOLUME_COMMANDS` partition
+  errors from the boundary assertion before assuming an environmental
+  issue.
 - **Never collapse the two axes on any rendering surface.** Platform Setup
   and Execution scores must each be presented separately on the dashboard,
   the methodology page, the console printer (`run-assessment.mjs`), and the
