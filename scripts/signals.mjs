@@ -543,10 +543,12 @@ export function stageRanInEntry(entry, legacyNumber, newName) {
   return false;
 }
 
-// Reads ~/.claude/ship/journal.jsonl line by line. Counts stage:2 entries
-// (verify-agent dispatches) and outcome:"shipped" entries within the
-// lookback window. Empty/missing file returns all zeros. Malformed lines
-// are skipped silently — same fault tolerance as parseJournalLine.
+// Reads ~/.claude/ship/journal.jsonl line by line. Counts stage 2
+// (verify-agent) and stage 3 (simplify) executions and outcome:"shipped"
+// entries within the lookback window. Stage execution is detected across
+// all three journal format generations via stageRanInEntry. Empty/missing
+// file returns all zeros. Malformed lines are skipped silently — same
+// fault tolerance as parseJournalLine.
 //
 // Inputs are injected (journalPath, now) so tests can drive temp files
 // without monkey-patching globals.
@@ -554,7 +556,12 @@ export async function gatherShipJournal(options = {}) {
   // Vitest skip: when integration tests run gatherSignals without injecting
   // journalPath, don't read the developer's real ~/.claude/ship/journal.jsonl.
   if (process.env.VITEST && !options.journalPath) {
-    return { stage2Count: 0, totalRuns: 0, lastRunAt: null };
+    return {
+      stage2Count: 0,
+      simplifyStageCount: 0,
+      totalRuns: 0,
+      lastRunAt: null,
+    };
   }
   const {
     journalPath = join(claudeHome(), "ship", "journal.jsonl"),
@@ -565,10 +572,16 @@ export async function gatherShipJournal(options = {}) {
   try {
     raw = await readFile(journalPath, "utf8");
   } catch {
-    return { stage2Count: 0, totalRuns: 0, lastRunAt: null };
+    return {
+      stage2Count: 0,
+      simplifyStageCount: 0,
+      totalRuns: 0,
+      lastRunAt: null,
+    };
   }
   const cutoff = now.getTime() - lookbackDays * 24 * 60 * 60 * 1000;
   let stage2Count = 0;
+  let simplifyStageCount = 0;
   let totalRuns = 0;
   let lastRunAt = null;
   for (const line of raw.split("\n")) {
@@ -576,13 +589,14 @@ export async function gatherShipJournal(options = {}) {
     if (!entry || typeof entry.ts !== "string") continue;
     const t = Date.parse(entry.ts);
     if (Number.isNaN(t) || t < cutoff) continue;
-    if (entry.stage === 2) stage2Count++;
+    if (stageRanInEntry(entry, 2, "verify-agent")) stage2Count++;
+    if (stageRanInEntry(entry, 3, "simplify")) simplifyStageCount++;
     if (entry.outcome === "shipped") {
       totalRuns++;
       if (!lastRunAt || entry.ts > lastRunAt) lastRunAt = entry.ts;
     }
   }
-  return { stage2Count, totalRuns, lastRunAt };
+  return { stage2Count, simplifyStageCount, totalRuns, lastRunAt };
 }
 
 // Parse a single JSONL line from ~/.claude/ship/journal.jsonl. Returns the
