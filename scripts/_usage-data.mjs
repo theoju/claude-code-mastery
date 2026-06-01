@@ -312,6 +312,8 @@ export async function scanTranscriptInvocations(options = {}) {
     let sessionHasColor = false;
     let sessionHasFewerPerms = false;
     let sessionHasEffortMax = false;
+    let sessionHasFocus = false;
+    let sessionHasRewind = false;
     const window = [];
 
     const processCurrent = () => {
@@ -331,8 +333,8 @@ export async function scanTranscriptInvocations(options = {}) {
         if (found.has("babysit")) sessionHasBabysit = true;
         // Posture commands — counted only when allowPosture is true
         // (interactive_cli or unknown — the conservative fallback).
-        if (found.has("focus") && allowPosture) counts.focusCommandUses++;
-        if (found.has("rewind") && allowPosture) counts.rewindCommandUses++;
+        if (found.has("focus") && allowPosture) sessionHasFocus = true;
+        if (found.has("rewind") && allowPosture) sessionHasRewind = true;
         if (found.has("simplify") && allowPosture) sessionHasSimplify = true;
         if (found.has("btw") && allowPosture) sessionHasBtw = true;
         if (found.has("voice") && allowPosture) sessionHasVoice = true;
@@ -411,6 +413,8 @@ export async function scanTranscriptInvocations(options = {}) {
     if (sessionHasColor) counts.colorCommandUses++;
     if (sessionHasFewerPerms) counts.fewerPermsCommandUses++;
     if (sessionHasEffortMax) counts.effortMaxCommandUses++;
+    if (sessionHasFocus) counts.focusCommandUses++;
+    if (sessionHasRewind) counts.rewindCommandUses++;
   }
   return counts;
 }

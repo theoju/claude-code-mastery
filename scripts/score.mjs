@@ -396,7 +396,7 @@ export const SCORERS = {
       s.focusCommandUses ?? s.transcriptInvocations?.focusCommandUses ?? 0;
     if (focusCommandUses >= 1) {
       score += 5;
-      ev.push(`/focus adopted (${focusCommandUses} use(s))`);
+      ev.push(`/focus adopted (${focusCommandUses} session(s))`);
     }
     const hasTerminalSetup =
       s.hasTerminalSetup ?? !!s.settings?.hasTerminalSetup;
