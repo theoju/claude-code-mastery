@@ -387,7 +387,7 @@ model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
 - **Ship-journal counters use `stageRanInEntry()` to detect stage
   execution across all three journal format generations** (singular
   `entry.stage`, legacy-numeric `stages_run`, new-string `stages_run`).
-  Adding a new stage counter follows this pattern — see CCE-72 / PR #N
+  Adding a new stage counter follows this pattern — see CCE-72 / PR #113
   for the reference implementation. The canonical stage-number /
   -name mapping lives inline in `scripts/signals.mjs::stageRanInEntry`
   (stages 0–7: pre-flight, test, verify-agent, simplify, code-review,
