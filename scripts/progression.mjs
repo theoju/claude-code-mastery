@@ -220,6 +220,26 @@ const DETECTORS = [
       };
     },
   },
+  {
+    transcriptsRequired: false,
+    detect(sessions) {
+      const remoteTools = ["RemoteTrigger", "PushNotification", "SendMessage"];
+      const m = sessions.find((s) =>
+        remoteTools.some((t) => (s.tool_counts?.[t] ?? 0) > 0),
+      );
+      if (!m) return null;
+      const tool = remoteTools.find((t) => (m.tool_counts?.[t] ?? 0) > 0);
+      const count = m.tool_counts[tool];
+      return {
+        timestamp: m.start_time,
+        dimension: "remote",
+        milestone: "First remote-tool invocation",
+        borisTip: 35,
+        evidence: `First session firing ${tool} (${count} call${count === 1 ? "" : "s"})`,
+        sessionId: m.session_id,
+      };
+    },
+  },
 ];
 
 export async function detectMilestones({

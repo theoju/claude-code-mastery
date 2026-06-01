@@ -346,4 +346,24 @@ describe("detectMilestones", () => {
     expect(milestone.borisTip).toBe(48);
     expect(milestone.evidence).toMatch(/\/babysit/);
   });
+
+  it("emits remote milestone on first RemoteTrigger|PushNotification|SendMessage tool fire", async () => {
+    writeMeta(dir, "no-remote", { start_time: daysAgo(30) });
+    writeMeta(dir, "push-day", {
+      start_time: daysAgo(15),
+      tool_counts: { PushNotification: 2 },
+    });
+    writeMeta(dir, "later-trigger", {
+      start_time: daysAgo(5),
+      tool_counts: { RemoteTrigger: 1 },
+    });
+
+    const r = await detectMilestones({ claudeHome: dir, now: NOW });
+    const milestone = r.milestones.find((m) => m.dimension === "remote");
+    expect(milestone).toBeDefined();
+    expect(milestone.sessionId).toBe("push-day");
+    expect(milestone.milestone).toBe("First remote-tool invocation");
+    expect(milestone.borisTip).toBe(35);
+    expect(milestone.evidence).toMatch(/PushNotification \(2 calls\)/);
+  });
 });
