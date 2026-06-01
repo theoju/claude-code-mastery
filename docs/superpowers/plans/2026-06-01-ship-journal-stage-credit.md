@@ -355,7 +355,7 @@ Expected: 16 tests pass (4 existing gatherShipJournal + 6 stageRanInEntry from T
 - [ ] **Step 5: Run the full test suite**
 
 Run: `npx vitest run`
-Expected: full suite passes. No other test in the repo references the journal return shape directly (verified via `grep -rn "stage2Count" scripts/ app/`).
+Expected: full suite passes. No other test in the repo pins the journal return **shape** via `toEqual`. One adjacent test — `/Users/theo/Projects/claude-extensions/scripts/__tests__/build-signals-summary.test.mjs:35` — constructs a partial `shipJournal: { stage2Count, totalRuns, lastRunAt }` literal inside a `makeSignals({...})` override and reads only projected fields (`r.shipVerifyStageRecent`, `r.shipsRecent`). The missing `simplifyStageCount` projects through `signals.shipJournal?.simplifyStageCount ?? 0 = 0` and `Math.max` against the transcript-derived value still yields the correct fixture output, so that test continues to pass unmodified. If the executor sees a "missing field" warning here, it's a false alarm — the projection's optional-chaining + `?? 0` defends the shape.
 
 - [ ] **Step 6: Commit**
 
@@ -492,16 +492,42 @@ EOF
 Run:
 
 ```bash
-grep -n "shipVerifyStageRecent\|simplifyCommandUses\|Settings.*Journal\|Transcripts" docs/superpowers/specs/2026-05-25-probe-implementation-status.md | head -30
+grep -n "shipVerifyStageRecent\|simplifyCommandUses\|^### " docs/superpowers/specs/2026-05-25-probe-implementation-status.md | head -30
 ```
 
-Identify the Part 1 registry rows for `shipVerifyStageRecent` (under the Settings/Journal layer) and `simplifyCommandUses` (under the Transcripts layer). The five header counts (75 tips / 12 dimensions / 48 next-actions / 47 probe-catalog entries / 71 signalsSummary keys) stay **unchanged** for this PR — no new probes / catalog entries / signalsSummary keys.
+The tracker's Part 1 registry has no "Settings/Journal" layer. The actual rows to annotate (verified against the current file head):
 
-- [ ] **Step 2: Append `[^journal-stage-credit]` to the two affected rows**
+- **Line 143 — Filesystem layer** (`### Filesystem (`~/.claude/`) — `signals.mjs`): the combined-cell row ` | `shipsRecent` / `shipVerifyStageRecent` | automation / verification scorer (`shipJournal`) | — | P | ``
+- **Line 166 — Transcripts layer** (`### Transcripts (...) — `\_usage-data.mjs`[^partition]`): the row ``| `shipVerifyStageRecent` | `shipVerifyStageRecent>=1` (verification) | ✅ | P\* |``
+- **Line 170 — Transcripts layer**: the row ``| `simplifyCommandUses` | `simplifyCommandUses>=1` (automation) | ✅ | P\* |``
 
-In each of the two rows identified in Step 1, append the footnote anchor `[^journal-stage-credit]` after the signal name (or wherever the spec's row layout places per-row annotations — match the partition footnote precedent from PR #110 if other rows already carry footnote anchors).
+(Line numbers are approximate — if the file has shifted since this plan was authored, re-locate with the grep above. The three Field-cell signal names are the stable anchor.)
 
-If neither row carries an existing footnote, the cleanest placement is in the "Notes" or final column of each row; if the row is too narrow, anchor the layer header (`Settings/Journal[^journal-stage-credit]` / `Transcripts[^journal-stage-credit]`) and reference both signals from the footnote body.
+The five header counts (75 tips / 12 dimensions / 48 next-actions / 47 probe-catalog entries / 71 signalsSummary keys) stay **unchanged** for this PR — no new probes / catalog entries / signalsSummary keys.
+
+- [ ] **Step 2: Append `[^journal-stage-credit]` to the Field cell of all three rows**
+
+Follow the existing `[^partition]` precedent already in this file (line 158, on the Transcripts layer header). The cleanest placement is **inside the Field cell**, immediately after the closing backtick of the signal name. Apply three edits:
+
+(a) Line 143 — anchor on `shipVerifyStageRecent` (the field that consumes the widened semantic — `shipsRecent` is unaffected):
+
+```markdown
+| `shipsRecent` / `shipVerifyStageRecent`[^journal-stage-credit] | automation / verification scorer (`shipJournal`) | — | P |
+```
+
+(b) Line 166 — anchor on `shipVerifyStageRecent`:
+
+```markdown
+| `shipVerifyStageRecent`[^journal-stage-credit] | `shipVerifyStageRecent>=1` (verification) | ✅ | P\* |
+```
+
+(c) Line 170 — anchor on `simplifyCommandUses`:
+
+```markdown
+| `simplifyCommandUses`[^journal-stage-credit] | `simplifyCommandUses>=1` (automation) | ✅ | P\* |
+```
+
+The footnote anchor inside the Field cell renders cleanly in GitHub's markdown table renderer and follows the precedent set by `[^partition]` on the Transcripts header. No new columns added; the four-column table layout is preserved.
 
 - [ ] **Step 3: Add the footnote definition at the end of Part 1**
 
@@ -621,6 +647,12 @@ would not isolate them cleanly. Use a temporary worktree at `main` to
 measure the pre-fix state directly:
 
 ```bash
+# Idempotent pre-clean — handles re-runs after a partial failure.
+# Note: block-destructive.sh blocks "rm -rf" even on /tmp paths;
+# use plain "rm -r" (no -f) per CLAUDE.md.
+git worktree remove --force /tmp/cce72-baseline-wt 2>/dev/null || true
+[ -d /tmp/cce72-baseline-wt ] && rm -r /tmp/cce72-baseline-wt
+
 git worktree add /tmp/cce72-baseline-wt main
 (cd /tmp/cce72-baseline-wt && npm install --silent && npm run assess -- --include-transcripts --insights-lookback 30 --print --no-slack > /tmp/cce72-baseline.txt 2>&1)
 git worktree remove /tmp/cce72-baseline-wt
@@ -749,7 +781,7 @@ cat >> /tmp/cce72-pr-notes.txt <<'EOF'
 EOF
 ```
 
-(This file feeds `/ship` Stage 6 — `gh pr create --body-file /tmp/cce72-pr-notes.txt`. Required because the PR body discusses block-destructive-pattern-adjacent strings that `block-destructive.sh` would otherwise reject if passed via heredoc.)
+(This file is consumed in Task 7. `/ship`'s Stage 6 hard-codes `gh pr create --body "$(cat <<'EOF' … EOF)"` and does NOT accept a `--body-file` flag — verified against `~/.claude/skills/ship/spokes/push-pr.md`. So Task 7 interrupts `/ship` before Stage 6 and dispatches `gh pr create --body-file /tmp/cce72-pr-notes.txt` manually. Keeping the PR body in a file is cleaner than embedding a multi-paragraph delta capture into a slash-command argument.)
 
 - [ ] **Step 7: No commit (live-verification artifacts are local-only)**
 
@@ -776,14 +808,16 @@ Expected: `feat/CCE-72-ship-journal-stage-credit`; six commits visible — the d
 In Claude Code, type:
 
 ```
-/ship --body-file /tmp/cce72-pr-notes.txt
+/ship
 ```
+
+`/ship` does NOT accept a `--body-file` flag — its accepted surface (per `~/.claude/commands/ship.md`) is `[--no-simplify] [--draft] [--base <branch>] [--jira <KEY>|none] [-m '<msg>'] [--skip-tests]`. Stage 6 hard-codes `gh pr create --body "$(cat <<'EOF' … EOF)"`, so the body must be substituted manually (see Step 4).
 
 The chain handles Stages 0-7 (pre-flight, cost gate, test, verify-agent, simplify, code review, commit-skip if already committed, push, PR open, Jira transition).
 
-- [ ] **Step 4: At Stage 6 (push + PR), confirm the PR notes file is consumed**
+- [ ] **Step 4: Intercept Stage 6 and dispatch `gh pr create` manually with the body file**
 
-`/ship` Stage 6 should invoke `gh pr create` with `--body-file /tmp/cce72-pr-notes.txt` (forwarded from the slash-command flag in Step 3). If the chain instead generates its own body, **stop and dispatch `gh pr create` manually** with the notes file:
+When `/ship` reaches Stage 6 (push + PR), interrupt and dispatch `gh pr create` directly with the body file captured in Task 6:
 
 ```bash
 gh pr create --base main --title "feat(scoring): credit /ship Stage 2 + 3 across journal format generations — CCE-72" --body-file /tmp/cce72-pr-notes.txt
