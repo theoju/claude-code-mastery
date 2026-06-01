@@ -428,6 +428,7 @@ const COMMAND_NAME_RE = /<command-name>\/?([\w:-]+)<\/command-name>/g;
 export async function scanTranscriptModes(path) {
   const modes = new Set();
   const skills = new Set();
+  const commands = new Set();
   let hasWorktreeState = false;
   let hasAiTitle = false;
   // Detect explanatory-output-style adoption via its rendered banner. The
@@ -478,6 +479,7 @@ export async function scanTranscriptModes(path) {
     if (raw.includes("<command-name>")) {
       for (const m of raw.matchAll(COMMAND_NAME_RE)) {
         const cmd = m[1];
+        commands.add(cmd);
         if (PLANNING_SKILL_COMMANDS.has(cmd)) modes.add("plan");
         if (LEARNING_SKILL_COMMANDS.has(cmd)) modes.add("learning");
       }
@@ -488,6 +490,7 @@ export async function scanTranscriptModes(path) {
     hasWorktreeState,
     hasAiTitle,
     skills,
+    commands,
     learningModeMatches,
     assistantTurns,
     opusAssistantTurns,
