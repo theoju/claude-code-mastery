@@ -68,7 +68,9 @@ const DETECTORS = [
   {
     transcriptsRequired: false,
     detect(sessions, facets) {
-      const m = sessions.find((s) => facets.get(s.session_id)?.session_type === "multi_task");
+      const m = sessions.find(
+        (s) => facets.get(s.session_id)?.session_type === "multi_task",
+      );
       if (!m) return null;
       return {
         timestamp: m.start_time,
@@ -83,7 +85,9 @@ const DETECTORS = [
   {
     transcriptsRequired: true,
     detect(sessions, _facets, transcripts) {
-      const m = sessions.find((s) => transcripts.get(s.session_id)?.modes.has("auto"));
+      const m = sessions.find((s) =>
+        transcripts.get(s.session_id)?.modes.has("auto"),
+      );
       if (!m) return null;
       return {
         timestamp: m.start_time,
@@ -98,7 +102,9 @@ const DETECTORS = [
   {
     transcriptsRequired: true,
     detect(sessions, _facets, transcripts) {
-      const m = sessions.find((s) => transcripts.get(s.session_id)?.modes.has("plan"));
+      const m = sessions.find((s) =>
+        transcripts.get(s.session_id)?.modes.has("plan"),
+      );
       if (!m) return null;
       return {
         timestamp: m.start_time,
@@ -113,7 +119,9 @@ const DETECTORS = [
   {
     transcriptsRequired: true,
     detect(sessions, _facets, transcripts) {
-      const m = sessions.find((s) => transcripts.get(s.session_id)?.hasWorktreeState);
+      const m = sessions.find(
+        (s) => transcripts.get(s.session_id)?.hasWorktreeState,
+      );
       if (!m) return null;
       return {
         timestamp: m.start_time,
@@ -128,14 +136,17 @@ const DETECTORS = [
   {
     transcriptsRequired: true,
     detect(sessions, _facets, transcripts) {
-      const m = sessions.find((s) => (transcripts.get(s.session_id)?.learningModeMatches ?? 0) > 0);
+      const m = sessions.find(
+        (s) => (transcripts.get(s.session_id)?.learningModeMatches ?? 0) > 0,
+      );
       if (!m) return null;
       return {
         timestamp: m.start_time,
         dimension: "learning",
         milestone: "First explanatory-mode session",
         borisTip: 51,
-        evidence: "First session emitting the ★ Insight banner from explanatory-output-style",
+        evidence:
+          "First session emitting the ★ Insight banner from explanatory-output-style",
         sessionId: m.session_id,
       };
     },
@@ -188,6 +199,27 @@ const DETECTORS = [
       };
     },
   },
+  {
+    transcriptsRequired: true,
+    detect(sessions, _facets, transcripts) {
+      const scheduledCommands = ["loop", "schedule", "babysit"];
+      const m = sessions.find((s) => {
+        const cmds = transcripts.get(s.session_id)?.commands;
+        return cmds && scheduledCommands.some((c) => cmds.has(c));
+      });
+      if (!m) return null;
+      const cmds = transcripts.get(m.session_id).commands;
+      const cmd = scheduledCommands.find((c) => cmds.has(c));
+      return {
+        timestamp: m.start_time,
+        dimension: "scheduled",
+        milestone: "Started using scheduled workflows",
+        borisTip: 48,
+        evidence: `First session invoking /${cmd}`,
+        sessionId: m.session_id,
+      };
+    },
+  },
 ];
 
 export async function detectMilestones({
@@ -202,7 +234,9 @@ export async function detectMilestones({
 
   const nowMs = Date.parse(now);
   if (!Number.isFinite(nowMs)) {
-    throw new Error(`detectMilestones: invalid now timestamp ${JSON.stringify(now)}`);
+    throw new Error(
+      `detectMilestones: invalid now timestamp ${JSON.stringify(now)}`,
+    );
   }
   const cutoff = cutoffFromLookback(now, lookbackDays);
 
@@ -212,17 +246,25 @@ export async function detectMilestones({
   const sortByTime = (a, b) => {
     const dt = Date.parse(a.start_time) - Date.parse(b.start_time);
     if (dt !== 0) return dt;
-    return a.session_id < b.session_id ? -1 : a.session_id > b.session_id ? 1 : 0;
+    return a.session_id < b.session_id
+      ? -1
+      : a.session_id > b.session_id
+        ? 1
+        : 0;
   };
   const allSessions = allMeta
     .filter((m) => m.start_time && Number.isFinite(Date.parse(m.start_time)))
     .sort(sortByTime);
-  const inWindow = allSessions.filter((m) => withinWindow(m.start_time, cutoff));
+  const inWindow = allSessions.filter((m) =>
+    withinWindow(m.start_time, cutoff),
+  );
 
   const facets = await loadFacetsMap(claudeHome);
   // "Stopped using" detectors need full history; "first" detectors only need
   // the window. Scan all sessions once so transcripts cover both.
-  const transcripts = includeTranscripts ? await buildTranscriptScans(claudeHome, allSessions) : null;
+  const transcripts = includeTranscripts
+    ? await buildTranscriptScans(claudeHome, allSessions)
+    : null;
   const ctx = { nowMs, allSessions };
 
   const milestones = [];
