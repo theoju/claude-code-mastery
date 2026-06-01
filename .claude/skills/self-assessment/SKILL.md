@@ -16,6 +16,18 @@ Otherwise: run `npm run assess -- $ARGUMENTS`, then report back with:
 - **Platform Setup** and **Execution** scores out of 100, plus the Δ between them. A high Δ is the diagnostic case — every tool installed, none of them fired.
 - Dimensions that moved (↗ ↘ → ✦) since the last snapshot.
 - Top 3 priority actions, noting which axis each falls on. **First filter** out every action whose `satisfiedWhen` predicate evaluates true against `signalsSummary` (a satisfied action is not a TODO — surfacing one as a priority is a reporting bug). Then rank the remainder by `weight × deficit`. Unpredicated actions stay in the pool — they're behavioral coaching that can't be auto-detected.
+
+  **`satisfiedWhen` DSL grammar** (string predicates evaluated against `signalsSummary`):
+  - `path` — truthy (non-null, non-zero, non-empty-string; strings `"0"` and `"false"` are also falsy)
+  - `!path` — falsy
+  - `path>=N` / `<=N` / `>N` / `<N` — numeric comparison
+  - `path=v` or `path=v|w|x` — equals (or equals one of)
+  - `path!=v` — not equals
+  - `path~regex` — array-of-strings element matches regex (case-insensitive)
+  - `A & B` — AND of two or more atoms
+
+  Canonical implementation: `app/lib/assessment.ts:evaluatePredicate`. Example: `loopCommandUses>=1` with `signalsSummary.loopCommandUses=14` evaluates to **true** → filter the action out, do not surface as a TODO.
+
 - CLAUDE.md aggregate health if configured (totals/averages/grade distribution only — **never** project names, paths, or per-file issues).
 - The dashboard URL from `assessment.config.json#publish.publicUrl` (or http://localhost:3737 if `npm run dev` is up).
 
