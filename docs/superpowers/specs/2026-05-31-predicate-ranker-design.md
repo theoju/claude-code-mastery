@@ -1,7 +1,15 @@
+---
+status: complete
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/104
+  - https://github.com/theoju/claude-code-self-assessment/pull/106
+synthesized_into: []
+---
+
 # Predicate evaluator + ranked next-actions — design
 
 **Date:** 2026-05-31
-**Status:** Approved (brainstorming → writing-plans next)
+**Status:** Implemented (PR #104 + PR #106 both merged)
 **Triggering bug:** `/self-assessment` reported `Start with one loop: /loop 30m /babysit` as a top-3 priority despite `signalsSummary.loopCommandUses=14` satisfying its `satisfiedWhen` predicate (`loopCommandUses>=1`). Root cause: the skill instructs the model to "first filter, then rank" but the canonical DSL evaluator lives in `app/lib/assessment.ts` (TS-only, Next.js-coupled by location), and no Node-side caller exists. The model running the skill hand-wrote a filter that expected an object shape and skipped string predicates entirely.
 
 ## Goal
@@ -259,24 +267,26 @@ CLAUDE.md `## Hard rules` gains:
 
 ## Ship sequencing
 
-| #   | PR                                                                          | Stages                                                                             | Estimate   |
-| --- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------- |
-| 1   | T1 — SKILL.md DSL grammar                                                   | full `/ship` chain (test → verify → simplify → review → commit → push → PR → Jira) | ~10 min    |
-| 2   | S1 — Extract evaluator + bake `rankedNextActions` + delete T1 grammar block | full `/ship` chain                                                                 | ~45–60 min |
+| #   | PR                                                                          | Status    | Notes                                                                 |
+| --- | --------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------- |
+| 1   | T1 — SKILL.md DSL grammar (PR #104)                                         | ✅ Merged | Added 12-line DSL grammar block + this spec + full implementation plan |
+| 2   | S1 — Extract evaluator + bake `rankedNextActions` + delete T1 grammar block (PR #106) | ✅ Merged | `scripts/predicate.mjs` extracted; 30 new tests added; SKILL.md grammar block deleted as planned; `rankedNextActions` live in `assessment.json` |
 
-PR 2 explicitly removes the SKILL.md grammar block PR 1 added, so the SKILL.md surface settles to a tighter, lower-maintenance form. Both PRs go through `/ship`'s full chain including code review.
+Both PRs shipped as designed. The SKILL.md surface settled to a single bullet reading from the pre-computed array; the DSL grammar block from PR 1 was deleted in PR 2 as planned.
 
-## Open risks
+## Open risks (resolved)
 
-| Risk                                                                        | Mitigation                                                                                                                                     |
-| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Next.js 16 cross-module-system import surprises (TS `.ts` importing `.mjs`) | Verified during exploration: ESM imports from TS work natively in Next.js 16 / Node 22+. If a build error surfaces, fallback to a `.mts` shim. |
-| Re-rank changes existing snapshot tests on `assessment.json`                | Update snapshots in the same PR; document expected diff                                                                                        |
-| Dashboard render path inadvertently broken by `evaluatePredicate` move      | Equivalence test pins reference identity; existing dashboard tests cover render paths                                                          |
-| `rankedNextActions` field grows assessment.json size                        | Top-10 cap keeps growth bounded (~3 KB worst case); gitignored anyway                                                                          |
+| Risk                                                                        | Resolution                                                                                                       |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Next.js 16 cross-module-system import surprises (TS `.ts` importing `.mjs`) | Non-issue in practice: ESM imports from TS work natively in Next.js 16 / Node 22+. No `.mts` shim needed.      |
+| Re-rank changes existing snapshot tests on `assessment.json`                | Snapshots updated in PR #106 alongside the implementation.                                                       |
+| Dashboard render path inadvertently broken by `evaluatePredicate` move      | Reference-equality passthrough test (`predicate-passthrough.test.ts`) enforces this in CI. Render tests passed. |
+| `rankedNextActions` field grows assessment.json size                        | Confirmed bounded: top-10 cap, gitignored. Non-issue.                                                           |
 
-## Done when
+## Done when (all criteria satisfied — 2026-05-31)
 
-- PR 1 merges and `/self-assessment` invocations report the DSL grammar inline.
-- PR 2 merges and `/self-assessment` invocations report `assessment.json.rankedNextActions[0..2]` verbatim, with the SKILL.md grammar block gone.
-- Today's specific bug (`/loop 30m /babysit` in top 3 despite `loopCommandUses=14`) does not recur — proven by the named regression test in `rank-next-actions.test.mjs`.
+- ✅ PR #104 merged: `/self-assessment` invocations reported the DSL grammar inline (tactical stopgap).
+- ✅ PR #106 merged: `/self-assessment` invocations read `assessment.json.rankedNextActions[0..2]` verbatim; SKILL.md grammar block deleted as obsolete.
+- ✅ The specific bug (`/loop 30m /babysit` in top 3 despite `loopCommandUses=14`) does not recur — the named regression test in `rank-next-actions.test.mjs` asserts `loopCommandUses=14` excludes the already-satisfied `babysit-loop` action and is enforced in CI.
+- ✅ Two CLAUDE.md hard rules pin the contracts: "DSL evaluator has one source" and "Ranked next-actions live in `assessment.json.rankedNextActions`".
+- ✅ 30 new tests shipped (predicate operators ×18, ranker ×9, wire-up ×2, passthrough equivalence ×1).

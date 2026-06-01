@@ -1,10 +1,20 @@
+---
+status: complete
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/104
+  - https://github.com/theoju/claude-code-self-assessment/pull/106
+synthesized_into: []
+---
+
 # Predicate evaluator + ranked next-actions Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status: Implemented.** PR #104 (tactical stopgap) and PR #106 (structural close-out) both merged on 2026-05-31. All tasks below are complete. See `docs/superpowers/specs/2026-05-31-predicate-ranker-design.md` for the design rationale.
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Eliminate the "model re-implements the DSL" bug class by (PR 1) documenting the `satisfiedWhen` DSL grammar inside the self-assessment skill, then (PR 2) extracting `evaluatePredicate` to `scripts/predicate.mjs`, baking a filtered + ranked `rankedNextActions[10]` into `assessment.json`, and turning the skill into a trivial reader.
 
-**Architecture:** PR 1 is a single additive edit to `.claude/skills/self-assessment/SKILL.md`. PR 2 introduces `scripts/predicate.mjs` as the canonical DSL evaluator (TypeScript `app/lib/assessment.ts` becomes a 1-line passthrough re-export), adds a `rankNextActions(rubric, scoreMap, signalsSummary, limit)` helper in `scripts/run-assessment.mjs`, and writes the ranked list to `app/data/assessment.json`. SKILL.md is then simplified to read the pre-computed field, and the PR 1 grammar block is deleted as obsolete.
+**Architecture:** PR 1 is a single additive edit to `.claude/skills/self-assessment/SKILL.md`. PR 2 introduces `scripts/predicate.mjs` as the canonical DSL evaluator (TypeScript `app/lib/assessment.ts` becomes a 2-line passthrough re-export), adds `scripts/rank-next-actions.mjs` with a `rankNextActions(rubric, scoreMap, signalsSummary, limit)` helper, wires it into `scripts/run-assessment.mjs`, and writes the ranked list to `app/data/assessment.json`. SKILL.md is then simplified to read the pre-computed field, and the PR 1 grammar block is deleted as obsolete.
 
 **Tech Stack:** Node 22+ ESM, TypeScript (re-export only), Vitest, no new runtime dependencies.
 
@@ -14,23 +24,11 @@
 
 ## Pre-flight (do once before Task 1)
 
-- [ ] **Confirm current branch is `feat/skill-dsl-grammar`** (spec already committed at `fee92e5`).
+> Both PRs are merged. Pre-flight is recorded for historical reference only.
 
-```bash
-git branch --show-current
-# Expected: feat/skill-dsl-grammar
+- [x] **Confirm current branch is `feat/skill-dsl-grammar`** (spec already committed at `fee92e5`). *(Completed; PR #104 shipped from this branch.)*
 
-git log -1 --oneline
-# Expected: fee92e5 docs(spec): predicate evaluator + ranked next-actions design
-```
-
-- [ ] **Confirm baseline tests pass.**
-
-```bash
-npx vitest run
-# Expected: Test Files <N> passed (<N>), Tests <N> passed (<N>)
-# Record the pre-change counts; PR 1 adds 0 tests, PR 2 adds 25+.
-```
+- [x] **Confirm baseline tests pass.** *(Baseline recorded before PR #104. PR 1 added 0 tests; PR 2 added 30 tests — predicate×18, ranker×9, wire-up×2, passthrough×1.)*
 
 ---
 
@@ -42,7 +40,7 @@ npx vitest run
 
 - Modify: `.claude/skills/self-assessment/SKILL.md`
 
-- [ ] **Step 1: Read the file to locate the insertion point.**
+- [x] **Step 1: Read the file to locate the insertion point.**
 
 ```bash
 grep -n "Top 3 priority actions" .claude/skills/self-assessment/SKILL.md
@@ -51,7 +49,7 @@ grep -n "Top 3 priority actions" .claude/skills/self-assessment/SKILL.md
 
 The new block goes immediately AFTER that bullet's existing single line, indented as a sub-paragraph of the same bullet.
 
-- [ ] **Step 2: Insert the grammar block.**
+- [x] **Step 2: Insert the grammar block.**
 
 Use the Edit tool. Locate the unique anchor:
 
@@ -76,14 +74,14 @@ Unpredicated actions stay in the pool — they're behavioral coaching that can't
   Canonical implementation: `app/lib/assessment.ts:evaluatePredicate`. Example: `loopCommandUses>=1` with `signalsSummary.loopCommandUses=14` evaluates to **true** → filter the action out, do not surface as a TODO.
 ```
 
-- [ ] **Step 3: Run the full test suite.**
+- [x] **Step 3: Run the full test suite.**
 
 ```bash
 npx vitest run
 # Expected: same Test Files / Tests counts as the baseline (this is a docs-only change).
 ```
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
 
 ```bash
 git add .claude/skills/self-assessment/SKILL.md
@@ -110,7 +108,7 @@ EOF
 )"
 ```
 
-- [ ] **Step 5: Run `/ship` (full chain: test → verify → simplify → review → push → PR → Jira).**
+- [x] **Step 5: Run `/ship` (full chain: test → verify → simplify → review → push → PR → Jira).**
 
 ```
 /ship
@@ -136,7 +134,7 @@ git checkout -b feat/predicate-ranker-structural
 - Create: `scripts/__tests__/predicate.test.mjs`
 - Create: `scripts/predicate.mjs`
 
-- [ ] **Step 1: Write the failing test file.** This covers every operator class and includes the rubric integration test (parse every production `satisfiedWhen` without throwing).
+- [x] **Step 1: Write the failing test file.** This covers every operator class and includes the rubric integration test (parse every production `satisfiedWhen` without throwing).
 
 Create `scripts/__tests__/predicate.test.mjs`:
 
@@ -269,14 +267,14 @@ describe("evaluatePredicate — rubric integration", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test — confirm it fails because `predicate.mjs` doesn't exist.**
+- [x] **Step 2: Run the test — confirm it fails because `predicate.mjs` doesn't exist.**
 
 ```bash
 npx vitest run scripts/__tests__/predicate.test.mjs
 # Expected: FAIL — "Cannot find module ../predicate.mjs"
 ```
 
-- [ ] **Step 3: Create `scripts/predicate.mjs` (port from `app/lib/assessment.ts:165–259`).**
+- [x] **Step 3: Create `scripts/predicate.mjs` (port from `app/lib/assessment.ts:165–259`).**
 
 ```javascript
 // Pure-ESM port of the satisfiedWhen DSL evaluator. Canonical implementation
@@ -375,21 +373,21 @@ export function evaluatePredicate(expr, signals) {
 }
 ```
 
-- [ ] **Step 4: Run the test — confirm it passes.**
+- [x] **Step 4: Run the test — confirm it passes.**
 
 ```bash
 npx vitest run scripts/__tests__/predicate.test.mjs
 # Expected: PASS — 18+ tests pass
 ```
 
-- [ ] **Step 5: Run the full suite to confirm nothing else broke.**
+- [x] **Step 5: Run the full suite to confirm nothing else broke.**
 
 ```bash
 npx vitest run
 # Expected: all green; new tests show as +18 vs baseline
 ```
 
-- [ ] **Step 6: Commit.**
+- [x] **Step 6: Commit.**
 
 ```bash
 git add scripts/predicate.mjs scripts/__tests__/predicate.test.mjs
@@ -420,7 +418,7 @@ EOF
 - Create: `app/lib/__tests__/predicate-passthrough.test.ts`
 - Modify: `app/lib/assessment.ts` (replace lines 165–259 with re-export)
 
-- [ ] **Step 1: Write the failing equivalence test.**
+- [x] **Step 1: Write the failing equivalence test.**
 
 Create `app/lib/__tests__/predicate-passthrough.test.ts`:
 
@@ -437,14 +435,14 @@ describe("evaluatePredicate — TS/MJS passthrough", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test — confirm it fails because TS still has its own definition.**
+- [x] **Step 2: Run the test — confirm it fails because TS still has its own definition.**
 
 ```bash
 npx vitest run app/lib/__tests__/predicate-passthrough.test.ts
 # Expected: FAIL — expected [Function fromTs] to be [Function fromMjs]
 ```
 
-- [ ] **Step 3: Replace the local implementation in `app/lib/assessment.ts`.**
+- [x] **Step 3: Replace the local implementation in `app/lib/assessment.ts`.**
 
 Find these blocks (currently at lines 161–259):
 
@@ -482,7 +480,7 @@ export function evaluatePredicate(
 }
 ```
 
-Replace ALL of that with a single comment + re-export:
+Replace ALL of that with a comment + 2-line re-export (the `// @ts-expect-error` line counts as line 1):
 
 ```typescript
 // ---------------------------------------------------------------------------
@@ -494,14 +492,14 @@ Replace ALL of that with a single comment + re-export:
 export { evaluatePredicate } from "../../scripts/predicate.mjs";
 ```
 
-- [ ] **Step 4: Run the equivalence test — confirm it passes.**
+- [x] **Step 4: Run the equivalence test — confirm it passes.**
 
 ```bash
 npx vitest run app/lib/__tests__/predicate-passthrough.test.ts
 # Expected: PASS — 1 test passes
 ```
 
-- [ ] **Step 5: Run the full suite to confirm no dashboard render regressions.**
+- [x] **Step 5: Run the full suite to confirm no dashboard render regressions.**
 
 ```bash
 npx vitest run
@@ -510,14 +508,14 @@ npx vitest run
 # identical (same function, just re-exported).
 ```
 
-- [ ] **Step 6: Confirm the Next.js production build still type-checks and bundles.**
+- [x] **Step 6: Confirm the Next.js production build still type-checks and bundles.**
 
 ```bash
 npm run build
 # Expected: ✓ Compiled successfully — no TS errors, no module resolution errors.
 ```
 
-- [ ] **Step 7: Commit.**
+- [x] **Step 7: Commit.**
 
 ```bash
 git add app/lib/assessment.ts app/lib/__tests__/predicate-passthrough.test.ts
@@ -538,12 +536,14 @@ EOF
 
 ### Task 4: Implement `rankNextActions` with TDD
 
+> Implemented in PR #106. `rankNextActions` shipped as a standalone `scripts/rank-next-actions.mjs` module (not inlined in `run-assessment.mjs`), keeping the ranker independently testable and importable.
+
 **Files:**
 
 - Create: `scripts/__tests__/rank-next-actions.test.mjs`
 - Create: `scripts/rank-next-actions.mjs`
 
-- [ ] **Step 1: Write the failing test file.**
+- [x] **Step 1: Write the failing test file.**
 
 Create `scripts/__tests__/rank-next-actions.test.mjs`:
 
@@ -719,14 +719,14 @@ describe("rankNextActions", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test — confirm it fails because the module doesn't exist.**
+- [x] **Step 2: Run the test — confirm it fails because the module doesn't exist.**
 
 ```bash
 npx vitest run scripts/__tests__/rank-next-actions.test.mjs
 # Expected: FAIL — "Cannot find module ../rank-next-actions.mjs"
 ```
 
-- [ ] **Step 3: Implement `scripts/rank-next-actions.mjs`.**
+- [x] **Step 3: Implement `scripts/rank-next-actions.mjs`.**
 
 Create the file:
 
@@ -797,21 +797,21 @@ export function rankNextActions(rubric, scoreMap, signalsSummary, limit = 10) {
 }
 ```
 
-- [ ] **Step 4: Run the test — confirm it passes.**
+- [x] **Step 4: Run the test — confirm it passes.**
 
 ```bash
 npx vitest run scripts/__tests__/rank-next-actions.test.mjs
 # Expected: PASS — 9 tests pass
 ```
 
-- [ ] **Step 5: Run the full suite.**
+- [x] **Step 5: Run the full suite.**
 
 ```bash
 npx vitest run
 # Expected: all green; +9 tests vs prior step.
 ```
 
-- [ ] **Step 6: Commit.**
+- [x] **Step 6: Commit.**
 
 ```bash
 git add scripts/rank-next-actions.mjs scripts/__tests__/rank-next-actions.test.mjs
@@ -835,12 +835,14 @@ EOF
 
 ### Task 5: Wire `rankNextActions` into `run-assessment.mjs`
 
+> Implemented in PR #106. `signalsSummary` extracted to a local variable; `scoreMap` built from `scored.scores`; `rankedNextActions` written under that key in `assessment.json` on every `npm run assess` run.
+
 **Files:**
 
 - Modify: `scripts/run-assessment.mjs` (add import + add field to assessment object)
 - Modify: `scripts/__tests__/run-assessment.test.mjs` (or create if absent — see Step 1)
 
-- [ ] **Step 1: Locate the existing run-assessment test file and add the assertion.**
+- [x] **Step 1: Locate the existing run-assessment test file and add the assertion.**
 
 ```bash
 ls scripts/__tests__/run-assessment*.test.mjs 2>&1
@@ -884,7 +886,7 @@ describe("rankNextActions integration with scoreAll output", () => {
 });
 ```
 
-- [ ] **Step 2: Run the new test — confirm it fails or passes per current state.**
+- [x] **Step 2: Run the new test — confirm it fails or passes per current state.**
 
 ```bash
 npx vitest run scripts/__tests__/run-assessment-ranking.test.mjs
@@ -894,7 +896,7 @@ npx vitest run scripts/__tests__/run-assessment-ranking.test.mjs
 
 If makeRubric / scoreAll fixture shape rejects rankNextActions usage, fix the fixture (don't weaken the assertion).
 
-- [ ] **Step 3: Modify `scripts/run-assessment.mjs` — add the import.**
+- [x] **Step 3: Modify `scripts/run-assessment.mjs` — add the import.**
 
 Near the top of the file, alongside other imports from `./score.mjs` / `./signals.mjs`:
 
@@ -902,7 +904,7 @@ Near the top of the file, alongside other imports from `./score.mjs` / `./signal
 import { rankNextActions } from "./rank-next-actions.mjs";
 ```
 
-- [ ] **Step 4: Modify the assessment object assembly (around line 325).**
+- [x] **Step 4: Modify the assessment object assembly (around line 325).**
 
 Locate this block:
 
@@ -949,14 +951,14 @@ const assessment = {
 
 (The change extracts `signalsSummary` to a local variable so both consumers reference it; computes a `scoreMap` from `scored.scores`; inserts the new field.)
 
-- [ ] **Step 5: Run the assessment with `--no-write` to confirm it composes correctly.**
+- [x] **Step 5: Run the assessment with `--no-write` to confirm it composes correctly.**
 
 ```bash
 node scripts/run-assessment.mjs --include-transcripts --insights-lookback 30 --no-write 2>&1 | head -5
 # Expected: prints the same header as before — Platform/Execution scores — no crash.
 ```
 
-- [ ] **Step 6: Run the full assessment once for real and inspect the output.**
+- [x] **Step 6: Run the full assessment once for real and inspect the output.**
 
 ```bash
 npm run assess -- --include-transcripts --insights-lookback 30
@@ -964,14 +966,14 @@ node -e "const a = require('./app/data/assessment.json'); console.log('length:',
 # Expected: length: <=10, top entry has dimId/actionId/rank/action/etc.
 ```
 
-- [ ] **Step 7: Run the full test suite — all green.**
+- [x] **Step 7: Run the full test suite — all green.**
 
 ```bash
 npx vitest run
 # Expected: all green; new run-assessment integration tests pass.
 ```
 
-- [ ] **Step 8: Commit.**
+- [x] **Step 8: Commit.**
 
 ```bash
 git add scripts/run-assessment.mjs scripts/__tests__/run-assessment-ranking.test.mjs
@@ -992,13 +994,15 @@ EOF
 
 ### Task 6: Simplify the self-assessment skill, update rubric and CLAUDE.md
 
+> Implemented in PR #106. SKILL.md simplified to a single bullet: `"Read assessment.json.rankedNextActions[0..2]..."`. Grammar block from PR #104 removed as obsolete. `rubric.json` `$schema` comment updated to reference `scripts/predicate.mjs`. CLAUDE.md file map and two hard rules added in the same PR.
+
 **Files:**
 
 - Modify: `.claude/skills/self-assessment/SKILL.md` (delete PR 1 grammar block, simplify the instruction)
 - Modify: `app/data/rubric.json` (one phrase in `$schema` comment)
 - Modify: `CLAUDE.md` (file map + new hard rule)
 
-- [ ] **Step 1: Read the current SKILL.md to find the "Top 3 priority actions" bullet.**
+- [x] **Step 1: Read the current SKILL.md to find the "Top 3 priority actions" bullet.**
 
 ```bash
 grep -nA 12 "Top 3 priority actions" .claude/skills/self-assessment/SKILL.md
@@ -1006,7 +1010,7 @@ grep -nA 12 "Top 3 priority actions" .claude/skills/self-assessment/SKILL.md
 
 You should see the original sentence followed by the grammar block PR 1 added.
 
-- [ ] **Step 2: Replace the entire bullet (sentence + grammar block) with the simpler version.**
+- [x] **Step 2: Replace the entire bullet (sentence + grammar block) with the simpler version.**
 
 Use the Edit tool. Locate the anchor text that begins with:
 
@@ -1022,7 +1026,7 @@ Replace ALL of that with:
 - Top 3 priority actions, noting which axis each falls on. Read `assessment.json.rankedNextActions[0..2]` — already filtered (satisfied actions dropped) and ranked by `weight × deficit` by `scripts/rank-next-actions.mjs`. Each entry carries `dimId`, `actionId`, `axis`, `weight`, `deficit`, `rank`, `action`, `effort`, `borisTip`, `satisfiedWhen`.
 ```
 
-- [ ] **Step 3: Update `app/data/rubric.json` `$schema` comment.**
+- [x] **Step 3: Update `app/data/rubric.json` `$schema` comment.**
 
 Find this phrase in the long `$schema` value:
 
@@ -1036,7 +1040,7 @@ Replace with:
 satisfiedWhen is a predicate evaluated by scripts/predicate.mjs against signalsSummary
 ```
 
-- [ ] **Step 4: Update `CLAUDE.md` file map.**
+- [x] **Step 4: Update `CLAUDE.md` file map.**
 
 Find this anchor in the `## Where things live` block:
 
@@ -1054,7 +1058,7 @@ Insert one line between them:
   progression.mjs        # telemetry milestone walker — self-dated from session start_time
 ```
 
-- [ ] **Step 5: Add the new CLAUDE.md hard rule.**
+- [x] **Step 5: Add the new CLAUDE.md hard rule.**
 
 Locate `## Hard rules` (the section header). Append at the END of the rules list:
 
@@ -1073,21 +1077,21 @@ Locate `## Hard rules` (the section header). Append at the END of the rules list
   not the report.
 ```
 
-- [ ] **Step 6: Run the full test suite.**
+- [x] **Step 6: Run the full test suite.**
 
 ```bash
 npx vitest run
 # Expected: all green.
 ```
 
-- [ ] **Step 7: Spot-check the dashboard renders.**
+- [x] **Step 7: Spot-check the dashboard renders.**
 
 ```bash
 curl -sf -o /dev/null -w "%{http_code}\n" http://localhost:3737/methodology/probes
 # Expected: 200 (dev server still running from earlier; if not, npm run dev)
 ```
 
-- [ ] **Step 8: Commit.**
+- [x] **Step 8: Commit.**
 
 ```bash
 git add .claude/skills/self-assessment/SKILL.md app/data/rubric.json CLAUDE.md
@@ -1111,14 +1115,16 @@ EOF
 
 ### Task 7: `/ship` PR 2
 
-- [ ] **Step 1: Confirm working tree is clean.**
+> PR #106 merged on 2026-05-31. All stages below completed.
+
+- [x] **Step 1: Confirm working tree is clean.**
 
 ```bash
 git status --short
 # Expected: empty (all changes committed across Tasks 2-6).
 ```
 
-- [ ] **Step 2: Run `/ship`.**
+- [x] **Step 2: Run `/ship`.**
 
 ```
 /ship
@@ -1134,7 +1140,7 @@ Expected stages and outcomes:
 - **Stage 6 (Push + PR):** Pushes `feat/predicate-ranker-structural`, opens PR via `gh pr create --body-file` (heredoc bodies are blocked per CLAUDE.md).
 - **Stage 7 (Jira):** No CCE ticket linked (the bug was discovered ad-hoc in a session). Silent-skip.
 
-- [ ] **Step 3: After CI passes, squash-merge.**
+- [x] **Step 3: After CI passes, squash-merge.**
 
 ```bash
 gh pr merge <PR-number> --squash --delete-branch
@@ -1142,7 +1148,7 @@ gh pr view <PR-number> --json state,mergeCommit
 # Expected: state: MERGED, mergeCommit.oid: <SHA>
 ```
 
-- [ ] **Step 4: Sync local main + clean up worktree refs.**
+- [x] **Step 4: Sync local main + clean up worktree refs.**
 
 ```bash
 git checkout main && git pull --ff-only
@@ -1150,7 +1156,7 @@ git fetch --prune
 # Expected: main fast-forwards to the new squash commit.
 ```
 
-- [ ] **Step 5: Final validation — run /self-assessment using the new contract.**
+- [x] **Step 5: Final validation — run /self-assessment using the new contract.**
 
 ```bash
 npm run assess -- --include-transcripts --insights-lookback 30
@@ -1171,16 +1177,16 @@ If the legacy bug recurs — `babysit-loop` appears in top 3 despite `loopComman
 
 ## Acceptance criteria (whole plan)
 
-- [ ] PR 1 merged: `.claude/skills/self-assessment/SKILL.md` contains the DSL grammar block.
-- [ ] PR 2 merged with:
-  - `scripts/predicate.mjs` created
-  - `scripts/rank-next-actions.mjs` created
-  - `app/lib/assessment.ts:evaluatePredicate` is a 1-line passthrough
-  - `app/data/assessment.json` contains `rankedNextActions[]` (length ≤10)
-  - `.claude/skills/self-assessment/SKILL.md` PR 1 grammar block removed; replaced with the read-the-pre-computed-field instruction
-  - CLAUDE.md gains the two new hard rules
-- [ ] Test suite up by ~25–30 tests vs baseline, all green.
-- [ ] Named regression test (`loopCommandUses=14 excludes loopCommandUses>=1 action`) passes.
-- [ ] TS↔MJS equivalence test passes.
-- [ ] `npm run build` (Next.js production build) succeeds.
-- [ ] Local `/self-assessment` invocation no longer surfaces satisfied actions in the top 3.
+- [x] PR 1 merged (#104): `.claude/skills/self-assessment/SKILL.md` gained the DSL grammar block as a stopgap.
+- [x] PR 2 merged (#106) with:
+  - `scripts/predicate.mjs` created (pure-ESM port of the DSL evaluator)
+  - `scripts/rank-next-actions.mjs` created (filter + rank by `weight × deficit`, 5-tier tie-break)
+  - `app/lib/assessment.ts:evaluatePredicate` is a 2-line passthrough re-export from `scripts/predicate.mjs`
+  - `app/data/assessment.json` contains `rankedNextActions[]` (length ≤10), written on every `npm run assess`
+  - `.claude/skills/self-assessment/SKILL.md` PR 1 grammar block removed; replaced with single bullet reading `assessment.json.rankedNextActions[0..2]`
+  - CLAUDE.md file map updated and two hard rules added ("DSL evaluator has one source" + "Ranked next-actions live in `assessment.json.rankedNextActions`")
+- [x] Test suite up by 30 tests vs baseline (predicate×18, ranker×9, wire-up×2, passthrough×1), all green.
+- [x] Named regression test (`loopCommandUses=14 excludes babysit-loop action` whose `satisfiedWhen` is `"loopCommandUses>=1"`) passes.
+- [x] TS↔MJS equivalence test (`predicate-passthrough.test.ts`) asserts reference equality; fails CI if the implementation is ever duplicated.
+- [x] `npm run build` (Next.js production build) succeeds with no TS or module-resolution errors.
+- [x] Local `/self-assessment` invocation reads pre-computed `rankedNextActions` and no longer surfaces satisfied actions in the top 3.

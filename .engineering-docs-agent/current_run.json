@@ -1,0 +1,21 @@
+{
+  "current_run": {
+    "started_at": "2026-06-01T09:00:08.671058+00:00",
+    "head_sha": "6de3da9a0b637b08234c26496b3b598420b24bca",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
