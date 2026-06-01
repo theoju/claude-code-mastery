@@ -54,7 +54,7 @@ Both PRs preserve the existing public surface: `evaluatePredicate(expr: string, 
 
 > **`satisfiedWhen` DSL grammar** (string predicates evaluated against `signalsSummary`):
 >
-> - `path` — truthy (non-null, non-zero, non-empty)
+> - `path` — truthy (non-null, non-zero, non-empty-string; strings `"0"` and `"false"` are also falsy)
 > - `!path` — falsy
 > - `path>=N` / `<=N` / `>N` / `<N` — numeric comparison
 > - `path=v` or `path=v|w|x` — equals (or equals one of)

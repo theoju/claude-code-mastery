@@ -65,7 +65,7 @@ Replace with:
 Unpredicated actions stay in the pool — they're behavioral coaching that can't be auto-detected.
 
   **`satisfiedWhen` DSL grammar** (string predicates evaluated against `signalsSummary`):
-  - `path` — truthy (non-null, non-zero, non-empty)
+  - `path` — truthy (non-null, non-zero, non-empty-string; strings `"0"` and `"false"` are also falsy)
   - `!path` — falsy
   - `path>=N` / `<=N` / `>N` / `<N` — numeric comparison
   - `path=v` or `path=v|w|x` — equals (or equals one of)
@@ -284,7 +284,7 @@ npx vitest run scripts/__tests__/predicate.test.mjs
 // (app/lib/assessment.ts re-exports from here as a 1-line passthrough).
 //
 // Grammar (mirrors app/data/rubric.json $schema comment):
-//   path                — truthy (non-null, non-zero, non-empty)
+//   path                — truthy (non-null, non-zero, non-empty-string; "0"/"false" also falsy)
 //   !path                — falsy
 //   path>=N / <=N / >N / <N — numeric comparison
 //   path=v / path=v|w|x  — equals (or equals one of)

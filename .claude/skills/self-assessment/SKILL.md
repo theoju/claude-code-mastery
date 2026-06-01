@@ -18,7 +18,7 @@ Otherwise: run `npm run assess -- $ARGUMENTS`, then report back with:
 - Top 3 priority actions, noting which axis each falls on. **First filter** out every action whose `satisfiedWhen` predicate evaluates true against `signalsSummary` (a satisfied action is not a TODO — surfacing one as a priority is a reporting bug). Then rank the remainder by `weight × deficit`. Unpredicated actions stay in the pool — they're behavioral coaching that can't be auto-detected.
 
   **`satisfiedWhen` DSL grammar** (string predicates evaluated against `signalsSummary`):
-  - `path` — truthy (non-null, non-zero, non-empty)
+  - `path` — truthy (non-null, non-zero, non-empty-string; strings `"0"` and `"false"` are also falsy)
   - `!path` — falsy
   - `path>=N` / `<=N` / `>N` / `<N` — numeric comparison
   - `path=v` or `path=v|w|x` — equals (or equals one of)
