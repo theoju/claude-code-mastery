@@ -10,7 +10,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { gatherSignals } from "./signals.mjs";
-import { scoreAll, computeTrends } from "./score.mjs";
+import { scoreAll, computeTrends, maxProbe } from "./score.mjs";
 import { rankNextActions } from "./rank-next-actions.mjs";
 import { detectMilestones } from "./progression.mjs";
 import {
@@ -36,18 +36,6 @@ const ASSESSMENT_PATH = join(DATA_DIR, "assessment.json");
 const RUBRIC_PATH = join(DATA_DIR, "rubric.json");
 const PROGRESSION_PATH = join(DATA_DIR, "progression.json");
 const PROGRESSION_CONFIG_PATH = join(DATA_DIR, "progression-config.json");
-
-// Read a probe value from BOTH the transcript scanner and history scanner
-// and return the max. The history scanner has higher fidelity for
-// side-channel commands (e.g. /btw never reaches the session JSONL);
-// the transcript scanner has higher fidelity for transcript-derived
-// patterns (e.g. /loop fired by /ship). Math.max recovers whichever
-// source saw it.
-function maxProbe(signals, field) {
-  const t = signals.transcriptInvocations?.[field] ?? 0;
-  const h = signals.historyInvocations?.[field] ?? 0;
-  return Math.max(t, h);
-}
 
 // Pure derivation: signals (raw filesystem capture) → signalsSummary (flat
 // scalar map). The predicate engine in app/lib/assessment.ts evaluates

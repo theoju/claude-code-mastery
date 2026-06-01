@@ -527,28 +527,25 @@ export const GAP_REASONS = {
   NO_PLUGINS: "No plugins installed",
   NO_HOOK_FIRE_DATA:
     "~/.claude/hook-fires.jsonl absent — automation execution unmeasured (Claude Code does not emit this telemetry by default)",
-  // For dimensions where /insights data structurally cannot carry the signal
-  // (effort/model never logged to session-meta; memory tools never appear in
-  // tool_counts; terminal/IDE customization is purely client-side config).
-  // These render as "unmeasured" with a clear rationale instead of blank.
-  NO_TELEMETRY_FOR_DIMENSION:
-    "no /insights telemetry exists for this dimension — platform-setup-only by nature",
 };
 
 function unavailable(reason) {
   return { score: null, evidence: [], gaps: [], gapReason: reason };
 }
 
-// Platform-Setup-only scorers: always unavailable, but the universe
-// contract still applies. Universe value is inert here.
-function noTelemetry() {
-  const fn = () => unavailable(GAP_REASONS.NO_TELEMETRY_FOR_DIMENSION);
-  fn.__universe = "all_sessions";
-  return fn;
-}
-
 function pct(n) {
   return Math.round(n * 100) / 100;
+}
+
+// Read a probe from BOTH transcript and history scanners; return the max.
+// History has higher fidelity for side-channel commands that never reach the
+// session JSONL (/btw); transcripts have higher fidelity for transcript-only
+// signals (/loop fired by /ship). Math.max recovers whichever source saw it.
+export function maxProbe(signals, field) {
+  return Math.max(
+    signals.transcriptInvocations?.[field] ?? 0,
+    signals.historyInvocations?.[field] ?? 0,
+  );
 }
 
 // Capped adoption credit — a third scorer-contribution shape alongside the
@@ -977,25 +974,14 @@ export const EXECUTION_SCORERS = {
     },
   ),
 
-  // Platform-Setup-only-by-nature dimensions. /insights data does not carry the
-  // relevant signal: memory-related tools never appear in tool_counts; terminal/IDE
-  // customization (statusline, keybindings, themes) is pure client config.
-  // Surface the rationale per dimension so users see "unmeasured because X"
-  // instead of a blank radar vertex that looks identical to a forgotten scorer.
-  // Universe is inert here (always unavailable) but the contract requires a value.
   memory: withGates(
     { transcripts: true, universe: "interactive_or_unknown" },
     (s) => {
       const denom = s.insights.interactiveOrUnknownSessionsAnalyzed;
-      const merge = (field) =>
-        Math.max(
-          s.transcriptInvocations?.[field] ?? 0,
-          s.historyInvocations?.[field] ?? 0,
-        );
-      const btw = merge("btwCommandUses");
-      const clear = merge("clearCommandUses");
-      const compact = merge("compactCommandUses");
-      const rewind = merge("rewindCommandUses");
+      const btw = maxProbe(s, "btwCommandUses");
+      const clear = maxProbe(s, "clearCommandUses");
+      const compact = maxProbe(s, "compactCommandUses");
+      const rewind = maxProbe(s, "rewindCommandUses");
       const sum = btw + clear + compact + rewind;
       const rawRatio = sum / denom;
       const ratio = Math.min(rawRatio, 1);
@@ -1020,14 +1006,9 @@ export const EXECUTION_SCORERS = {
     { transcripts: true, universe: "interactive_or_unknown" },
     (s) => {
       const denom = s.insights.interactiveOrUnknownSessionsAnalyzed;
-      const merge = (field) =>
-        Math.max(
-          s.transcriptInvocations?.[field] ?? 0,
-          s.historyInvocations?.[field] ?? 0,
-        );
-      const color = merge("colorCommandUses");
-      const voice = merge("voiceCommandUses");
-      const focus = merge("focusCommandUses");
+      const color = maxProbe(s, "colorCommandUses");
+      const voice = maxProbe(s, "voiceCommandUses");
+      const focus = maxProbe(s, "focusCommandUses");
       const sum = color + voice + focus;
       const rawRatio = sum / denom;
       const ratio = Math.min(rawRatio, 1);

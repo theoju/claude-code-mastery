@@ -66,10 +66,12 @@ export default function MethodologyPage() {
         </p>
       </Section>
 
-      <Section title="What each Execution scorer measures (11 of 12 dimensions)">
+      <Section title="What each Execution scorer measures (all 12 dimensions; one partially)">
         <p>
-          Eleven dimensions currently have execution scorers. Each formula is a
-          deterministic function over the signals named below — open{" "}
+          All twelve dimensions have execution scorers; Model & Effort Tuning is
+          partially measured (the Opus-usage half is scored from transcripts;
+          effort level stays settings-only). Each formula is a deterministic
+          function over the signals named below — open{" "}
           <span className="mono">scripts/score.mjs</span> to read the source.
           For the full inventory of <em>which</em> signals each predicate reads,
           see the{" "}
