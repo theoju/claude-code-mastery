@@ -34,6 +34,7 @@ function makeSignals(overrides = {}) {
     keybindingsConfigured: false,
     shipJournal: {
       stage2Count: 3,
+      simplifyStageCount: 0,
       totalRuns: 5,
       lastRunAt: "2026-05-09T12:00:00Z",
     },
@@ -729,6 +730,56 @@ describe("buildSignalsSummary", () => {
     );
     expect(rGoRewind.goCommandUses).toBe(4);
     expect(rGoRewind.rewindCommandUses).toBe(3);
+  });
+
+  it("MAX-merges ship-journal simplifyStageCount with transcript + history sources (CCE-72)", () => {
+    // Journal wins: /ship Stage 3 ran 42 times but /simplify was never typed.
+    // transcript=0, history=0, journal=42 → simplifyCommandUses = 42.
+    const rJournalWins = buildSignalsSummary(
+      makeSignals({
+        transcriptInvocations: {
+          ...makeSignals().transcriptInvocations,
+          simplifyCommandUses: 0,
+        },
+        historyInvocations: { simplifyCommandUses: 0 },
+        shipJournal: {
+          stage2Count: 42,
+          simplifyStageCount: 42,
+          totalRuns: 50,
+          lastRunAt: "2026-05-09T12:00:00Z",
+        },
+      }),
+    );
+    expect(rJournalWins.simplifyCommandUses).toBe(42);
+
+    // Transcript wins: typed /simplify 99 times but journal only saw 5.
+    const rTranscriptWins = buildSignalsSummary(
+      makeSignals({
+        transcriptInvocations: {
+          ...makeSignals().transcriptInvocations,
+          simplifyCommandUses: 99,
+        },
+        shipJournal: {
+          stage2Count: 1,
+          simplifyStageCount: 5,
+          totalRuns: 5,
+          lastRunAt: "2026-05-09T12:00:00Z",
+        },
+      }),
+    );
+    expect(rTranscriptWins.simplifyCommandUses).toBe(99);
+
+    // Missing shipJournal → falls back to the transcript ∪ history MAX.
+    const rNoJournal = buildSignalsSummary(
+      makeSignals({
+        transcriptInvocations: {
+          ...makeSignals().transcriptInvocations,
+          simplifyCommandUses: 7,
+        },
+        shipJournal: undefined,
+      }),
+    );
+    expect(rNoJournal.simplifyCommandUses).toBe(7);
   });
 
   it("handles missing historyInvocations (falls back to transcript only)", () => {
