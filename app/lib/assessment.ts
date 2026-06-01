@@ -146,6 +146,19 @@ export interface Insights {
   [key: string]: unknown;
 }
 
+export interface RankedNextAction {
+  dimId: string;
+  actionId: string;
+  axis: string;
+  weight: number;
+  deficit: number;
+  rank: number;
+  action: string;
+  effort?: string;
+  borisTip?: number;
+  satisfiedWhen: string | null;
+}
+
 export interface Assessment {
   capturedAt: string;
   overall: number;
@@ -154,6 +167,7 @@ export interface Assessment {
   user: string | null;
   dimensions: Dimension[];
   signalsSummary: Record<string, unknown>;
+  rankedNextActions: RankedNextAction[];
   insights: Insights | null;
   claudeMd: ClaudeMdReport | null;
 }
@@ -225,6 +239,7 @@ export async function loadAssessment(): Promise<Assessment> {
     scores: ScoredDimension[];
     trends: Record<string, Trend>;
     signalsSummary: Record<string, unknown>;
+    rankedNextActions?: RankedNextAction[];
     insights?: Insights | null;
     claudeMd?: ClaudeMdReport | null;
   }>(ASSESSMENT_PATH);
@@ -257,6 +272,7 @@ export async function loadAssessment(): Promise<Assessment> {
         summary: SUMMARIES[d.id] || "",
       })),
       signalsSummary: {},
+      rankedNextActions: [],
       claudeMd: null,
     };
   }
@@ -297,6 +313,7 @@ export async function loadAssessment(): Promise<Assessment> {
     user: scored.user,
     dimensions,
     signalsSummary: scored.signalsSummary,
+    rankedNextActions: scored.rankedNextActions ?? [],
     insights: scored.insights ?? null,
     claudeMd: scored.claudeMd ?? null,
   };
