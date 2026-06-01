@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { gatherSignals } from "./signals.mjs";
 import { scoreAll, computeTrends } from "./score.mjs";
+import { rankNextActions } from "./rank-next-actions.mjs";
 import { detectMilestones } from "./progression.mjs";
 import {
   detectConfigMilestones,
@@ -322,10 +323,13 @@ async function main() {
   const claudeMdRuns = cmTargets.length ? await auditAll(cmTargets) : [];
   const plansAudit = await auditPlans();
 
+  const signalsSummary = buildSignalsSummary(signals);
+  const scoreMap = new Map(scored.scores.map((s) => [s.id, s]));
   const assessment = {
     ...scored,
     trends,
-    signalsSummary: buildSignalsSummary(signals),
+    signalsSummary,
+    rankedNextActions: rankNextActions(rubric, scoreMap, signalsSummary, 10),
     insights: signals.insights,
     claudeMd: claudeMdRuns.length
       ? {
