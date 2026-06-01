@@ -1,7 +1,14 @@
+---
+status: shipped
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/108
+synthesized_into: []
+---
+
 # CCE-33: Progression milestone detectors for scheduled / remote / verification
 
-**Status:** Design approved 2026-06-01
-**Ticket:** [CCE-33](https://designitright.atlassian.net/browse/CCE-33) (Backlog, Medium, Story)
+**Status:** Implementation complete — shipped in PR #108 (2026-06-01)
+**Ticket:** [CCE-33](https://designitright.atlassian.net/browse/CCE-33)
 **Related cycles:** v0.9.7 (`/progression` page split-out), v0.9.16 (runtime-adoption probes)
 
 ## Goal
@@ -200,14 +207,26 @@ Null-safe traversal throughout, matching existing detectors:
 
 ## Acceptance criteria
 
-- [ ] Three new detectors in `scripts/progression.mjs::DETECTORS`, matching the existing record shape (one for scheduled / remote / verification).
-- [ ] `scanTranscriptModes` in `scripts/_usage-data.mjs` emits a `commands: Set<string>` field.
-- [ ] Unit tests for each detector — first-occurrence detection + no-false-positive when signals are absent.
-- [ ] Regression: all 9 existing detectors still fire against their existing fixtures.
-- [ ] `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` updated in the same PR (Part 1, Part 2, header counts).
-- [ ] `npm test` green (expect baseline + ~4 new tests).
-- [ ] Live `npm run assess --include-transcripts --insights-lookback 30` populates `progression.json.milestones` with non-null entries for `scheduled`, `remote`, `verification` (verifies signal availability on the user's real data, not just fixtures).
-- [ ] `/progression` page shows the new milestones at their telemetry-dated timestamps (not at "today").
+- [x] Three new detectors in `scripts/progression.mjs::DETECTORS`, matching the existing record shape (one for scheduled / remote / verification).
+- [x] `scanTranscriptModes` in `scripts/_usage-data.mjs` emits a `commands: Set<string>` field.
+- [x] Unit tests for each detector — first-occurrence detection + no-false-positive when signals are absent.
+- [x] Regression: all 9 existing detectors still fire against their existing fixtures.
+- [x] `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` updated in the same PR (Part 1, Part 2, header counts).
+- [x] `npm test` green (expect baseline + ~4 new tests).
+- [x] Live `npm run assess --include-transcripts --insights-lookback 30` populates `progression.json.milestones` with non-null entries for `scheduled`, `remote`, `verification`.
+- [x] `/progression` page shows the new milestones at their telemetry-dated timestamps (not at "today").
+
+## Implementation outcome
+
+PR #108 shipped all changes as specced. Live verification on real `~/.claude/usage-data/` confirmed backdated telemetry timestamps for all three new milestones:
+
+| Dimension | Milestone | Backdated to |
+| --- | --- | --- |
+| `scheduled` | Started using scheduled workflows | 2026-04-29 |
+| `remote` | First remote-tool invocation | 2026-04-15 |
+| `verification` | First /go composite invocation | 2026-05-26 |
+
+All five machine-enforced probe-tracker header counts (75 tips / 12 dimensions / 48 next-actions / 47 probe-catalog entries / 71 `signalsSummary` keys) are unchanged — the three new detectors are purely progression/telemetry-layer additions with no new `satisfiedWhen` predicates, probe-catalog entries, or `signalsSummary` keys.
 
 ## Out of scope
 

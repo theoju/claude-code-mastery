@@ -1,0 +1,24 @@
+{
+  "current_run": {
+    "started_at": "2026-06-01T15:59:26.065586+00:00",
+    "head_sha": "0e15ad81bb7baa267075708324024e017cdb7d64",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: source-collector",
+      "lint_block: docs/superpowers/specs/2026-05-25-probe-implementation-status.md frontmatter_schema: no frontmatter or YAML parse error",
+      "lint_block: docs/superpowers/plans/2026-05-31-predicate-ranker.md frontmatter_schema: no frontmatter or YAML parse error",
+      "lint_block: docs/superpowers/plans/2026-05-31-per-command-partition.md internal_links: broken internal link(s): /Users/theo/Projects/claude-extensions/docs/superpowers/specs/2026-05-31-per-command-partition-design.md, /Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs, /Users/theo/Projects/claude-extensions/scripts/__tests__/_usage-data.test.mjs, /Users/theo/Projects/claude-extensions/docs/superpowers/specs/2026-05-25-probe-implementation-status.md, /Users/theo/Projects/claude-extensions/CLAUDE.md, /Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs:260, /Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs, /Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs:314"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}

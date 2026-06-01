@@ -1,7 +1,15 @@
+---
+status: implemented
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/104
+  - https://github.com/theoju/claude-code-self-assessment/pull/106
+synthesized_into: []
+---
+
 # Predicate evaluator + ranked next-actions — design
 
 **Date:** 2026-05-31
-**Status:** Approved (brainstorming → writing-plans next)
+**Status:** Implemented — PRs #104 and #106 merged 2026-05-31
 **Triggering bug:** `/self-assessment` reported `Start with one loop: /loop 30m /babysit` as a top-3 priority despite `signalsSummary.loopCommandUses=14` satisfying its `satisfiedWhen` predicate (`loopCommandUses>=1`). Root cause: the skill instructs the model to "first filter, then rank" but the canonical DSL evaluator lives in `app/lib/assessment.ts` (TS-only, Next.js-coupled by location), and no Node-side caller exists. The model running the skill hand-wrote a filter that expected an object shape and skipped string predicates entirely.
 
 ## Goal
@@ -75,6 +83,7 @@ Both PRs preserve the existing public surface: `evaluatePredicate(expr: string, 
 | Path                                           | Purpose                                                                                                                                                                           |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `scripts/predicate.mjs`                        | Pure-ESM port of `readPath`, `isTruthy`, `evaluateAtomic`, `evaluatePredicate` from `app/lib/assessment.ts` lines 165–259. Exports `evaluatePredicate`. No external dependencies. |
+| `scripts/rank-next-actions.mjs`                | Standalone ranker module. Exports `rankNextActions(rubric, scoreMap, signalsSummary, limit)`. Imported by `run-assessment.mjs`; extracted as its own file so it can be unit-tested in isolation. |
 | `scripts/__tests__/predicate.test.mjs`         | Operator-coverage suite + rubric integration test (see Testing).                                                                                                                  |
 | `scripts/__tests__/rank-next-actions.test.mjs` | Fixture-driven tests for the new ranker, including a named regression for the `loopCommandUses=14 vs >=1` bug.                                                                    |
 
@@ -82,8 +91,8 @@ Both PRs preserve the existing public surface: `evaluatePredicate(expr: string, 
 
 | Path                                      | Change                                                                                                                                                                                                                                                                     |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/lib/assessment.ts`                   | Replace local `evaluatePredicate` + helpers (lines 165–259) with `export { evaluatePredicate } from "../../scripts/predicate.mjs";`. Internal helpers (`readPath`, `isTruthy`, `evaluateAtomic`) are not currently exported externally; they move with the implementation. |
-| `scripts/run-assessment.mjs`              | Import `evaluatePredicate`. Add `rankNextActions(rubric, scoreMap, signalsSummary, limit=10)` per the algorithm below. Attach result to written assessment under `rankedNextActions`.                                                                                      |
+| `app/lib/assessment.ts`                   | Replace local `evaluatePredicate` + helpers (lines 165–259) with `export { evaluatePredicate } from "../../scripts/predicate.mjs";`. Internal helpers (`readPath`, `isTruthy`, `evaluateAtomic`) are not currently exported externally; they move with the implementation. `Assessment` interface also gains a `RankedNextAction` type and a `rankedNextActions` field. |
+| `scripts/run-assessment.mjs`              | Import `rankNextActions` from `scripts/rank-next-actions.mjs`. Call it after scoring to attach `rankedNextActions` to the written assessment. The ranking logic itself lives in the dedicated module.                                                                        |
 | `app/data/rubric.json`                    | Update the `$schema` comment to note canonical evaluator is `scripts/predicate.mjs` (one phrase change).                                                                                                                                                                   |
 | `.claude/skills/self-assessment/SKILL.md` | Replace the "First filter ... then rank" instructions with: "Read `assessment.json.rankedNextActions[0..2]` — already filtered (satisfied actions dropped) and sorted by `weight × deficit`." **Delete the PR 1 grammar block** (now obsolete).                            |
 | `CLAUDE.md`                               | File map gains `predicate.mjs` line under `scripts/`. New hard rule (see below).                                                                                                                                                                                           |
@@ -251,11 +260,15 @@ it("TS export is a literal passthrough of the MJS source", () => {
 
 Proves the TS re-export never silently duplicates the implementation — a future contributor who copies instead of re-exports fails CI.
 
-## Hard rule (new, lands in PR 2)
+## Hard rules (new, landed in PR #106)
 
-CLAUDE.md `## Hard rules` gains:
+CLAUDE.md `## Hard rules` gains two entries:
 
 > **DSL evaluator has one source.** `scripts/predicate.mjs` is canonical. `app/lib/assessment.ts:evaluatePredicate` must remain a 1-line passthrough re-export — never copy the implementation. Test `app/lib/__tests__/predicate-passthrough.test.ts` asserts the two are reference-equal; a duplicate fails CI. When the DSL grammar evolves, edit `scripts/predicate.mjs` and the rubric `$schema` comment — never the TS file.
+
+> **Ranked next-actions live in `assessment.json.rankedNextActions`.** The self-assessment skill must NEVER hand-implement the `satisfiedWhen` filter or the weight×deficit ranking. Read the pre-computed top-10 from the written file. The 2026-05-31 cycle landed this contract; surfacing a satisfied action as a TODO again is a regression — fix the data layer, not the report.
+
+Both rules are woven into CLAUDE.md's "Hard rules" section. The first is enforced by the CI reference-identity test; the second is a behavioral contract enforced by the named regression test in `rank-next-actions.test.mjs`.
 
 ## Ship sequencing
 
@@ -277,6 +290,6 @@ PR 2 explicitly removes the SKILL.md grammar block PR 1 added, so the SKILL.md s
 
 ## Done when
 
-- PR 1 merges and `/self-assessment` invocations report the DSL grammar inline.
-- PR 2 merges and `/self-assessment` invocations report `assessment.json.rankedNextActions[0..2]` verbatim, with the SKILL.md grammar block gone.
-- Today's specific bug (`/loop 30m /babysit` in top 3 despite `loopCommandUses=14`) does not recur — proven by the named regression test in `rank-next-actions.test.mjs`.
+- ✅ PR #104 merged — `/self-assessment` invocations include the DSL grammar block in SKILL.md so a careful model can evaluate predicates correctly.
+- ✅ PR #106 merged — `/self-assessment` reads `assessment.json.rankedNextActions[0..2]` verbatim; the SKILL.md grammar block is deleted as obsolete; 30 new tests land including the named regression; two CLAUDE.md hard rules lock the contract end-to-end.
+- ✅ Today's specific bug (`/loop 30m /babysit` in top 3 despite `loopCommandUses=14`) does not recur — proven by the named regression test in `scripts/__tests__/rank-next-actions.test.mjs`.

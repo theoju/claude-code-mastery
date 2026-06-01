@@ -1,6 +1,13 @@
+---
+status: implemented
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/108
+synthesized_into: []
+---
+
 # CCE-33: Progression Detectors for scheduled / remote / verification — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Close the progression-timeline coverage gap by adding three telemetry-dated milestone detectors — `scheduled` (Boris tip 48), `remote` (tip 35), `verification` (tip 73) — so `/progression` covers all 12 scored dimensions instead of 9 of 12.
 
@@ -25,6 +32,10 @@ No new files. No UI work. No rubric changes.
 
 ---
 
+> **Status: Implemented — PR #108 (merged 2026-06-01).** Live verification confirmed backdated milestone timestamps: `scheduled` @ 2026-04-29, `remote` @ 2026-04-15, `verification` @ 2026-05-26. All five machine-enforced probe-tracker header counts are unchanged (75/12/48/47/71) — the new detectors are purely progression-layer additions with no new `satisfiedWhen` predicates or `probe-catalog.json` entries.
+
+---
+
 ## Task 1: Extend `scanTranscriptModes` with `commands` Set
 
 **Files:**
@@ -34,11 +45,11 @@ No new files. No UI work. No rubric changes.
 
 The change is one new local `Set`, three new lines inside the existing `<command-name>` block, and one new field on the return object. The existing `<command-name>` scan already extracts the command name into `cmd`; we just need to also stash it into the new Set.
 
-- [ ] **Step 1: Read the current implementation**
+- [x] **Step 1: Read the current implementation**
 
 Read `scripts/_usage-data.mjs:428-496` to confirm the current shape — specifically that `COMMAND_NAME_RE` at line 422 captures the command name into `m[1]` and that the existing `<command-name>` block at lines 478-484 already iterates matches.
 
-- [ ] **Step 2: Add the `commands` local Set**
+- [x] **Step 2: Add the `commands` local Set**
 
 Edit `scripts/_usage-data.mjs` — inside `scanTranscriptModes`, alongside the other locals declared near line 429-444 (the `modes`, `skills`, `learningModeMatches`, `assistantTurns` locals), add:
 
@@ -48,7 +59,7 @@ const commands = new Set();
 
 Place it on a new line right after `const skills = new Set();`.
 
-- [ ] **Step 3: Populate `commands` inside the existing scan loop**
+- [x] **Step 3: Populate `commands` inside the existing scan loop**
 
 Inside the existing block at lines 478-484, add `commands.add(cmd);` as the first line of the for-loop. The block becomes:
 
@@ -65,7 +76,7 @@ if (raw.includes("<command-name>")) {
 
 Why first: keeps the `commands` Set a faithful record of every command seen, independent of the planning/learning skill membership checks below. No de-dup needed (Sets handle that natively).
 
-- [ ] **Step 4: Add `commands` to the return object**
+- [x] **Step 4: Add `commands` to the return object**
 
 Insert `commands,` into the return object near line 486-495, between `skills,` and `learningModeMatches,`:
 
@@ -83,14 +94,14 @@ return {
 };
 ```
 
-- [ ] **Step 5: Run the full test suite — verify no regressions**
+- [x] **Step 5: Run the full test suite — verify no regressions**
 
 Run: `npx vitest run`
 Expected: 619/619 pass (baseline). The `commands` field is additive; no existing test asserts exact key membership on the `scanTranscriptModes` return shape (verified by grepping the test files for `toMatchObject\|toEqual.*modes` — only positive-property checks exist).
 
 If a test fails because it asserts the return shape verbatim, that test needs to learn about the new key — update the assertion, do not skip the new field.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/_usage-data.mjs
@@ -117,7 +128,7 @@ EOF
 - Modify: `scripts/progression.mjs:191` (append to `DETECTORS` array)
 - Test: `scripts/__tests__/progression.test.mjs` (append new `it` block)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append the following inside `describe("detectMilestones", …)` in `scripts/__tests__/progression.test.mjs` (before the closing `});` at line 241):
 
@@ -158,12 +169,12 @@ it("emits scheduled milestone on first /loop|/schedule|/babysit invocation", asy
 
 Note on the transcript shape: `scanTranscriptModes` uses `raw.includes("<command-name>")` + `raw.matchAll(COMMAND_NAME_RE)` on the **literal JSON line text**, so the test fixture must produce a JSON-encoded line that contains the substring `<command-name>babysit</command-name>` — which embedding the markup inside `message.content` does. The existing `<command-name>` scan in `_usage-data.mjs` is regex-based on the raw line, not on parsed `message.content`, so this fixture style works without any special escaping.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs -t "scheduled milestone"`
 Expected: FAIL — `milestone` is `undefined` because no scheduled detector exists yet.
 
-- [ ] **Step 3: Add the detector**
+- [x] **Step 3: Add the detector**
 
 Edit `scripts/progression.mjs` — append the following inside the `DETECTORS` array, after the existing "Stopped using bypass" detector (which currently ends at line 190 with `},`). Insert before the closing `];` at line 191:
 
@@ -191,17 +202,17 @@ Edit `scripts/progression.mjs` — append the following inside the `DETECTORS` a
   },
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs -t "scheduled milestone"`
 Expected: PASS.
 
-- [ ] **Step 5: Run the full progression test file to verify no regressions**
+- [x] **Step 5: Run the full progression test file to verify no regressions**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs`
 Expected: all existing `detectMilestones` tests still pass (the new detector ignores sessions lacking the transcript commands Set, so it can't false-positive existing fixtures).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/progression.mjs scripts/__tests__/progression.test.mjs
@@ -227,7 +238,7 @@ EOF
 - Modify: `scripts/progression.mjs` (append to `DETECTORS` array, after Task 2's detector)
 - Test: `scripts/__tests__/progression.test.mjs`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append inside `describe("detectMilestones", …)`:
 
@@ -255,12 +266,12 @@ it("emits remote milestone on first RemoteTrigger|PushNotification|SendMessage t
 
 This detector is facets-only (no transcripts), so the test does **not** pass `includeTranscripts: true`. That also confirms the detector fires when transcripts are off — important because not every user runs assess with `--include-transcripts`.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs -t "remote milestone"`
 Expected: FAIL — `milestone` is `undefined`.
 
-- [ ] **Step 3: Add the detector**
+- [x] **Step 3: Add the detector**
 
 Edit `scripts/progression.mjs` — append inside the `DETECTORS` array, after the scheduled detector added in Task 2:
 
@@ -287,17 +298,17 @@ Edit `scripts/progression.mjs` — append inside the `DETECTORS` array, after th
   },
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs -t "remote milestone"`
 Expected: PASS.
 
-- [ ] **Step 5: Run the full progression test file**
+- [x] **Step 5: Run the full progression test file**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs`
 Expected: all existing tests still pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/progression.mjs scripts/__tests__/progression.test.mjs
@@ -323,7 +334,7 @@ EOF
 - Modify: `scripts/progression.mjs` (append to `DETECTORS` array, after Task 3's detector)
 - Test: `scripts/__tests__/progression.test.mjs`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append inside `describe("detectMilestones", …)`:
 
@@ -362,12 +373,12 @@ it("emits verification milestone on first /go invocation", async () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs -t "verification milestone"`
 Expected: FAIL.
 
-- [ ] **Step 3: Add the detector**
+- [x] **Step 3: Add the detector**
 
 Edit `scripts/progression.mjs` — append inside the `DETECTORS` array, after the remote detector added in Task 3:
 
@@ -391,17 +402,17 @@ Edit `scripts/progression.mjs` — append inside the `DETECTORS` array, after th
   },
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run scripts/__tests__/progression.test.mjs -t "verification milestone"`
 Expected: PASS.
 
-- [ ] **Step 5: Run the full test suite to verify no regressions across the project**
+- [x] **Step 5: Run the full test suite to verify no regressions across the project**
 
 Run: `npx vitest run`
 Expected: baseline + 3 new tests pass (so 622/622 if baseline was 619; recount from actual baseline at start of work — `npx vitest run --reporter=verbose 2>&1 | tail -3` gives the live count).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/progression.mjs scripts/__tests__/progression.test.mjs
@@ -428,12 +439,12 @@ EOF
 
 The CLAUDE.md hard rule: any probe-set change must update the tracker in the same PR. The new detectors don't add `satisfiedWhen` predicates or `probe-catalog.json` entries, but they DO add three new entries to the "Progression detectors / `scripts/progression.mjs`" registry layer in Part 1, and they shift the tracking status for Boris tips 35 / 48 / 73 in Part 2.
 
-- [ ] **Step 1: Locate the Part 1 progression-detectors section**
+- [x] **Step 1: Locate the Part 1 progression-detectors section**
 
 Run: `grep -n "progression" docs/superpowers/specs/2026-05-25-probe-implementation-status.md`
 Open the file to the matching section. If a "Progression detectors" / `scripts/progression.mjs` layer heading already exists in Part 1, append three rows under it. If it does not exist (the spec may have been written before progression had a registry section), create the layer heading with the three rows.
 
-- [ ] **Step 2: Add the three Part 1 registry rows**
+- [x] **Step 2: Add the three Part 1 registry rows**
 
 Insert under the "Progression detectors" / `scripts/progression.mjs` layer:
 
@@ -445,7 +456,7 @@ Insert under the "Progression detectors" / `scripts/progression.mjs` layer:
 
 Axis labels: `scheduled` and `verification` are transcripts-driven user-action signals → P\* (Platform behavior). `remote` is a tool-fire facet signal that feeds a milestone derived from `tool_counts` → E (Execution-flavor evidence). Match the existing column layout already in the file — column order may be (probe-field, dim, evidence, tip, axis) or similar; conform to whatever is already there.
 
-- [ ] **Step 3: Update Part 2 tip-coverage rows for tips 35, 48, 73**
+- [x] **Step 3: Update Part 2 tip-coverage rows for tips 35, 48, 73**
 
 Locate the Part 2 section listing every Boris tip and its tracking status (`✅` / `📊` / `🗣` / `❌`). For each of:
 
@@ -455,7 +466,7 @@ Locate the Part 2 section listing every Boris tip and its tracking status (`✅`
 
 If the Part 2 table has a per-tip ✅/📊/🗣/❌ tally row at the top or bottom, recount it after editing.
 
-- [ ] **Step 4: Re-derive the header counts**
+- [x] **Step 4: Re-derive the header counts**
 
 The CLAUDE.md hard rule mandates re-deriving five counts in the header rather than guessing. From the project root, run:
 
@@ -499,12 +510,12 @@ The signalsSummary key count is the one most easily miscounted (per CLAUDE.md: a
 
 Update the header counts in the tracker file to whatever the script reports.
 
-- [ ] **Step 5: Verify with the tracker-counts machine-enforced test**
+- [x] **Step 5: Verify with the tracker-counts machine-enforced test**
 
 Run: `npx vitest run scripts/__tests__/tracker-counts.test.mjs`
 Expected: PASS. The test asserts the five header counts match the live source. A stale count fails CI.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docs/superpowers/specs/2026-05-25-probe-implementation-status.md
@@ -533,7 +544,7 @@ EOF
 
 This task is half human-in-the-loop: it verifies on the user's real `~/.claude/usage-data` that the detectors fire against real signal availability, not just fixtures.
 
-- [ ] **Step 1: Run a full assessment with transcripts on**
+- [x] **Step 1: Run a full assessment with transcripts on**
 
 ```bash
 npm run assess -- --include-transcripts --insights-lookback 30
@@ -541,7 +552,7 @@ npm run assess -- --include-transcripts --insights-lookback 30
 
 Expected: exits 0, writes `app/data/assessment.json` and `app/data/progression.json`.
 
-- [ ] **Step 2: Inspect `progression.json` for the three new milestones**
+- [x] **Step 2: Inspect `progression.json` for the three new milestones**
 
 ```bash
 node -e '
@@ -559,7 +570,7 @@ Expected: all three print ✅ with a real ISO timestamp (the date the user first
 
 If any prints ❌, the user has truly never adopted that workflow in their real data — that's a true-negative, not a bug. Skip Step 3 for that dim and report it in the PR description so a reviewer can validate.
 
-- [ ] **Step 3: Verify the timeline UI renders the milestones**
+- [x] **Step 3: Verify the timeline UI renders the milestones**
 
 ```bash
 npm run dev
@@ -569,7 +580,7 @@ Open http://localhost:3737/progression and confirm the three new milestones appe
 
 Use Cmd+C to kill the dev server when done.
 
-- [ ] **Step 4: Switch to ship**
+- [x] **Step 4: Switch to ship**
 
 The branch this work lives on is `docs/cce-33-spec` (the spec was committed there pre-implementation). Spec + plan + implementation + tracker update all ship as one PR.
 
@@ -610,10 +621,12 @@ No issues found. Plan ready.
 
 ## Execution handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-31-cce-33-progression-detectors.md`. Two execution options:
+**Completed.** All six tasks shipped in PR #108 (merged 2026-06-01). The implementation followed the inline-execution path in a single session.
 
-1. **Subagent-Driven (recommended)** — dispatches a fresh subagent per task with two-stage review (spec compliance, then code quality) between tasks. Best fit here: each task is independent (Tasks 2-4 are isomorphic), code blocks are complete enough for mechanical-implementer subagents, the spec is approved so spec-reviewer has a clear referent. Estimated 6 subagent rounds + 6 spec-reviews + 6 code-reviews ≈ 18 subagent dispatches total.
+**Outcome summary:**
 
-2. **Inline Execution** — executes tasks in this session via `superpowers:executing-plans`. Faster wall-clock but pollutes this controller context with implementation chatter. Better fit if any of the tasks turns out to need on-the-fly judgement.
-
-Which approach?
+- `scanTranscriptModes` now emits a `commands: Set<string>` field on every session result (Task 1).
+- Three detectors appended to `DETECTORS` in `scripts/progression.mjs`: `scheduled` (tip 48, transcripts-required), `remote` (tip 35, facets-only), `verification` (tip 73, transcripts-required) (Tasks 2–4).
+- Three positive-case unit tests added to `scripts/__tests__/progression.test.mjs`; full suite green (Task 4 Step 5).
+- Probe-tracker spec updated with three new Part 1 registry rows and Part 2 tip-coverage entries for tips 35/48/73; `tracker-counts.test.mjs` passes with unchanged header counts (Task 5).
+- Live assessment against `~/.claude/usage-data/` produced backdated milestones: `scheduled` @ 2026-04-29, `remote` @ 2026-04-15, `verification` @ 2026-05-26. All three visible in the timeline UI at `http://localhost:3737/progression` (Task 6).

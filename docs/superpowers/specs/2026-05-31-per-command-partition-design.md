@@ -1,7 +1,14 @@
+---
+status: implemented
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/110
+synthesized_into: []
+---
+
 # Per-command partition for observer-session false positives
 
-**Status:** Design approved 2026-05-31 (pending three-agent verification + user review)
-**Ticket:** To be filed as a new CCE-X issue; brainstorm session originated from CLAUDE.md "Known limitation / deferred follow-up"
+**Status:** Implemented in PR #110 (merged 2026-05-31)
+**Ticket:** CCE-71 follow-up; originated from CLAUDE.md "Known limitation / deferred follow-up" (now resolved — see CLAUDE.md hard rule "Command counting honors the posture-vs-volume partition")
 **Related cycles:** v0.9.16 (`/color` from `history.jsonl` — `/Users/theo/Projects/claude-extensions/CLAUDE.md:160`-ish, PR #96), v0.9.17 (the blanket-fix that regressed `scheduled` 75→63 and was reverted)
 
 ## Goal
@@ -233,16 +240,16 @@ No new probes, catalog entries, or `signalsSummary` keys are added — so the fi
 
 ## Acceptance criteria
 
-- [ ] Two new module-level Sets in `scripts/_usage-data.mjs` (POSTURE_COMMANDS / VOLUME_COMMANDS) with the documented contents.
-- [ ] Boundary assertion factored into an exported helper (`assertCommandPartition`) and called at module load; runs the three checks from §Architecture §2.
-- [ ] Per-session loop calls `classifySessionKind(path)` once and computes `allowPosture = sessionKind === "interactive_cli" || sessionKind === "unknown"` (NOT `=== undefined` — the function returns the literal string).
-- [ ] Posture-command counters gated behind `allowPosture`.
-- [ ] Volume-command counters unchanged.
-- [ ] Net-new unit tests cover all seven cases in §Tests (Tests 1, 2, 3, 4, 5, 6, 8) plus the four `assertCommandPartition` cases in Test 7.
-- [ ] All pre-existing tests still pass (the partition is purposefully non-breaking for interactive fixtures — current baseline is 622 tests across 44 files; recount at implementation time).
-- [ ] `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` annotated with the partition footnote.
-- [ ] CLAUDE.md "Known limitation / deferred follow-up" paragraph rewritten per Implementation Order step 6.
-- [ ] Live `npm run assess --include-transcripts --insights-lookback 30` produces a console-printable score table; **posture commands trend down or stay flat**; volume commands stay flat. Capture the live `rewindCommandUses` value pre- and post-change for confidence on the `/rewind` regression-risk path.
+- [x] Two new module-level Sets in `scripts/_usage-data.mjs` (POSTURE_COMMANDS / VOLUME_COMMANDS) with the documented contents.
+- [x] Boundary assertion factored into an exported helper (`assertCommandPartition`) and called at module load; runs the three checks from §Architecture §2.
+- [x] Per-session loop calls `classifySessionKind(path)` once and computes `allowPosture = sessionKind === "interactive_cli" || sessionKind === "unknown"` (NOT `=== undefined` — the function returns the literal string).
+- [x] Posture-command counters gated behind `allowPosture`.
+- [x] Volume-command counters unchanged.
+- [x] Net-new unit tests cover all seven cases in §Tests (Tests 1, 2, 3, 4, 5, 6, 8) plus the four `assertCommandPartition` cases in Test 7.
+- [x] All pre-existing tests still pass (the partition is purposefully non-breaking for interactive fixtures — current baseline is 622 tests across 44 files; recount at implementation time).
+- [x] `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` annotated with the partition footnote.
+- [x] CLAUDE.md "Known limitation / deferred follow-up" paragraph rewritten per Implementation Order step 6.
+- [x] Live `npm run assess --include-transcripts --insights-lookback 30` produces a console-printable score table; posture commands trended down (correct inflation-removal); volume commands stayed flat. `rewindCommandUses` and `simplifyCommandUses` both crossed their `>= 1` thresholds downward — confirmed as correct in PR #110 body, not regression.
 
 ## Out of scope
 
@@ -257,11 +264,11 @@ No new probes, catalog entries, or `signalsSummary` keys are added — so the fi
 - **Risk:** Drift between the documented posture/volume command lists in CLAUDE.md and the actual `POSTURE_COMMANDS` / `VOLUME_COMMANDS` Sets. **Mitigation:** the boundary assertion catches all three drift cases (disjointness, TARGET ⊇ partition, partition ⊆ TARGET). CLAUDE.md's "Known limitation" paragraph gets rewritten in the same PR (see Implementation Order step 6).
 - **Risk:** A real interactive session with `entrypoint: "sdk-cli"` (e.g., a future tool that uses the SDK as a transport but represents user posture) would have posture commands suppressed. **Mitigation:** the `entrypoint` distinction is the documented kind boundary today; if such a hybrid kind emerges, the classification function itself should grow a new kind, not the partition.
 - **Risk:** Score regression at first run after the fix lands, surprising the user. **Mitigation:** the live-verification step in acceptance criteria runs the assessment and captures pre/post values for at-risk counters. The CLAUDE.md update from step 6 explicitly tells future readers "expect modest count drops on `/color`, `/btw`, `/rewind`, etc. in the run immediately following the partition's first deployment."
-- **Risk:** `/rewind` has no history MAX-merge floor and could theoretically drop to 0 for a user with very few real interactive `/rewind` invocations, crossing the `rewindCommandUses >= 1` threshold downward. **Mitigation:** the live-verification capture in acceptance criteria explicitly records `rewindCommandUses` pre/post. Current author-snapshot: pre ≈ 7, post ≈ 3 (4 observer false-positives subtracted), still above threshold.
+- **Risk:** `/rewind` has no history MAX-merge floor and could theoretically drop to 0 for a user with very few real interactive `/rewind` invocations, crossing the `rewindCommandUses >= 1` threshold downward. **Mitigation:** the live-verification capture in acceptance criteria explicitly records `rewindCommandUses` pre/post. Current author-snapshot: pre ≈ 7, post ≈ 3 (4 observer false-positives subtracted), still above threshold. **Outcome (PR #110):** Both `rewindCommandUses >= 1` and `simplifyCommandUses >= 1` thresholds did cross downward post-fix. The PR body explicitly flags this as correct inflation-removal, not regression. No scoring corrections were applied — the new lower values are the accurate reflection of actual interactive usage.
 - **Risk:** Module-load failure of the assertion causes total assessment blackout (no `assessment.json` written) rather than degraded output. **Mitigation:** This is intentional fail-loud behavior. The CLAUDE.md update explicitly tells operators to check stderr for `POSTURE_COMMANDS` / `VOLUME_COMMANDS` partition errors before assuming an environmental issue.
 - **Risk:** Future contributor adds a recursive directory walk to `scanTranscriptInvocations` (e.g., to include subagent transcripts), and the absence of a `subagent` skip silently reintroduces inheritance noise. **Mitigation:** the §Architecture §3 inline note flags this; a future PR that adds traversal recursion must add the skip explicitly.
 
-## Implementation order (preview for the writing-plans handoff)
+## Implementation order (completed — PR #110)
 
 1. Add the two Sets and the `assertCommandPartition` helper to `scripts/_usage-data.mjs`; call the helper at module load. Add the Test-7 unit tests for the helper.
 2. Add `classifySessionKind` call + `allowPosture = sessionKind === "interactive_cli" || sessionKind === "unknown"` flag at the top of the per-session loop. (No subagent skip — dead code under current traversal.)
