@@ -159,7 +159,7 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   v0.9.17 originally attempted a blanket "exclude observer/sdk/subagent
   from `scanTranscriptInvocations`" fix and regressed `scheduled` 75→63
   by deleting genuine autonomous-workflow signal. It was reverted; the
-  per-command partition (PR #N) is the correct shape — posture is
+  per-command partition (PR #110) is the correct shape — posture is
   filtered, volume is preserved. **Operational note:** if
   `npm run assess` exits non-zero with no `assessment.json` written,
   check stderr for `POSTURE_COMMANDS` / `VOLUME_COMMANDS` partition

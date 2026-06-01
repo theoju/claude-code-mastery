@@ -268,7 +268,7 @@ had no telemetry-dated detectors).
 > it is **E** (Execution flavor, consistent with the Insights / cooked telemetry
 > layer's conventions).
 
-[^partition]: As of PR #N (spec 2026-05-31), the nine posture commands listed below (`color`, `voice`, `focus`, `btw`, `clear`, `compact`, `simplify`, `rewind`, `fewer-permission-prompts`) are counted from transcripts only when `classifySessionKind` returns `interactive_cli` or `unknown`. Observer and SDK-orchestrated sessions still echo the primary session's `<command-name>` markup but no longer inflate posture counters. The five volume commands (`loop`, `schedule`, `babysit`, `go`, `batch`) remain counted across every scanned session kind. See `scripts/_usage-data.mjs` `POSTURE_COMMANDS` / `VOLUME_COMMANDS` for the canonical partition.
+[^partition]: As of PR #110 (spec 2026-05-31), the nine posture commands listed below (`color`, `voice`, `focus`, `btw`, `clear`, `compact`, `simplify`, `rewind`, `fewer-permission-prompts`) are counted from transcripts only when `classifySessionKind` returns `interactive_cli` or `unknown`. Observer and SDK-orchestrated sessions still echo the primary session's `<command-name>` markup but no longer inflate posture counters. The five volume commands (`loop`, `schedule`, `babysit`, `go`, `batch`) remain counted across every scanned session kind. See `scripts/_usage-data.mjs` `POSTURE_COMMANDS` / `VOLUME_COMMANDS` for the canonical partition.
 
 ---
 
