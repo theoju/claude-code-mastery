@@ -983,7 +983,39 @@ export const EXECUTION_SCORERS = {
   // Surface the rationale per dimension so users see "unmeasured because X"
   // instead of a blank radar vertex that looks identical to a forgotten scorer.
   // Universe is inert here (always unavailable) but the contract requires a value.
-  memory: noTelemetry(),
+  memory: withGates(
+    { transcripts: true, universe: "interactive_or_unknown" },
+    (s) => {
+      const denom = s.insights.interactiveOrUnknownSessionsAnalyzed;
+      const merge = (field) =>
+        Math.max(
+          s.transcriptInvocations?.[field] ?? 0,
+          s.historyInvocations?.[field] ?? 0,
+        );
+      const btw = merge("btwCommandUses");
+      const clear = merge("clearCommandUses");
+      const compact = merge("compactCommandUses");
+      const rewind = merge("rewindCommandUses");
+      const sum = btw + clear + compact + rewind;
+      const rawRatio = sum / denom;
+      const ratio = Math.min(rawRatio, 1);
+      const score = Math.round(ratio * 100);
+      const capSuffix =
+        rawRatio > 1
+          ? ` — capped from ${pct(rawRatio * 100)}% (multiple memory commands per session)`
+          : "";
+      const evidence = [
+        `Memory hygiene commands: ${sum} session-coverage hits across ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix}`,
+      ];
+      const gaps = [];
+      if (sum === 0) {
+        gaps.push(
+          "No /btw, /clear, /compact, or /rewind in any interactive session",
+        );
+      }
+      return { score, evidence, gaps, gapReason: null };
+    },
+  ),
   customization: noTelemetry(),
 
   // Linear ratio of sessions emitting the `★ Insight ` banner — the rendered

@@ -676,7 +676,7 @@ describe("EXECUTION_SCORERS", () => {
   });
 
   describe("platform-setup-only dimensions", () => {
-    it.each(["memory", "customization"])(
+    it.each(["customization"])(
       "%s returns null with NO_TELEMETRY_FOR_DIMENSION reason",
       (id) => {
         const r = EXECUTION_SCORERS[id](
@@ -688,10 +688,10 @@ describe("EXECUTION_SCORERS", () => {
     );
   });
 
-  it("every scorer declares a universe option (interactive_only or all_sessions)", () => {
+  it("every scorer declares a universe option (interactive_only, interactive_or_unknown, or all_sessions)", () => {
     for (const [name, scorer] of Object.entries(EXECUTION_SCORERS)) {
       expect(scorer.__universe, `${name} must declare universe`).toMatch(
-        /^(interactive_only|all_sessions)$/,
+        /^(interactive_only|interactive_or_unknown|all_sessions)$/,
       );
     }
   });
