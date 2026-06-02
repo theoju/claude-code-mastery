@@ -73,6 +73,7 @@ const ALL_SATISFIED_SIGNALS = {
   rewindCommandUses: 2,
   simplifyCommandUses: 1,
   btwCommandUses: 1,
+  cliBtwUseCountAllTime: 1,
   voiceCommandUses: 1,
   clearCommandUses: 1,
   compactCommandUses: 1,

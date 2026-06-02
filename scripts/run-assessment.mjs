@@ -131,10 +131,13 @@ export function buildSignalsSummary(signals) {
       maxProbe(signals, "simplifyCommandUses"),
       signals.shipJournal?.simplifyStageCount ?? 0,
     ),
-    btwCommandUses: Math.max(
-      maxProbe(signals, "btwCommandUses"),
-      signals.settings.cliBtwUseCount ?? 0,
-    ),
+    // CCE-78: btwCommandUses is 30-day windowed session-coverage only. The
+    // cumulative all-time counter (settings.cliBtwUseCount) is exposed
+    // separately as cliBtwUseCountAllTime to keep predicates that want
+    // "have you ever adopted this habit" semantics working without
+    // corrupting the ratio numerator in any windowed Execution scorer.
+    btwCommandUses: maxProbe(signals, "btwCommandUses"),
+    cliBtwUseCountAllTime: signals.settings?.cliBtwUseCount ?? 0,
     voiceCommandUses: maxProbe(signals, "voiceCommandUses"),
     clearCommandUses: maxProbe(signals, "clearCommandUses"),
     compactCommandUses: maxProbe(signals, "compactCommandUses"),

@@ -252,7 +252,7 @@
           "id": "btw-side-channel",
           "action": "Use /btw for side questions while Claude works — Boris tip 33+54",
           "effort": "5min",
-          "satisfiedWhen": "btwCommandUses>=1",
+          "satisfiedWhen": "cliBtwUseCountAllTime>=1",
           "borisTip": [33, 54]
         },
         {

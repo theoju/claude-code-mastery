@@ -182,8 +182,8 @@
   },
   "btwCommandUses": {
     "source": "history",
-    "path": "~/.claude/history.jsonl (primary)",
-    "description": "Count of /btw side-chain question invocations. Boris tip 33."
+    "path": "~/.claude/history.jsonl + transcript MAX-merge (windowed session-coverage)",
+    "description": "30-day windowed session-coverage count of /btw. Side-channel command rarely lands in session JSONL, so history.jsonl is the primary source. Note: NOT blended with cliBtwUseCountAllTime — that's a separate cumulative all-time counter exposed for 'have you ever adopted' predicates only. CCE-78. Boris tip 33."
   },
   "voiceCommandUses": {
     "source": "history",
@@ -244,5 +244,10 @@
     "source": "runtime",
     "path": "~/.claude.json → opus47LaunchSeenCount / unpinOpus47LaunchEffort / lastReleaseNotesSeen",
     "description": "True when the user has engaged the 4.7 release surface. Awareness proxy for the 4.6→4.7 workflow shifts (Boris tip 74), not behavioral mastery. Axis A."
+  },
+  "cliBtwUseCountAllTime": {
+    "source": "runtime",
+    "path": "~/.claude.json → btwUseCount",
+    "description": "Cumulative all-time count of /btw invocations maintained by Claude Code. Habit-only adoption signal (Boris tip 33+54) — backs the tip 33 predicate. Distinct from btwCommandUses which is 30-day windowed session-coverage; mixing the two in a ratio would corrupt window semantics (CCE-78)."
   }
 }
