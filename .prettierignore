@@ -1,0 +1,4 @@
+# mkdocs literate-nav SUMMARY.md requires 4-space indented nested lists
+# (Python markdown default tab_length=4). Prettier's markdown formatter
+# enforces 2-space — conflicts with literate-nav's parser. Pin it.
+docs/site-src/SUMMARY.md

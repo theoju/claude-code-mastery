@@ -2,6 +2,6 @@
 - [Self-Assessment](self-assessment.md)
 - [Ship Pattern](ship-pattern.md)
 - Reference
-  - [Boris Tips](boris-tips-reference-2026-05-10.md)
-  - [Tip Classification](tip-classification-2026-05-10.md)
+    - [Boris Tips](boris-tips-reference-2026-05-10.md)
+    - [Tip Classification](tip-classification-2026-05-10.md)
 - [What's New](whats-new.md)
