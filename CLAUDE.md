@@ -117,6 +117,27 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   original PR 9 plan assumed an `outputStyle` field that doesn't exist; a
   60-transcript survey killed it before the code was wrong. Use the same
   approach for any new Execution scorer.
+- **Don't blend cumulative all-time counters into windowed ratio
+  surfaces.** Numerator counters that share a ratio with a 30-day windowed
+  denominator must also be 30-day windowed; mixing cumulative all-time
+  sources (e.g. `~/.claude.json` lifetime invocation counts like
+  `btwUseCount`, `hasUsedAgentsFleet`-derived all-time flags) into the
+  numerator overstates session-coverage and produces ratios that drift up
+  with account age rather than recent posture. Two semantic axes to check
+  per field: **(a) time window** (windowed vs cumulative) and **(b) counter
+  class** (per-session-coverage vs raw invocation count). A summary blend
+  via `Math.max(maxProbe(s, field), cumulativeCounter)` looks ergonomic but
+  conflates both axes — keep the cumulative source on a separate
+  signalsSummary field (e.g. `cliBtwUseCountAllTime` for `cliBtwUseCount`)
+  and route habit-only predicates (`>=1` adoption checks) at the cumulative
+  field. v0.9.18 / CCE-78: the original /btw blend at
+  `run-assessment.mjs:134-137` Math.max'd `cliBtwUseCount` (cumulative
+  all-time invocation count) into `btwCommandUses` (30-day session-coverage)
+  for predicate ergonomics, which silently corrupted the Memory Execution
+  ratio's numerator. Fixed by exposing `cliBtwUseCountAllTime` separately
+  and rerouting the tip 33 predicate. The follow-up redesign for the
+  Memory Execution scorer (per-field semantics rather than fungible sum)
+  is **CCE-79**.
 - **Verify denominator semantics for every ratio scorer.** A scorer
   measuring user posture (permissions, plan mode, learning) must restrict
   its denominator to sessions whose posture is actually settable by the

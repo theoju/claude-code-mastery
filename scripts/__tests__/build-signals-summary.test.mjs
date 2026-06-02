@@ -896,6 +896,7 @@ describe("buildSignalsSummary", () => {
         "btwCommandUses",
         "claudeMdExists",
         "clearCommandUses",
+        "cliBtwUseCountAllTime",
         "colorCommandUses",
         "compactCommandUses",
         "coworkDispatchAdopted",
