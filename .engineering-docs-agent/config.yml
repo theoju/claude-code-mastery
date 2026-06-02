@@ -1,19 +1,19 @@
 # engineering-docs-agent host config for theoju/claude-code-self-assessment (CCE-57).
 #
-# Host type: Next.js + TypeScript dashboard. No static-site generator;
-# docs are plain markdown rendered by GitHub at
-# https://github.com/theoju/claude-code-self-assessment/blob/main/docs/.
-# See docs/host-onboarding/framework-none.md in the plugin repo for what
-# this means (what runs, what skips, how to upgrade to mkdocs).
+# Host type: Next.js + TypeScript dashboard with a mkdocs-Material docs
+# site published to GitHub Pages. The site source lives at docs/site-src/
+# and is built by .github/workflows/docs-agent-pages.yml on every push
+# to main that touches docs/site-src/**, mkdocs.yml, requirements-docs.txt,
+# or the workflow itself.
 
 docs:
-  framework: none
+  framework: mkdocs
   source_dir: docs
-  whats_new_file: docs/whats-new.md
+  whats_new_file: docs/site-src/whats-new.md
   agent_editable_paths:
     - "docs/**"
   lens_paths:
-    core: docs/
+    core: docs/site-src/
 
 sources:
   git:
@@ -30,12 +30,12 @@ lint:
   tier1: default
 
 publishing:
-  # framework: none → no GitHub Pages publish workflow exists or is
-  # expected. The publish-verifier stage skips with `verify_skipped` in
-  # partial_reasons. If you later scaffold mkdocs and add a deploy
-  # workflow, swap framework to mkdocs and fill in base_url + build_workflow.
-  base_url: null
-  build_workflow: null
+  # framework: mkdocs → publish-verifier checks the build_workflow ran
+  # for the current HEAD on main and that base_url + each lens page is
+  # reachable within verify_timeout_seconds. A failed verification adds
+  # `verify_failed` to partial_reasons but does not block the run.
+  base_url: https://theoju.github.io/claude-code-self-assessment/
+  build_workflow: docs-agent-pages.yml
   url_map_rule: standard
   verify_timeout_seconds: 60
 
