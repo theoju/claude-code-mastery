@@ -301,7 +301,7 @@ and what the publish-verifier checks.
 
 #### 8. `.gitignore`
 
-Append `/site/` so local `mkdocs build` output doesn't get tracked.
+Append `site/` so local `mkdocs build` output doesn't get tracked. (No leading slash — matches the existing `.gitignore` style; see `node_modules`, `.next`, etc.)
 
 #### 9. `README.md`
 

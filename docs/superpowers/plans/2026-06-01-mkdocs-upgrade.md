@@ -16,13 +16,14 @@
 
 ## File Structure
 
-### New files (6)
+### New files (7)
 
 | Path                                     | Purpose                                                    |
 | ---------------------------------------- | ---------------------------------------------------------- |
 | `mkdocs.yml`                             | Site config (Material theme, plugins, markdown extensions) |
 | `requirements-docs.txt`                  | Pinned Python deps for mkdocs build                        |
-| `.github/workflows/docs-agent-pages.yml` | GitHub Pages build + deploy workflow                       |
+| `.github/workflows/docs-agent-pages.yml` | GitHub Pages build + deploy workflow (push to main)        |
+| `.github/workflows/docs-build-check.yml` | PR-level mkdocs build --strict gate (no deploy) — Task 15c |
 | `docs/site-src/index.md`                 | Site landing page (hand-authored, one-time)                |
 | `docs/site-src/SUMMARY.md`               | Literate-nav ordering                                      |
 | `docs/site-src/whats-new.md`             | Stub the agent populates over time                         |
@@ -35,16 +36,18 @@
 | `scripts/__tests__/docs-path-migration.test.mjs`  | Asserts no stale `docs/(ship-pattern\|self-assessment\|boris-tips\|tip-classification\|images)` refs in source tree |
 | `scripts/__tests__/docs-config-mkdocs.test.mjs`   | Asserts `.engineering-docs-agent/config.yml` flipped to mkdocs contract                                             |
 
-### Modified files (6)
+### Modified files (8)
 
-| Path                                 | Change                                                                                                 |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `.engineering-docs-agent/config.yml` | 5 field flips (framework, whats_new_file, lens_paths.core, base_url, build_workflow) + comment rewrite |
-| `.gitignore`                         | Append `/site/`                                                                                        |
-| `README.md`                          | 3 path refs updated (line 9 image, line 133 self-assessment, line 145 ship-pattern)                    |
-| `CLAUDE.md`                          | 2 path refs updated (line 272 docs/images/, line 439 docs/ship-pattern.md)                             |
-| `app/data/rubric.json`               | 1 path ref updated (line ~21, ship-pattern.md reference)                                               |
-| `app/docs/ship-pattern/page.tsx`     | 2 spots updated (runtime path line 14 + display string line 33)                                        |
+| Path                                      | Change                                                                                                                       |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `.engineering-docs-agent/config.yml`      | 5 field flips (framework, whats_new_file, lens_paths.core, base_url, build_workflow) + comment rewrite                       |
+| `.gitignore`                              | Append `site/`                                                                                                               |
+| `README.md`                               | 3 path refs updated (line 9 image, line 133 self-assessment, line 145 ship-pattern)                                          |
+| `CLAUDE.md`                               | 3 path refs updated (line 77 comment, line 272 docs/images/, line 439 docs/ship-pattern.md) + new "Docs site (mkdocs)" block |
+| `app/data/rubric.json`                    | 1 path ref updated (line ~21, ship-pattern.md reference)                                                                     |
+| `app/docs/ship-pattern/page.tsx`          | 2 spots updated (runtime path line 14 + display string line 33)                                                              |
+| `.claude/commands/self-assessment.md`     | 1 path ref updated (line 13, link to docs/self-assessment.md)                                                                |
+| `.claude/skills/self-assessment/SKILL.md` | 1 path ref updated (line 36, mention of docs/self-assessment.md)                                                             |
 
 ### File moves (5, via `git mv`)
 
@@ -276,6 +279,80 @@ describe("mkdocs scaffold — files exist", () => {
     );
     expect(existsSync(join(dir, "images"))).toBe(false);
   });
+
+  // Test rigor agent finding T4: SUMMARY.md entries that don't resolve
+  // to a real file pass mkdocs build for the file existing, but the nav
+  // entry is dead. Catch dead nav entries before --strict mode does.
+  it("every SUMMARY.md page link resolves to a real file under docs/site-src/", () => {
+    const dir = join(REPO_ROOT, "docs", "site-src");
+    const body = readFileSync(join(dir, "SUMMARY.md"), "utf8");
+    const matches = [...body.matchAll(/\]\(([^)]+\.md)\)/g)].map((m) => m[1]);
+    expect(
+      matches.length,
+      "SUMMARY.md should have at least one .md link",
+    ).toBeGreaterThan(0);
+    for (const rel of matches) {
+      expect(
+        existsSync(join(dir, rel)),
+        `SUMMARY.md references ${rel} but docs/site-src/${rel} does not exist`,
+      ).toBe(true);
+    }
+  });
+
+  // Test rigor agent finding T6: rubric.json edited by hand in Task 14.
+  // A stray comma would only fail at runtime / next assess.
+  it("app/data/rubric.json remains valid JSON after path-ref edit", () => {
+    const p = join(REPO_ROOT, "app", "data", "rubric.json");
+    expect(existsSync(p)).toBe(true);
+    expect(() => JSON.parse(readFileSync(p, "utf8"))).not.toThrow();
+  });
+
+  // Spec negative test 1: specs don't ship to the site.
+  // Pre-merge enforceable as "config.yml lens_paths.core does NOT include
+  // docs/superpowers" AND "docs/site-src/superpowers/ does not exist".
+  it("docs/site-src/superpowers/ does NOT exist (specs stay outside the site)", () => {
+    expect(existsSync(join(REPO_ROOT, "docs", "site-src", "superpowers"))).toBe(
+      false,
+    );
+  });
+
+  // Spec negative test 2: Pages workflow ignores non-docs pushes.
+  // Walk the workflow YAML's on.push.paths list and assert every entry
+  // is docs-related — no scripts/**, no app/**, no package.json.
+  it("docs-agent-pages.yml on.push.paths only includes docs-related globs", () => {
+    const p = join(REPO_ROOT, ".github", "workflows", "docs-agent-pages.yml");
+    const body = readFileSync(p, "utf8");
+    // Extract the paths block. The format is:
+    //   on:
+    //     push:
+    //       branches: [main]
+    //       paths:
+    //         - "docs/site-src/**"
+    //         - "mkdocs.yml"
+    //         ...
+    const pathsBlock = body.match(/paths:\n((?:\s*-\s*"[^"]+"\n)+)/);
+    expect(
+      pathsBlock,
+      "docs-agent-pages.yml should declare on.push.paths",
+    ).not.toBeNull();
+    const paths = [...pathsBlock[1].matchAll(/-\s*"([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    expect(paths.length).toBeGreaterThan(0);
+    const allowedPrefixes = [
+      "docs/site-src/",
+      "mkdocs.yml",
+      "requirements-docs.txt",
+      ".github/workflows/docs-agent-pages",
+    ];
+    for (const p of paths) {
+      const ok = allowedPrefixes.some((prefix) => p.startsWith(prefix));
+      expect(
+        ok,
+        `docs-agent-pages.yml on.push.paths includes "${p}" which is not docs-related`,
+      ).toBe(true);
+    }
+  });
 });
 ```
 
@@ -285,7 +362,7 @@ describe("mkdocs scaffold — files exist", () => {
 npx vitest run scripts/__tests__/docs-mkdocs-scaffold.test.mjs
 ```
 
-Expected: FAIL — all 7 cases fail (no scaffold files exist yet).
+Expected: FAIL — all ~10 cases fail (no scaffold files exist yet, SUMMARY.md missing, rubric.json edit not yet made, etc.).
 
 - [ ] **Step 3: Commit the red test**
 
@@ -363,6 +440,34 @@ describe(".engineering-docs-agent/config.yml — mkdocs contract", () => {
   it("publishing.base_url is NOT null (regression guard)", () => {
     expect(readConfig()).not.toMatch(/^\s*base_url:\s*null\s*$/m);
   });
+
+  // Spec negative test 3: framework=mkdocs ACTIVATES (not just declared).
+  // A half-flipped state — framework: mkdocs but base_url: null — passes
+  // the individual checks above but fails the joint contract. Assert all
+  // three publishing fields are populated in one test so the failure
+  // message says "config is half-flipped" rather than "base_url is null".
+  it("framework=mkdocs implies base_url AND build_workflow are both populated", () => {
+    const body = readConfig();
+    const isMkdocs = /^\s*framework:\s*mkdocs\s*$/m.test(body);
+    if (!isMkdocs) return; // base_url check already covered above
+    expect(
+      body,
+      "framework: mkdocs requires non-null publishing.base_url",
+    ).not.toMatch(/^\s*base_url:\s*null\s*$/m);
+    expect(
+      body,
+      "framework: mkdocs requires non-null publishing.build_workflow",
+    ).not.toMatch(/^\s*build_workflow:\s*null\s*$/m);
+    expect(body).toMatch(/^\s*base_url:\s*https?:\/\//m);
+    expect(body).toMatch(/^\s*build_workflow:\s*[a-z][a-z0-9._-]*\.ya?ml\s*$/m);
+  });
+
+  // Regression guard: lens_paths.core must NOT include docs/superpowers
+  // (specs stay outside the published site per spec non-goal #7).
+  it("lens_paths.core does NOT include docs/superpowers (specs stay private)", () => {
+    expect(readConfig()).not.toMatch(/^\s*core:\s*docs\/superpowers/m);
+    expect(readConfig()).not.toMatch(/^\s*core:\s*docs\/?\s*$/m);
+  });
 });
 ```
 
@@ -372,7 +477,7 @@ describe(".engineering-docs-agent/config.yml — mkdocs contract", () => {
 npx vitest run scripts/__tests__/docs-config-mkdocs.test.mjs
 ```
 
-Expected: FAIL — all 7 cases fail (config still has framework=none, base_url=null, etc.).
+Expected: FAIL — all 9 cases fail (config still has framework=none, base_url=null, etc.).
 
 - [ ] **Step 3: Commit the red test**
 
@@ -618,7 +723,7 @@ the `docs-agent/YYYY-MM-DD` PR.
 npx vitest run scripts/__tests__/docs-mkdocs-scaffold.test.mjs
 ```
 
-Expected: scaffold-files-exist case now PASSES. Workflow-file case still FAILS (next task). Migrated-files cases still FAIL (Task 9). Originals-gone cases still FAIL (Task 9).
+Expected: scaffold-files-exist case now PASSES. Workflow-file case still FAILS (Task 9 next). Migrated-files cases still FAIL (Task 10 does the moves). Originals-gone cases still FAIL (Task 10).
 
 - [ ] **Step 3: Commit**
 
@@ -773,36 +878,72 @@ stay in place (out of the published site)."
 
 ---
 
-### Task 11: Fix image references in the moved `self-assessment.md`
+### Task 11: Fix broken relative links in all migrated markdown files
 
 **Files:**
 
-- Modify: `docs/site-src/self-assessment.md`
+- Modify: `docs/site-src/self-assessment.md` (6 `../.claude/...` links + 2-3 `./superpowers/...` links, possibly images)
+- Modify: `docs/site-src/ship-pattern.md` (1 `./superpowers/...` link)
+- Modify (if image refs present): `docs/site-src/boris-tips-reference-2026-05-10.md`
+- Modify (if image refs present): `docs/site-src/tip-classification-2026-05-10.md`
 
-The migrated `self-assessment.md` references images via paths that were relative to `docs/` but now need to be relative to `docs/site-src/`. The image now lives at `docs/site-src/images/`, so a relative ref of `images/self-assessment-dashboard.png` works from a file in `docs/site-src/`.
+**Why this matters (correctness agent finding C2 — BLOCKER):** `mkdocs build --strict` (Task 18) rejects links resolving outside `docs_dir`. The migrated files contain three classes of broken links:
 
-- [ ] **Step 1: Find current image references**
+1. **Image refs** prefixed with old `docs/` or `../` — rewrite relative to `docs/site-src/`.
+2. **`../.claude/skills/self-assessment/{SKILL,setup,gotchas,signals}.md` links** in `self-assessment.md` (lines 12-15, 212, 255, 280) — `.claude/` is outside `docs_dir` and CANNOT be made internal. Convert to absolute GitHub blob URLs.
+3. **`./superpowers/specs/2026-05-09-ship-slash-command-design.md` links** in `self-assessment.md` (lines 273, 281) and `ship-pattern.md` (line 38) — specs stay outside `docs_dir` per spec non-goal #7. Convert to absolute GitHub blob URLs.
+
+Note: the `./ship-pattern.md` same-directory link in `self-assessment.md:271` still resolves cleanly after the move (both files end up in `docs/site-src/`). Leave it alone.
+
+- [ ] **Step 1: Scan all 4 migrated files for image refs**
 
 ```bash
-grep -nE 'images/[a-z0-9-]+\.(png|jpg|svg)' docs/site-src/self-assessment.md
+grep -nE 'images/[a-z0-9-]+\.(png|jpg|svg)' docs/site-src/*.md
 ```
 
-If no matches: skip to Step 4 (no image refs to fix). If matches exist with old `../images/` or `docs/images/` form, proceed.
+For each match using an old form (`docs/images/X.png` or `../images/X.png`), use Edit to rewrite to `images/X.png` (relative to the file's new location).
 
-- [ ] **Step 2: Rewrite refs**
+- [ ] **Step 2: Scan all 4 migrated files for `.claude/` references**
 
-Manual targeted Edit per line — if any line contains `docs/images/X.png` or `../images/X.png`, change to `images/X.png` (relative to the file's new location). Use the Edit tool with explicit old/new strings rather than sed to avoid over-matching.
+```bash
+grep -nE '\(\.\./\.claude/' docs/site-src/*.md
+```
 
-Example Edit invocation pattern (one per ref found in Step 1):
+Expected matches in `self-assessment.md` only (~6 lines). For each, convert to an absolute GitHub URL. Example Edit pattern:
 
 ```
 Edit tool:
   file_path: /Users/theo/Projects/claude-extensions/.claude/worktrees/engineering-docs-agent-integration/docs/site-src/self-assessment.md
-  old_string: ![alt](docs/images/foo.png)
-  new_string: ![alt](images/foo.png)
+  old_string: [`.claude/skills/self-assessment/SKILL.md`](../.claude/skills/self-assessment/SKILL.md)
+  new_string: [`.claude/skills/self-assessment/SKILL.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/SKILL.md)
 ```
 
-- [ ] **Step 3: Verify all image refs now resolve relative to site-src**
+Repeat for each `../.claude/skills/self-assessment/{SKILL,setup,gotchas,signals}.md` link. About 6 such links total.
+
+- [ ] **Step 3: Scan all 4 migrated files for `./superpowers/` references**
+
+```bash
+grep -nE '\(\.\/superpowers/' docs/site-src/*.md
+```
+
+Expected matches in `self-assessment.md` (~2) and `ship-pattern.md` (~1). For each, convert to an absolute GitHub URL. Example:
+
+```
+Edit tool:
+  file_path: /Users/theo/Projects/claude-extensions/.claude/worktrees/engineering-docs-agent-integration/docs/site-src/self-assessment.md
+  old_string: [`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](./superpowers/specs/2026-05-09-ship-slash-command-design.md)
+  new_string: [`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/docs/superpowers/specs/2026-05-09-ship-slash-command-design.md)
+```
+
+- [ ] **Step 4: Verify no broken-outside-docs-dir links remain**
+
+```bash
+grep -nE '\((\.\./|\./superpowers/)' docs/site-src/*.md
+```
+
+Expected: empty output. The `./ship-pattern.md` same-dir link in `self-assessment.md:271` does NOT match either pattern.
+
+- [ ] **Step 5: Verify image refs**
 
 ```bash
 grep -nE 'images/[a-z0-9-]+\.(png|jpg|svg)' docs/site-src/*.md
@@ -810,18 +951,23 @@ grep -nE 'images/[a-z0-9-]+\.(png|jpg|svg)' docs/site-src/*.md
 
 Expected: every match starts with `images/` (no `docs/images/`, no `../images/`).
 
-- [ ] **Step 4: Commit if changed; otherwise skip**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add docs/site-src/self-assessment.md
-git commit -m "fix(docs): rewrite image refs relative to docs/site-src/ — CCE-XX
+git add docs/site-src/
+git commit -m "fix(docs): repair broken relative links in migrated markdown — CCE-XX
 
-mkdocs resolves image links relative to the markdown file. After
-the move, refs like docs/images/x.png break under mkdocs build
---strict. Now images/x.png — site-src is the docs_dir root."
+After move to docs/site-src/, three classes of links broke:
+- image refs prefixed with docs/ or ../
+- ../.claude/skills/... links (outside docs_dir; cannot be made
+  internal)
+- ./superpowers/specs/... links (specs stay outside docs_dir per
+  spec non-goal #7)
+
+Image refs rewritten relative to docs/site-src/. .claude/ and
+superpowers/specs/ links converted to absolute GitHub blob URLs.
+mkdocs build --strict will now resolve all links."
 ```
-
-(If `grep` found no matches in Step 1, skip commit and move to Task 12.)
 
 ---
 
@@ -887,24 +1033,38 @@ part of the mkdocs site), so these are GitHub-rendered links."
 
 ---
 
-### Task 13: Update path refs in `CLAUDE.md`
+### Task 13: Update path refs in `CLAUDE.md` (3 updates + bidirectional pointer)
 
 **Files:**
 
-- Modify: `CLAUDE.md` lines ~272 and ~439
+- Modify: `CLAUDE.md` lines ~77, ~272, ~439 + add bidirectional pointer block
+
+**Why three updates not two (correctness agent finding C1 — BLOCKER):** Line 77 is `  docs/ship-pattern/page.tsx # renders docs/ship-pattern.md as a dashboard page (PR #58)`. The app path (`docs/ship-pattern/page.tsx`) is fine — it refers to `app/docs/ship-pattern/page.tsx` by short name. But the comment text contains `docs/ship-pattern.md`, which the path-migration test catches.
+
+**Why bidirectional pointer (completeness agent finding):** The project's `## Conventions` section says "Cross-references between sibling docs/skills/commands should be bidirectional… Default to symmetric." The new spec/plan reference CLAUDE.md; CLAUDE.md should gain a pointer back.
 
 - [ ] **Step 1: Find exact line content**
 
 ```bash
-grep -n 'docs/' CLAUDE.md | grep -v 'docs/superpowers/' | grep -v 'docs/ship-pattern/page.tsx'
+grep -n 'docs/' CLAUDE.md | grep -v 'docs/superpowers/'
 ```
 
 Expected output (line numbers may drift slightly):
 
+- Line 77-ish: `  docs/ship-pattern/page.tsx # renders docs/ship-pattern.md as a dashboard page (PR #58)`
 - Line 272-ish: `- Committed README/doc assets live in \`docs/images/\`. The \`.gitignore\``
 - Line 439-ish: `\`docs/ship-pattern.md\` Stage 7 — the \`/ship\` command transitions`
 
-- [ ] **Step 2: Update `docs/images/` ref**
+- [ ] **Step 2: Update line 77 (comment text only — keep app path)**
+
+Use Edit:
+
+```
+old_string: docs/ship-pattern/page.tsx # renders docs/ship-pattern.md as a dashboard page (PR #58)
+new_string: docs/ship-pattern/page.tsx # renders docs/site-src/ship-pattern.md as a dashboard page (PR #58)
+```
+
+- [ ] **Step 3: Update `docs/images/` ref (~line 272)**
 
 Use Edit:
 
@@ -913,7 +1073,7 @@ old_string: Committed README/doc assets live in `docs/images/`. The `.gitignore`
 new_string: Committed README/doc assets live in `docs/site-src/images/`. The `.gitignore`
 ```
 
-- [ ] **Step 3: Update `docs/ship-pattern.md` ref**
+- [ ] **Step 4: Update `docs/ship-pattern.md` ref (~line 439)**
 
 Use Edit:
 
@@ -922,23 +1082,41 @@ old_string: `docs/ship-pattern.md` Stage 7 — the `/ship` command transitions
 new_string: `docs/site-src/ship-pattern.md` Stage 7 — the `/ship` command transitions
 ```
 
-- [ ] **Step 4: Re-run path-migration test**
+- [ ] **Step 5: Add bidirectional pointer block**
+
+Find a natural anchor near the existing `## Where things live` section (which already lists docs paths). Append a new subsection. Use Read to find a clean insertion point (after the `app/data/` block or before `## Tests`), then Edit to insert:
+
+```markdown
+### Docs site (mkdocs)
+
+The published docs site lives at https://theoju.github.io/claude-code-self-assessment/.
+Source under `docs/site-src/`, built by `.github/workflows/docs-agent-pages.yml`,
+verified on every PR by `.github/workflows/docs-build-check.yml`. The
+engineering-docs-agent's nightly fills in lens pages + `whats-new.md`.
+
+- Spec: `docs/superpowers/specs/2026-06-01-mkdocs-upgrade-design.md`
+- Plan: `docs/superpowers/plans/2026-06-01-mkdocs-upgrade.md`
+- Config: `.engineering-docs-agent/config.yml` (`framework: mkdocs`)
+```
+
+- [ ] **Step 6: Re-run path-migration test**
 
 ```bash
 npx vitest run scripts/__tests__/docs-path-migration.test.mjs
 ```
 
-Expected: still FAILS but CLAUDE.md gone from offenders list. Only rubric.json + page.tsx remain.
+Expected: still FAILS but CLAUDE.md gone from offenders list. Only rubric.json + page.tsx + .claude/commands/ + .claude/skills/ remain.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add CLAUDE.md
-git commit -m "docs(claude-md): retarget 2 doc-path refs to docs/site-src/ — CCE-XX
+git commit -m "docs(claude-md): retarget 3 doc-path refs + add docs-site pointer — CCE-XX
 
-Project memory should track the move so future-Claude reading
-CLAUDE.md gets the current paths. Line 77's app/docs/ship-pattern/
-page.tsx is the app path, not a docs path — left untouched."
+Three stale refs updated (line 77 comment text, line 272
+docs/images/, line 439 docs/ship-pattern.md). New 'Docs site
+(mkdocs)' subsection added to satisfy bidirectional pointer
+convention — spec + plan now have a reverse link from CLAUDE.md."
 ```
 
 ---
@@ -1031,6 +1209,158 @@ git commit -m "app(docs): retarget ship-pattern page to docs/site-src/ — CCE-X
 
 Two spots: runtime readFile path + the literal mono-font display
 string shown in the page header. No behavior change."
+```
+
+---
+
+### Task 15a: Update `.claude/commands/self-assessment.md`
+
+**Files:**
+
+- Modify: `.claude/commands/self-assessment.md` line ~13
+
+**Why this matters (correctness agent finding C1):** This file references `docs/self-assessment.md` in the slash-command docs. Path-migration test catches it.
+
+- [ ] **Step 1: Find current ref**
+
+```bash
+grep -n 'docs/self-assessment' .claude/commands/self-assessment.md
+```
+
+Expected: `13: Full human-facing user guide: [\`docs/self-assessment.md\`](../../docs/self-assessment.md).`
+
+- [ ] **Step 2: Update the ref**
+
+Use Edit:
+
+```
+old_string: Full human-facing user guide: [`docs/self-assessment.md`](../../docs/self-assessment.md).
+new_string: Full human-facing user guide: [`docs/site-src/self-assessment.md`](../../docs/site-src/self-assessment.md).
+```
+
+- [ ] **Step 3: Re-run path-migration test**
+
+```bash
+npx vitest run scripts/__tests__/docs-path-migration.test.mjs
+```
+
+Expected: still FAILS but `.claude/commands/self-assessment.md` gone from offenders. Only `.claude/skills/` remaining (Task 15b will close it).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add .claude/commands/self-assessment.md
+git commit -m "docs(claude/commands): retarget self-assessment.md ref to docs/site-src/ — CCE-XX"
+```
+
+---
+
+### Task 15b: Update `.claude/skills/self-assessment/SKILL.md`
+
+**Files:**
+
+- Modify: `.claude/skills/self-assessment/SKILL.md` line ~36
+
+- [ ] **Step 1: Find current ref**
+
+```bash
+grep -n 'docs/self-assessment' .claude/skills/self-assessment/SKILL.md
+```
+
+Expected: `36: - Human-facing user guide: \`docs/self-assessment.md\`.`
+
+- [ ] **Step 2: Update the ref**
+
+Use Edit:
+
+```
+old_string: - Human-facing user guide: `docs/self-assessment.md`.
+new_string: - Human-facing user guide: `docs/site-src/self-assessment.md`.
+```
+
+- [ ] **Step 3: Re-run path-migration test (should now be GREEN)**
+
+```bash
+npx vitest run scripts/__tests__/docs-path-migration.test.mjs
+```
+
+Expected: PASS — `offenders` array empty.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add .claude/skills/self-assessment/SKILL.md
+git commit -m "docs(claude/skills): retarget self-assessment.md ref to docs/site-src/ — CCE-XX
+
+Path-migration test now passes (red → green). All seven
+known stale refs across the source tree are repaired."
+```
+
+---
+
+### Task 15c: Add CI workflow `docs-build-check.yml` for PR-level mkdocs strict gate
+
+**Files:**
+
+- Create: `.github/workflows/docs-build-check.yml`
+
+**Why this matters (test rigor agent finding T1):** `mkdocs build --strict` is the contract that catches broken inter-doc links, missing nav refs, malformed mkdocs.yml. Currently it only runs locally (Task 18) and on `main` (the Pages workflow). Without a PR gate, a broken site lands on `main` and only the post-merge Pages build catches it. Adding a PR-trigger workflow that does the strict build (but not the deploy) closes this gap at low cost (~45s per run, free for public repos).
+
+- [ ] **Step 1: Create the workflow file**
+
+Create `/Users/theo/Projects/claude-extensions/.claude/worktrees/engineering-docs-agent-integration/.github/workflows/docs-build-check.yml`:
+
+```yaml
+name: docs-build-check
+
+# PR-level gate: mkdocs build --strict must pass before docs PRs merge.
+# Mirrors the build step of docs-agent-pages.yml but never deploys.
+# Without this gate, broken links land on main and only the post-merge
+# Pages workflow catches them — too late for review feedback.
+
+on:
+  pull_request:
+    paths:
+      - "docs/site-src/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs-build-check.yml"
+      - ".github/workflows/docs-agent-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+      - name: Install docs deps
+        run: pip install -r requirements-docs.txt
+      - name: mkdocs build --strict
+        run: mkdocs build --strict --site-dir /tmp/site
+```
+
+- [ ] **Step 2: Run scaffold test for docs-build-check.yml coverage**
+
+There's no test for this file yet (scaffold test only covers `docs-agent-pages.yml`). It's not required since the workflow's existence + correctness is verified by its own first run on the scaffold PR. Skip to commit.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add .github/workflows/docs-build-check.yml
+git commit -m "ci(docs): add PR-level mkdocs build --strict gate — CCE-XX
+
+Closes test-rigor agent finding T1. Catches broken inter-doc
+links + missing nav refs + malformed mkdocs.yml on PRs, before
+they land on main. Mirrors docs-agent-pages.yml's build step
+but never deploys."
 ```
 
 ---
@@ -1369,16 +1699,19 @@ In TDD order:
 8. `feat(docs): add whats-new.md stub for agent population — CCE-XX`
 9. `feat(ci): add docs-agent-pages workflow for GitHub Pages deploy — CCE-XX`
 10. `refactor(docs): move docs/*.md + images/ into docs/site-src/ — CCE-XX`
-11. `fix(docs): rewrite image refs relative to docs/site-src/ — CCE-XX` (only if image-ref grep found matches)
+11. `fix(docs): repair broken relative links in migrated markdown — CCE-XX` (covers image refs + .claude/ links + ./superpowers/ links across all 4 moved files)
 12. `docs(readme): update 3 path refs after docs/ → docs/site-src/ move — CCE-XX`
-13. `docs(claude-md): retarget 2 doc-path refs to docs/site-src/ — CCE-XX`
+13. `docs(claude-md): retarget 3 doc-path refs + add docs-site pointer — CCE-XX`
 14. `data(rubric): retarget ship-pattern.md ref to docs/site-src/ — CCE-XX`
 15. `app(docs): retarget ship-pattern page to docs/site-src/ — CCE-XX`
+    15a. `docs(claude/commands): retarget self-assessment.md ref to docs/site-src/ — CCE-XX`
+    15b. `docs(claude/skills): retarget self-assessment.md ref to docs/site-src/ — CCE-XX`
+    15c. `ci(docs): add PR-level mkdocs build --strict gate — CCE-XX`
 16. `feat(docs-agent): flip config.yml to mkdocs contract — CCE-XX`
-17. `chore(gitignore): ignore /site/ (local mkdocs build output) — CCE-XX`
+17. `chore(gitignore): ignore site/ (local mkdocs build output) — CCE-XX`
     18-20: verification only (no commits unless fixes were needed)
 
-Total: 16-17 commits + 0-N fix commits in the build-clean loop.
+Total: 20 commits + 0-N fix commits in the build-clean loop.
 
 After Task 20 passes, the branch is shippable. Run `/ship` to commit/push (if anything outstanding), open the PR, run code-review, and update the linked Jira ticket.
 
@@ -1391,3 +1724,50 @@ After Task 20 passes, the branch is shippable. Run `/ship` to commit/push (if an
 - **Path placeholders:** every code block uses absolute paths to this worktree. Don't `cd` — run from the worktree root.
 - **CCE-XX:** replace with the resolved Jira key in every commit message. If unresolved at execution time, use `CCE-XX` as a literal placeholder and update once the ticket is filed.
 - **If a step fails:** don't paper over with a workaround. Diagnose root cause (the spec's CLAUDE.md "trust but verify" rule applies here too). The plan's verification gates exist to catch real problems.
+
+---
+
+## Validation findings & responses
+
+The plan was validated by 3 independent agents (correctness, completeness, test rigor). Their findings and the plan revisions that addressed them:
+
+### Correctness agent — RED verdict, 2 BLOCKERs (both addressed)
+
+| Finding                                                                                                                                                                                                                                                                                 | Response                                                                                                                                                                             |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| C1 (BLOCKER): Path-migration test would fail at Task 15 because `.claude/commands/self-assessment.md:13`, `.claude/skills/self-assessment/SKILL.md:36`, and `CLAUDE.md:77` (comment text) reference `docs/self-assessment.md`/`docs/ship-pattern.md` and the plan didn't update them    | Added Tasks 15a, 15b; expanded Task 13 to include line 77                                                                                                                            |
+| C2 (BLOCKER): `mkdocs build --strict` (Task 18) would fail because `docs/self-assessment.md` has 6 broken `../.claude/...` links + 2 `./superpowers/...` links, and `docs/ship-pattern.md` has 1 `./superpowers/...` link. `.claude/` is outside `docs_dir` and cannot be made internal | Expanded Task 11 to scan all 4 migrated files AND fix all 3 broken-link classes (image refs, `.claude/` links → absolute GitHub URLs, `./superpowers/` links → absolute GitHub URLs) |
+| C6 (Minor): Task 8 prediction says "Task 9" when it should say "Task 10" for migrated-files-exist case                                                                                                                                                                                  | Fixed                                                                                                                                                                                |
+| C4 (Cosmetic): Migrated files retain stale descriptive-text refs like `(docs/tip-classification-2026-05-10.md)`                                                                                                                                                                         | Allow-listed by the path-migration test's `docs/site-src/**` exclusion; per spec non-goal #2 "no automated content rewriting"; left in place                                         |
+
+### Completeness agent — MOSTLY COMPLETE verdict, 3 ship-blocking items (all addressed)
+
+| Finding                                                                                                                                  | Response                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| C1: Spec says "Append `/site/`" (with slash); plan said `site/` (no slash). Drift                                                        | Reconciled — spec updated to `site/` (matches `.gitignore` style: no leading slash on `node_modules`, `.next`, etc.) |
+| C2: Task 11 only scanned `self-assessment.md` for image refs; should scan all 4 migrated files                                           | Task 11 expanded; Step 1 now grep's `docs/site-src/*.md`                                                             |
+| C7: CLAUDE.md modifications don't add a bidirectional pointer back to the new spec/plan, violating the "Default to symmetric" convention | Task 13 Step 5 adds a new "Docs site (mkdocs)" subsection pointing at spec + plan + workflow + config                |
+| C3: Open Question §2 (file plugin-side tech-debt ticket) is in the spec but has no plan task                                             | Acknowledged as explicit deferral per spec §Open Questions; not added to plan                                        |
+| C5: Spec negative test "specs don't ship to site" could be pre-merge testable                                                            | Added to Task 2 (scaffold test): `docs/site-src/superpowers/` does NOT exist                                         |
+
+### Test rigor agent — INADEQUATE verdict, 6 critical gaps (most addressed)
+
+| Finding                                                                           | Response                                                                                                                                                                                                                                                  |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1 (Critical): `mkdocs build --strict` is never in CI (local-only)                | Added Task 15c: new `.github/workflows/docs-build-check.yml` PR-level gate that runs `mkdocs build --strict` (no deploy) on every PR touching docs paths                                                                                                  |
+| T2 (Critical): YAML files regex-checked, not parsed                               | Deferred — adding `yaml` package as devDep is a larger surface; the regex tests + the new CI build gate (Task 15c) catch the same failure modes (`mkdocs build --strict` fails on malformed yaml). Worth adding as a follow-up if false positives appear. |
+| T3 (Critical): `app/data/rubric.json` not re-validated as JSON after Task 14 edit | Added to Task 2 (scaffold test): `JSON.parse(readFileSync(rubric.json))` does not throw                                                                                                                                                                   |
+| T4 (Critical): SUMMARY.md entries not asserted to resolve to real files           | Added to Task 2 (scaffold test): every `.md` link in SUMMARY.md is `existsSync`'d under `docs/site-src/`                                                                                                                                                  |
+| T6 (Critical): `app/docs/ship-pattern/page.tsx` has zero automated coverage       | Partially addressed via Task 19 dev-server smoke + the scaffold test's path-existence check. Adding a Playwright E2E test is deferred — the in-app page would be expensive to test in CI for a path-only change.                                          |
+| Spec negative test 1 ("specs don't ship to site")                                 | Added to Task 2 scaffold test (`docs/site-src/superpowers/` does not exist) AND Task 3 config test (`lens_paths.core` does not include `docs/superpowers`)                                                                                                |
+| Spec negative test 2 ("Pages workflow ignores non-docs pushes")                   | Added to Task 2 scaffold test: walks the workflow's `on.push.paths` block and asserts every entry starts with one of the allowed docs-related prefixes                                                                                                    |
+| Spec negative test 3 ("framework=mkdocs activates")                               | Added to Task 3 config test: when `framework: mkdocs`, both `base_url` and `build_workflow` must be populated (joint contract, single-test failure message)                                                                                               |
+| Test design improvements (false-negative regex patterns, fixture idioms)          | Acknowledged; regex patterns kept simple for plan readability. The new CI build gate (Task 15c) catches semantically-wrong-but-regex-passing config because `mkdocs build --strict` would fail.                                                           |
+
+### Net result
+
+- **17 → 20 commits** (added 15a, 15b, 15c)
+- **6 → 8 modified files** (added `.claude/commands/self-assessment.md`, `.claude/skills/self-assessment/SKILL.md`)
+- **6 → 7 new files** (added `.github/workflows/docs-build-check.yml`)
+- **Test suite: +5 new test cases** (SUMMARY-resolves, JSON-validity, specs-not-in-site, workflow-paths-docs-only, framework-mkdocs-activates)
+- **Both correctness BLOCKERs resolved.** Plan should now execute cleanly to green.
