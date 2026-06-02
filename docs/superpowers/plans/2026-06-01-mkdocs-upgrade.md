@@ -1771,3 +1771,67 @@ The plan was validated by 3 independent agents (correctness, completeness, test 
 - **6 → 7 new files** (added `.github/workflows/docs-build-check.yml`)
 - **Test suite: +5 new test cases** (SUMMARY-resolves, JSON-validity, specs-not-in-site, workflow-paths-docs-only, framework-mkdocs-activates)
 - **Both correctness BLOCKERs resolved.** Plan should now execute cleanly to green.
+
+---
+
+## Post-merge outcomes (2026-06-02, PR #121 / CCE-81)
+
+The plan executed cleanly through all 20 tasks. Three deviations from the planned rollout, all documented here for future host onboardings.
+
+### Deviation 1 — Pages enablement failed on first push-triggered deploy
+
+**Symptom:** PR #121 squash-merged at 06:26:27Z → `docs-agent-pages.yml` auto-fired on commit `6369065` → failed at the `configure-pages@v6` step after ~3s:
+
+```
+Get Pages site failed. Error: Not Found
+Create Pages site failed. Error: Resource not accessible by integration
+HttpError: Resource not accessible by integration
+```
+
+**Root cause:** The spec's Gate 5 assumed `enablement: true` would programmatically enable Pages with `pages: write` + `id-token: write` permissions. It doesn't — the workflow's `GITHUB_TOKEN` lacks the admin scope required for `POST /repos/.../pages`, and `permissions:` blocks can only _restrict_ default-token scopes, never expand them. `enablement: true` is silently a no-op on first run when the workflow token lacks admin, and a silent no-op every run thereafter once Pages is enabled by other means.
+
+**Recovery (manual, ~2 min):**
+
+```bash
+# 1. Enable Pages directly from a personal admin gh login
+gh api -X POST repos/theoju/claude-code-self-assessment/pages \
+  -f build_type=workflow
+# Returned: {"build_type":"workflow","html_url":"https://theoju.github.io/claude-code-self-assessment/", ...}
+
+# 2. Re-dispatch the deploy workflow on main
+gh workflow run docs-agent-pages.yml \
+  --repo theoju/claude-code-self-assessment --ref main
+
+# 3. Watch run 26802635123: build 16s, deploy 8s, both green
+# 4. Verify: curl -sI https://theoju.github.io/claude-code-self-assessment/  → HTTP/2 200
+```
+
+**Verification (all green):**
+
+| Page                                | HTTP                                  |
+| ----------------------------------- | ------------------------------------- |
+| `/` (root)                          | 200                                   |
+| `/self-assessment/`                 | 200                                   |
+| `/ship-pattern/`                    | 200                                   |
+| `/boris-tips-reference-2026-05-10/` | 200                                   |
+| `/tip-classification-2026-05-10/`   | 200                                   |
+| `/whats-new/`                       | 200                                   |
+| `/methodology/` (Next.js route)     | 404 (expected; confirms site scoping) |
+
+**Permanent fix (filed as plugin tech-debt followup):** the engineering-docs-agent's `setup_scaffold` script should bake in `gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow` so future hosts onboarded with `framework: mkdocs` don't trip the same footgun. Also: delete the `enablement: true` line from `docs-agent-pages.yml` — it's misleading on first run and meaningless after. CLAUDE.md Conventions section now carries this gotcha for the project.
+
+### Deviation 2 — Jira ticket created post-execution, not pre-execution
+
+The plan and PR opened with `CCE-XX` as a literal placeholder per Open Question §1 / executor note. After PR creation, an investigation workflow searched CCE for an existing matching ticket; none of the 5 candidates fit (CCE-57 host-onboarding and CCE-64 framework=none first-class are both Done with different scope; CCE-60 targeted the sibling repo; CCE-36 / CCE-63 unrelated). Filed **CCE-81** ("feat(docs): upgrade claude-code-self-assessment docs site to mkdocs + GitHub Pages") with full description linking PR #121, the spec, the plan, and noting CCE-64's instruction to flip the host to framework=none was intentionally reversed by this PR. Updated PR #121 title + body to reference CCE-81 before merge.
+
+### Deviation 3 — Monitor scripts kept crashing under zsh
+
+Two separate Monitor invocations used `status` as a loop-local variable name. Under zsh (the session shell), `status` and `pipestatus` are read-only built-in parameters exposing the last command's exit code and the per-stage pipeline exit codes; assigning to either crashes the shell with `read-only variable: status`. Both monitors exited non-zero with NO event lines emitted, which initially looked like the watched workflow had failed — but direct `gh run view <ID>` queries showed the deploy had actually succeeded. Lesson recorded in CLAUDE.md: name loop locals away from the reserved set (`run_status`, `pipe_state`) or shebang the script `bash`. **Corollary:** a monitor exiting non-zero with no event lines is almost always a script bug, not a failure of the watched system — confirm by direct query.
+
+### Final state
+
+- **PR #121:** MERGED at 2026-06-02T06:26:27Z, mergeCommit `6369065`
+- **Ticket:** CCE-81 (Open) tracks this work end-to-end
+- **Site:** Live at https://theoju.github.io/claude-code-self-assessment/ as of 2026-06-02T06:29:12Z
+- **Future docs-touching merges:** `docs-agent-pages.yml` push-triggered runs will work cleanly without manual intervention; `build_type=workflow` is durable
+- **Local cleanup pending:** remote branch `worktree-engineering-docs-agent-integration` still exists (squash-merged with `--squash` only, not `--delete-branch`, to avoid the documented worktree mid-cleanup failure). Clean up from main checkout: `git push origin --delete worktree-engineering-docs-agent-integration && git fetch --prune`

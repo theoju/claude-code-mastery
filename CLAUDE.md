@@ -421,6 +421,50 @@ model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
   commit, push-pr, jira-update). New stages append to the end of the
   workflow, never insert in the middle, so the numeric detector arm
   stays stable.
+- **`actions/configure-pages@v6 enablement: true` does NOT actually
+  bootstrap GitHub Pages on a first deploy** — despite the field name
+  and the action's docs. The workflow's `GITHUB_TOKEN` lacks the admin
+  scope required to call `POST /repos/.../pages`, so the very first run
+  fails with `Resource not accessible by integration` even with
+  `permissions: pages: write` declared. `permissions:` can only
+  _restrict_ the default token's scopes, never expand them. After Pages
+  exists (any path), `enablement: true` becomes a silent no-op forever.
+  **Fix for host onboarding:** before the first deploy, run
+  `gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow`
+  from a personal/admin gh login. Equivalent UI path: Settings → Pages
+  → Build and deployment → Source = "GitHub Actions". `build_type=workflow`
+  is durable — once set, all subsequent push-triggered runs of
+  `docs-agent-pages.yml` work cleanly and the `enablement: true` line
+  is meaningless. The line should be deleted from the workflow to
+  remove the footgun; the post-implementation note in the spec
+  (`docs/superpowers/specs/2026-06-01-mkdocs-upgrade-design.md` →
+  "Post-implementation correction") and the plan's recovery section
+  document the v0.9.20 onboarding incident for PR #121 / CCE-81 in
+  full. `build_type=workflow` also disables branch-deploy publishing —
+  the only path to `theoju.github.io/<repo>/` is via `deploy-pages@v5`'s
+  artifact upload, which is what we want for mkdocs builds but worth
+  knowing if anyone wonders why static files in main don't appear.
+  For future host repos onboarded with `framework: mkdocs`, the
+  `gh api` call should be baked into the engineering-docs-agent's
+  `setup_scaffold` script (currently filed as a plugin tech-debt
+  followup — see PR #121 description "Followup tickets recommended").
+- **Monitor scripts must use bash, not zsh's defaults** — `status` and
+  `pipestatus` are read-only zsh built-in parameters (they expose the
+  last command's exit code and the per-stage exit codes of the last
+  pipeline). Assigning to either inside a poll loop crashes the shell
+  with `read-only variable: status` and the monitor exits non-zero with
+  no event lines emitted. Both monitors I wrote during the PR #121
+  cycle hit this and silently masked successful deploys. **Two ways
+  to avoid:** (1) name loop locals away from the reserved set
+  (`run_status`, `pipe_state`) instead of `status`/`pipestatus`, or
+  (2) shebang the script `#!/usr/bin/env bash` and run it under bash
+  where these names are not reserved. The session environment
+  reminder lists `Shell: zsh` — weight that when writing Monitor
+  scripts. **Corollary:** a monitor exiting non-zero with NO emitted
+  event lines is almost always a script bug, not a failure of the
+  watched system. Always confirm by direct query (`gh run view <ID>
+--json status,conclusion,jobs`) before treating monitor failure as
+  evidence the underlying task failed.
 
 ## Issue tracking
 
