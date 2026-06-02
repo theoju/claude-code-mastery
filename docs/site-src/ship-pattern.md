@@ -35,7 +35,7 @@ the spec under `## Halt rules`.
 The full design spec — files, lifecycle, halt matrix, gotchas — lives
 at:
 
-- [`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](./superpowers/specs/2026-05-09-ship-slash-command-design.md)
+- [`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/docs/superpowers/specs/2026-05-09-ship-slash-command-design.md)
 
 To author your own copy:
 

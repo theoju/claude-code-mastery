@@ -1,0 +1,40 @@
+name: docs-build-check
+
+# PR-level gate: mkdocs build --strict must pass before docs PRs merge.
+# Mirrors the build step of docs-agent-pages.yml but never deploys.
+# Without this gate, broken links land on main and only the post-merge
+# Pages workflow catches them — too late for review feedback.
+
+on:
+  pull_request:
+    paths:
+      - "docs/site-src/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs-build-check.yml"
+      - ".github/workflows/docs-agent-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same PR branch — only the latest commit
+# needs the strict-build gate, and the build is ~30s with pip cache.
+concurrency:
+  group: docs-build-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+      - name: Install docs deps
+        run: pip install -r requirements-docs.txt
+      - name: mkdocs build --strict
+        run: mkdocs build --strict --site-dir /tmp/site

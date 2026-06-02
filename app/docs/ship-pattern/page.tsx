@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function ShipPatternPage() {
-  const path = join(process.cwd(), "docs", "ship-pattern.md");
+  const path = join(process.cwd(), "docs", "site-src", "ship-pattern.md");
   let md: string;
   try {
     md = await readFile(path, "utf8");
@@ -30,7 +30,7 @@ export default async function ShipPatternPage() {
         <div className="flex items-baseline gap-3 text-xs uppercase tracking-[0.15em] text-[color:var(--color-mute)] mb-3">
           <span>Recommended pattern</span>
           <span>·</span>
-          <span className="mono">docs/ship-pattern.md</span>
+          <span className="mono">docs/site-src/ship-pattern.md</span>
         </div>
       </header>
 

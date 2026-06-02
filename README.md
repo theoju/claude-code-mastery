@@ -6,7 +6,7 @@ Self-Assessment rubric. Reads signals directly from `~/.claude/` — no telemetr
 external service, nothing leaves your machine unless you enable the Slack
 notifier.
 
-![Dashboard overview — two-axis scoring (Platform Setup vs Execution), 12-dimension radar, milestone progression, and the headline read.](docs/images/self-assessment-dashboard.png)
+![Dashboard overview — two-axis scoring (Platform Setup vs Execution), 12-dimension radar, milestone progression, and the headline read.](docs/site-src/images/self-assessment-dashboard.png)
 
 - **Two axes, not one composite**: **Platform Setup** (how `~/.claude/` is
   configured) and **Execution** (whether you actually use it, derived from
@@ -130,7 +130,7 @@ Two slash commands ship in `.claude/commands/`:
   weight×deficit priority actions. Accepts the same flags as the script
   (`--include-transcripts`, `--insights-lookback N`, `--no-slack`, etc).
   Treat it like a morning standup with your toolchain. Full guide:
-  [`docs/self-assessment.md`](docs/self-assessment.md).
+  [`docs/site-src/self-assessment.md`](docs/site-src/self-assessment.md).
 - **`/refresh-insights`** — files the markdown summary from a `/insights`
   run in the current session into `app/data/insights-narrative.md`. Thin
   convenience wrapper around `pbpaste | npm run import-insights`; never
@@ -142,7 +142,7 @@ The rubric scores authorship of a personal `/ship` slash command (Boris
 tip 5) as the highest-weighted automation next-action. `/ship` is **not**
 committed to this repo — it lives in your personal `~/.claude/commands/`
 so it works against whatever repo your terminal is in. See
-[`docs/ship-pattern.md`](docs/ship-pattern.md) for a one-page summary or
+[`docs/site-src/ship-pattern.md`](docs/site-src/ship-pattern.md) for a one-page summary or
 [`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](docs/superpowers/specs/2026-05-09-ship-slash-command-design.md)
 for the full 8-stage design spec.
 

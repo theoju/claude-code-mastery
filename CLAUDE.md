@@ -74,7 +74,7 @@ app/
   progression/page.tsx   # renders app/data/progression.json via loadProgression (NOT /insights history); moved out of dashboard in v0.9.7
   dimensions/[id]/page.tsx # per-dimension drilldown
   tips/[n]/page.tsx      # Boris tip detail with prev/next nav
-  docs/ship-pattern/page.tsx # renders docs/ship-pattern.md as a dashboard page (PR #58)
+  docs/ship-pattern/page.tsx # renders docs/site-src/ship-pattern.md as a dashboard page (PR #58)
   lib/
     doc-markdown.tsx     # markdown renderer for in-repo docs (H1, GFM tables, HR, OL) — superset of boris-content.tsx
   data/
@@ -87,6 +87,17 @@ app/
   self-assessment.md     # /self-assessment slash command
   refresh-insights.md    # /refresh-insights slash command
 ```
+
+### Docs site (mkdocs)
+
+The published docs site lives at https://theoju.github.io/claude-code-self-assessment/.
+Source under `docs/site-src/`, built by `.github/workflows/docs-agent-pages.yml`,
+verified on every PR by `.github/workflows/docs-build-check.yml`. The
+engineering-docs-agent's nightly fills in lens pages + `whats-new.md`.
+
+- Spec: `docs/superpowers/specs/2026-06-01-mkdocs-upgrade-design.md`
+- Plan: `docs/superpowers/plans/2026-06-01-mkdocs-upgrade.md`
+- Config: `.engineering-docs-agent/config.yml` (`framework: mkdocs`)
 
 ## Tests
 
@@ -269,7 +280,7 @@ already checked out at …`). The GitHub-side merge still succeeds — only
   `self-assessment` SKILL.md `## Pointers` section after a re-audit caught
   the asymmetry. Default to symmetric; one-way pointers age into stale
   asymmetric trees.
-- Committed README/doc assets live in `docs/images/`. The `.gitignore`
+- Committed README/doc assets live in `docs/site-src/images/`. The `.gitignore`
   rule `dashboard-*.png` exists to keep ad-hoc tooling/test screenshots
   out of the repo — name committed assets around it (e.g.
   `mastery-dashboard.png`) rather than adding a per-file `!exception`
@@ -436,7 +447,7 @@ model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
   Atlassian MCP server (`atlassian:*` tools) is the canonical
   integration surface.
 - For the reference example of Jira-touching automation, see
-  `docs/ship-pattern.md` Stage 7 — the `/ship` command transitions
+  `docs/site-src/ship-pattern.md` Stage 7 — the `/ship` command transitions
   the linked ticket and posts the PR link as the close-of-loop step.
 - **Auto-mode authorization for Jira writes is scoped per action,
   not per session.** Re-authenticating the Atlassian MCP server (or
