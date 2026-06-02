@@ -18,7 +18,7 @@
         },
         {
           "id": "ship-command",
-          "action": "Create ~/.claude/commands/ship.md that chains test → verify → simplify → review → commit → push+PR → Jira. See docs/superpowers/specs/2026-05-09-ship-slash-command-design.md and docs/ship-pattern.md for a reference design — Boris tip 5",
+          "action": "Create ~/.claude/commands/ship.md that chains test → verify → simplify → review → commit → push+PR → Jira. See docs/superpowers/specs/2026-05-09-ship-slash-command-design.md and docs/site-src/ship-pattern.md for a reference design — Boris tip 5",
           "effort": "30min",
           "satisfiedWhen": "hasShipCommand",
           "borisTip": 5
