@@ -10,4 +10,4 @@ Run `npm run assess -- $ARGUMENTS`, then report back per the contract in [`.clau
 
 Follow the protocol and spoke index defined in SKILL.md for setup, gotchas, and signals.
 
-Full human-facing user guide: [`docs/self-assessment.md`](../../docs/self-assessment.md).
+Full human-facing user guide: [`docs/site-src/self-assessment.md`](../../docs/site-src/self-assessment.md).
