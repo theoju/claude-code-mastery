@@ -1,0 +1,37 @@
+site_name: Claude Code Self-Assessment
+site_url: https://theoju.github.io/claude-code-self-assessment/
+repo_url: https://github.com/theoju/claude-code-self-assessment
+docs_dir: docs/site-src
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - content.code.copy
+
+plugins:
+  - search
+  - awesome-pages
+  - literate-nav:
+      nav_file: SUMMARY.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.details
