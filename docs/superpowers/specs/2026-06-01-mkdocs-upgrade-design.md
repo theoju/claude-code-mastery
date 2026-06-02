@@ -2,7 +2,7 @@
 
 **Status:** Spec (pre-implementation)
 **Date:** 2026-06-01
-**Ticket:** CCE-XX (TBD — see Open Questions §1)
+**Ticket:** CCE-XX — placeholder; resolve to a real key (existing or new) BEFORE opening the PR. See Open Questions §1 for the search-then-file procedure.
 **Author flow:** Brainstorm → Spec → Plan → Implementation (this is the Spec)
 
 ## Context
@@ -282,7 +282,7 @@ Stub the agent will populate. Required because the config declares
 `docs/site-src/whats-new.md`. Initial content is a placeholder so
 the first nightly has somewhere to append.
 
-### Modified files (2)
+### Modified files (5)
 
 #### 7. `.engineering-docs-agent/config.yml`
 
@@ -302,6 +302,44 @@ and what the publish-verifier checks.
 #### 8. `.gitignore`
 
 Append `/site/` so local `mkdocs build` output doesn't get tracked.
+
+#### 9. `README.md`
+
+Three GitHub-rendered links that point at moving files. README is NOT
+part of the mkdocs site — it stays at the repo root and is read by
+GitHub. These three references rebreak after the `git mv`:
+
+- Line 9: image link `docs/images/self-assessment-dashboard.png` →
+  `docs/site-src/images/self-assessment-dashboard.png`
+- Line 133: `[`docs/self-assessment.md`](docs/self-assessment.md)` →
+  `[`docs/site-src/self-assessment.md`](docs/site-src/self-assessment.md)`
+- Line 145: `[`docs/ship-pattern.md`](docs/ship-pattern.md)` →
+  `[`docs/site-src/ship-pattern.md`](docs/site-src/ship-pattern.md)`
+
+#### 10. `CLAUDE.md` (project memory)
+
+Two stale path references that should track the move so the project
+memory stays accurate:
+
+- "Committed README/doc assets live in `docs/images/`" (line ~272) →
+  `docs/site-src/images/`
+- "`docs/ship-pattern.md` Stage 7 — the `/ship` command…" (line ~439)
+  → `docs/site-src/ship-pattern.md`
+
+(Line 77's `docs/ship-pattern/page.tsx` reference is the **app path**,
+not the docs path — it does NOT need updating.)
+
+#### 11. `app/data/rubric.json`
+
+One reference inside a rubric action string (line ~21):
+
+- `… and docs/ship-pattern.md for a reference design` →
+  `… and docs/site-src/ship-pattern.md for a reference design`
+
+Note: the same line also references
+`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md` —
+that path is NOT moving (specs stay outside the published site), so
+that reference stays as-is.
 
 ### File moves (5, via `git mv`)
 
@@ -324,11 +362,18 @@ A sed sweep updates image references in the moved markdown files
   published site. The plugin's `lens_paths` flip narrows agent
   analysis to `docs/site-src/` only.
 
-### Small app-side edit (1)
+### Small app-side edit (1 file, 2 changes)
 
-`app/docs/ship-pattern/page.tsx` reads `docs/ship-pattern.md` at
-build time via `app/lib/doc-markdown.tsx`. Path changes to
-`docs/site-src/ship-pattern.md`. One TS edit; no behavior change.
+`app/docs/ship-pattern/page.tsx` has **two** spots that reference the
+markdown file:
+
+1. The runtime path it passes to `app/lib/doc-markdown.tsx` to read
+   and render the markdown at build time.
+2. A literal display string at line ~33 (`<span className="mono">docs/ship-pattern.md</span>`)
+   shown to users in the page header.
+
+Both update from `docs/ship-pattern.md` to
+`docs/site-src/ship-pattern.md`. No behavior change beyond the path.
 
 ## Rollout sequence
 
@@ -339,9 +384,7 @@ verification gates that must pass before the next starts.
 
 **Branch:** `engineering-docs-agent-integration`
 **Title:** `feat(docs): scaffold mkdocs site + Pages workflow — CCE-XX`
-**Contents:** 6 new files + 2 modified files + 5 `git mv` operations
-
-- 1 TS edit.
+**Contents:** 6 new files, 5 modified files, 5 `git mv` operations, 1 small TS edit (2 changes in one file).
 
 **Local verification before opening the PR (mandatory):**
 
@@ -521,12 +564,14 @@ Every claim has an evidence command. No "trust me it works" entries.
 
 This PR ships:
 
-- 6 new files (mkdocs.yml, requirements-docs.txt, docs-agent-pages.yml,
-  index.md, SUMMARY.md, whats-new.md)
-- 2 modified files (`.engineering-docs-agent/config.yml`, `.gitignore`)
-- 5 file moves (4 markdown + 1 image dir) via `git mv`
-- 1 small TS edit (`app/docs/ship-pattern/page.tsx` path)
-- 1 sed sweep over moved markdown to update image references
+- **6 new files** (mkdocs.yml, requirements-docs.txt,
+  docs-agent-pages.yml, index.md, SUMMARY.md, whats-new.md)
+- **5 modified files** (`.engineering-docs-agent/config.yml`,
+  `.gitignore`, `README.md`, `CLAUDE.md`, `app/data/rubric.json`)
+- **5 file moves** (4 markdown + 1 image dir) via `git mv`
+- **1 small TS edit** in `app/docs/ship-pattern/page.tsx` (2 changes:
+  runtime path + display string)
+- **1 sed sweep** over moved markdown to update image references
 
 Nothing else. No IA work, no plugin changes, no theme customization,
 no release. Reviewable in one sitting; auditable in one diff.
