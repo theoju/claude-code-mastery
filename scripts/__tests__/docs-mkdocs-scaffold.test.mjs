@@ -175,11 +175,11 @@ describe("mkdocs scaffold — files exist", () => {
       "requirements-docs.txt",
       ".github/workflows/docs-agent-pages",
     ];
-    for (const p of paths) {
-      const ok = allowedPrefixes.some((prefix) => p.startsWith(prefix));
+    for (const path of paths) {
+      const ok = allowedPrefixes.some((prefix) => path.startsWith(prefix));
       expect(
         ok,
-        `docs-agent-pages.yml on.push.paths includes "${p}" which is not docs-related`,
+        `docs-agent-pages.yml on.push.paths includes "${path}" which is not docs-related`,
       ).toBe(true);
     }
   });

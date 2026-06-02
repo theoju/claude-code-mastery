@@ -57,8 +57,6 @@ describe(".engineering-docs-agent/config.yml — mkdocs contract", () => {
   // message says "config is half-flipped" rather than "base_url is null".
   it("framework=mkdocs implies base_url AND build_workflow are both populated", () => {
     const body = readConfig();
-    const isMkdocs = /^\s*framework:\s*mkdocs\s*$/m.test(body);
-    if (!isMkdocs) return; // base_url check already covered above
     expect(
       body,
       "framework: mkdocs requires non-null publishing.base_url",
