@@ -9,10 +9,10 @@ when the underlying signals do, so day-to-day noise doesn't masquerade as
 progress.
 
 > **For Claude Code:** the `/self-assessment` slash command defers to
-> [`.claude/skills/self-assessment/SKILL.md`](../.claude/skills/self-assessment/SKILL.md).
-> Spokes: [setup](../.claude/skills/self-assessment/setup.md) ·
-> [gotchas](../.claude/skills/self-assessment/gotchas.md) ·
-> [signals](../.claude/skills/self-assessment/signals.md).
+> [`.claude/skills/self-assessment/SKILL.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/SKILL.md).
+> Spokes: [setup](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/setup.md) ·
+> [gotchas](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/gotchas.md) ·
+> [signals](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/signals.md).
 
 ---
 
@@ -209,7 +209,7 @@ post: total targets, files scanned, average score/grade, grade distribution.
 
 `assessment.config.json` (copy from `assessment.config.example.json`,
 **never commit secrets**). The example file is the source of truth for
-shape and defaults — see [`.claude/skills/self-assessment/setup.md`](../.claude/skills/self-assessment/setup.md)
+shape and defaults — see [`.claude/skills/self-assessment/setup.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/setup.md)
 for the verbatim copy and the first-run prompt flow.
 
 `.env.local`:
@@ -252,7 +252,7 @@ regressions.
 | `--include-transcripts` is slow on a large `~/.claude/projects/` | Full transcript history scan                                                                     | Lower `--insights-lookback` to narrow the window, or accept the wait.           |
 
 For more failure modes, see
-[`.claude/skills/self-assessment/gotchas.md`](../.claude/skills/self-assessment/gotchas.md).
+[`.claude/skills/self-assessment/gotchas.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/gotchas.md).
 
 ---
 
@@ -270,14 +270,14 @@ personal `/ship` slash command. It lives in `~/.claude/commands/` (not
 this repo) and chains test → verify → simplify → review → commit →
 push+PR → Jira. See [`docs/ship-pattern.md`](./ship-pattern.md) for a
 short summary and
-[`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](./superpowers/specs/2026-05-09-ship-slash-command-design.md)
+[`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/docs/superpowers/specs/2026-05-09-ship-slash-command-design.md)
 for the full spec.
 
 ---
 
 ## See also
 
-- [`.claude/skills/self-assessment/SKILL.md`](../.claude/skills/self-assessment/SKILL.md) — Claude-facing skill hub (with `gotchas.md`, `signals.md`, `setup.md` spokes). Read by Claude when invoking `/self-assessment`.
+- [`.claude/skills/self-assessment/SKILL.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/.claude/skills/self-assessment/SKILL.md) — Claude-facing skill hub (with `gotchas.md`, `signals.md`, `setup.md` spokes). Read by Claude when invoking `/self-assessment`.
 - `README.md` — project overview, quick start, signal sources
 - `ROUTINE.md` — cloud / launchd scheduled run
 - `.claude/commands/self-assessment.md` — the slash-command shim
