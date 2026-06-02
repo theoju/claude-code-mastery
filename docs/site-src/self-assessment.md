@@ -268,7 +268,7 @@ each morning and post the result to Slack. See `ROUTINE.md` for setup.
 The rubric's highest-weighted automation next-action is authoring a
 personal `/ship` slash command. It lives in `~/.claude/commands/` (not
 this repo) and chains test → verify → simplify → review → commit →
-push+PR → Jira. See [`docs/ship-pattern.md`](./ship-pattern.md) for a
+push+PR → Jira. See [`docs/site-src/ship-pattern.md`](./ship-pattern.md) for a
 short summary and
 [`docs/superpowers/specs/2026-05-09-ship-slash-command-design.md`](https://github.com/theoju/claude-code-self-assessment/blob/main/docs/superpowers/specs/2026-05-09-ship-slash-command-design.md)
 for the full spec.
