@@ -428,6 +428,31 @@ commit touches all four paths in the workflow's `paths:` filter, so
 `pages: write` + `id-token: write` permissions. If it fails, the
 workflow exits non-zero — no silent skip.
 
+> **POST-IMPLEMENTATION CORRECTION (2026-06-02, PR #121 / CCE-81):**
+> Gate 5 as written above is **WRONG**. The `enablement: true` flag
+> does NOT actually bootstrap Pages on the first deploy. The
+> workflow's `GITHUB_TOKEN` lacks the admin scope required for
+> `POST /repos/.../pages`, and `permissions:` blocks can only
+> _restrict_ the default token's scopes, never expand them. The first
+> push-triggered run of `docs-agent-pages.yml` against merge commit
+> `6369065` failed with `Resource not accessible by integration` at
+> the `configure-pages@v6` step. **Actual recovery:** ran
+> `gh api -X POST repos/theoju/claude-code-self-assessment/pages -f build_type=workflow`
+> from a personal admin gh login, then dispatched the workflow via
+> `gh workflow run docs-agent-pages.yml --ref main`. The dispatched
+> run succeeded (build 16s, deploy 8s) and the site came live at
+> https://theoju.github.io/claude-code-self-assessment/ within ~90s.
+> All five migrated pages returned HTTP 200; the Next.js
+> `/methodology/` route correctly 404s (confirms site scoping to
+> `docs/site-src/`). **Future-host onboarding fix:** drop the
+> `enablement: true` line from `docs-agent-pages.yml` (it's a no-op
+> after Pages exists and a misleading footgun before) and bake the
+> `gh api` call into either the engineering-docs-agent plugin's
+> `setup_scaffold` script (see "Future work" below) or a per-repo
+> onboarding runbook. Equivalent UI path: Settings → Pages → Build
+> and deployment → Source = "GitHub Actions". The CLAUDE.md
+> Conventions section now carries this gotcha for the project.
+
 **Gate 6 — Site live at `https://theoju.github.io/claude-code-self-assessment/`.**
 First deploy typically takes 60-120s after the `deploy` job. Verify:
 
