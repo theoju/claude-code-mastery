@@ -18,6 +18,12 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded runs on the same PR branch — only the latest commit
+# needs the strict-build gate, and the build is ~30s with pip cache.
+concurrency:
+  group: docs-build-check-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

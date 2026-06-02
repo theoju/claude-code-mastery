@@ -152,7 +152,10 @@ describe("mkdocs scaffold — files exist", () => {
   it("docs-agent-pages.yml on.push.paths only includes docs-related globs", () => {
     const p = join(REPO_ROOT, ".github", "workflows", "docs-agent-pages.yml");
     const body = readFileSync(p, "utf8");
-    // Extract the paths block. The format is:
+    // Extract the paths block under the `push:` context specifically.
+    // Without anchoring to `push:`, a later addition of `pull_request.paths`
+    // could match first (depending on YAML ordering) and the test would
+    // silently stop validating the push filter.
     //   on:
     //     push:
     //       branches: [main]
@@ -160,7 +163,9 @@ describe("mkdocs scaffold — files exist", () => {
     //         - "docs/site-src/**"
     //         - "mkdocs.yml"
     //         ...
-    const pathsBlock = body.match(/paths:\n((?:\s*-\s*"[^"]+"\n)+)/);
+    const pathsBlock = body.match(
+      /push:\s*\n[\s\S]*?paths:\n((?:\s*-\s*"[^"]+"\n)+)/,
+    );
     expect(
       pathsBlock,
       "docs-agent-pages.yml should declare on.push.paths",
