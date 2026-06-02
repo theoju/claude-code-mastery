@@ -2,6 +2,7 @@ node_modules
 .next
 next-env.d.ts
 site/
+.venv-docs/
 
 # Secrets — never commit
 .env
