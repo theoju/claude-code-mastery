@@ -1,0 +1,23 @@
+{
+  "current_run": {
+    "started_at": "2026-06-02T08:43:14.528725+00:00",
+    "head_sha": "636906588d039ebbd40e223f3008d22506c5d60f",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: source-collector",
+      "pr_summarizer_invalid: pr=119",
+      "pr_summarizer_invalid: pr=118"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
