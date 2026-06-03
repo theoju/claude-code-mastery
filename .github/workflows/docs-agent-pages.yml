@@ -2,8 +2,7 @@ name: docs-agent-pages
 
 # Builds the mkdocs site and deploys to GitHub Pages.
 # Fires only when docs sources actually change (path filter below) +
-# manual workflow_dispatch. configure-pages@v6 with enablement: true
-# enables Pages programmatically on the first run.
+# manual workflow_dispatch.
 
 on:
   push:
@@ -30,8 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/configure-pages@v6
-        with:
-          enablement: true
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"

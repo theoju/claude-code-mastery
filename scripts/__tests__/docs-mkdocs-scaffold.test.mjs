@@ -73,7 +73,7 @@ describe("mkdocs scaffold — files exist", () => {
     const body = readFileSync(p, "utf8");
     expect(body).toMatch(/^name:\s*docs-agent-pages$/m);
     expect(body).toMatch(/actions\/configure-pages@v6/);
-    expect(body).toMatch(/enablement:\s*true/);
+    expect(body).not.toMatch(/enablement:\s*['"]?true['"]?/);
     expect(body).toMatch(/actions\/upload-pages-artifact@v5/);
     expect(body).toMatch(/actions\/deploy-pages@v5/);
     expect(body).toMatch(/mkdocs build --strict/);
