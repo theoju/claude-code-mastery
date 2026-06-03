@@ -1,0 +1,22 @@
+{
+  "current_run": {
+    "started_at": "2026-06-03T08:47:01.922977+00:00",
+    "head_sha": "cc8e2e82a1a6850ef2d307e821e585091844a0f4",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: source-collector",
+      "lint_block: docs/site-src/whats-new.md frontmatter_schema: no frontmatter or YAML parse error"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
