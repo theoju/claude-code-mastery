@@ -435,8 +435,9 @@ model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
   → Build and deployment → Source = "GitHub Actions". `build_type=workflow`
   is durable — once set, all subsequent push-triggered runs of
   `docs-agent-pages.yml` work cleanly and the `enablement: true` line
-  is meaningless. The line should be deleted from the workflow to
-  remove the footgun; the post-implementation note in the spec
+  is meaningless. The line was deleted from the workflow in PR #125 / CCE-82 (2026-06-02).
+  See the plugin's CLAUDE.md (https://github.com/theoju/engineering-docs-agent/blob/main/CLAUDE.md)
+  for the durable plugin-side fix detail; the post-implementation note in this repo's spec
   (`docs/superpowers/specs/2026-06-01-mkdocs-upgrade-design.md` →
   "Post-implementation correction") and the plan's recovery section
   document the v0.9.20 onboarding incident for PR #121 / CCE-81 in
