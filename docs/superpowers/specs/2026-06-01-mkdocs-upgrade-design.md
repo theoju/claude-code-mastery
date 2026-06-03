@@ -452,6 +452,8 @@ workflow exits non-zero — no silent skip.
 > onboarding runbook. Equivalent UI path: Settings → Pages → Build
 > and deployment → Source = "GitHub Actions". The CLAUDE.md
 > Conventions section now carries this gotcha for the project.
+>
+> **Resolved 2026-06-02 by PR #A (this repo) + theoju/engineering-docs-agent PR #103 (plugin) under CCE-82:** template + this repo's workflow + plugin's own workflow all cleaned; bootstrap is now done by `scripts/enable_pages.py` from SKILL.md step 6c.
 
 **Gate 6 — Site live at `https://theoju.github.io/claude-code-self-assessment/`.**
 First deploy typically takes 60-120s after the `deploy` job. Verify:
