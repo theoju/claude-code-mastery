@@ -1,0 +1,19 @@
+{
+  "current_run": {
+    "started_at": "2026-06-05T08:30:07.733322+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": false,
+    "partial_reasons": [],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
