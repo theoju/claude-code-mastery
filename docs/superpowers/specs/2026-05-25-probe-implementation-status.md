@@ -74,7 +74,8 @@ self-assessment scores against the 75 canonical tips only. (See Finding F1.)
   _this_ probe. Independent of whether the parent dim is E-scored on other
   signals: e.g. tips 4 (`claudeMdExists`) and 45 (`autoMemoryEnabled`) live in
   the now-E-scored `memory` dim, but the memory Execution scorer reads
-  btw/clear/compact/rewind, not these flags. Renders as _unmeasured_, not zero.
+  `/clear`+`/compact` (CCE-79: numerator narrowed from the original four-command
+  blend), not these flags. Renders as _unmeasured_, not zero.
 
 ## Tracking-status legend
 
