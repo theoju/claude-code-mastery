@@ -223,7 +223,7 @@
       "id": "memory",
       "title": "Memory & Context Management",
       "weight": 3,
-      "target": 92,
+      "target": 60,
       "rubricArea": "Long-horizon context hygiene",
       "borisTips": "4, 45, 62, 63, 64, 70",
       "nextActions": [
