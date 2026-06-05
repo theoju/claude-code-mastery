@@ -39,7 +39,7 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         interactiveOrUnknownSessionsAnalyzed: 100,
         transcriptsScanned: true,
       },
-      transcriptInvocations: { btwCommandUses: 100 },
+      transcriptInvocations: { clearCommandUses: 100 },
     });
     expect(result.score).toBe(100);
   });
@@ -51,26 +51,26 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         interactiveOrUnknownSessionsAnalyzed: 100,
         transcriptsScanned: true,
       },
-      transcriptInvocations: { btwCommandUses: 80, clearCommandUses: 80 },
+      transcriptInvocations: { clearCommandUses: 80, compactCommandUses: 80 },
     });
     expect(result.score).toBe(100);
     expect(result.evidence[0]).toMatch(/capped from \d+%/);
   });
 
-  it("Test 6: history-source contributes via MAX-merge (btw)", () => {
+  it("Test 6: history-source contributes via MAX-merge (clear)", () => {
     const result = EXECUTION_SCORERS.memory({
       insights: {
         interactiveSessionsAnalyzed: 100,
         interactiveOrUnknownSessionsAnalyzed: 100,
         transcriptsScanned: true,
       },
-      transcriptInvocations: { btwCommandUses: 5 },
-      historyInvocations: { btwCommandUses: 30 },
+      transcriptInvocations: { clearCommandUses: 5 },
+      historyInvocations: { clearCommandUses: 30 },
     });
     expect(result.score).toBe(30);
   });
 
-  it("Test 7: rewind is transcript-only (HISTORY_COMMAND_LIST excludes it)", () => {
+  it("Test 7: /rewind no longer contributes to numerator (CCE-79)", () => {
     const result = EXECUTION_SCORERS.memory({
       insights: {
         interactiveSessionsAnalyzed: 100,
@@ -78,9 +78,8 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         transcriptsScanned: true,
       },
       transcriptInvocations: { rewindCommandUses: 10 },
-      // historyInvocations.rewindCommandUses intentionally undefined
     });
-    expect(result.score).toBe(10);
+    expect(result.score).toBe(0);
   });
 
   it("Test 8: zero-signal produces gap message", () => {
@@ -93,7 +92,9 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
       transcriptInvocations: {},
     });
     expect(result.score).toBe(0);
-    expect(result.gaps[0]).toMatch(/No \/btw, \/clear, \/compact, or \/rewind/);
+    expect(result.gaps[0]).toMatch(
+      /No \/clear or \/compact in any interactive session/,
+    );
   });
 
   it("Test 9: realistic mixed input (author baseline)", () => {
@@ -110,8 +111,8 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         rewindCommandUses: 0,
       },
     });
-    expect(result.score).toBe(52);
-    expect(result.evidence[0]).toMatch(/62 session-coverage hits across 120/);
+    expect(result.score).toBe(19);
+    expect(result.evidence[0]).toMatch(/23 session-coverage hits across 120/);
     expect(result.evidence[0]).not.toMatch(/capped/);
   });
 
@@ -122,7 +123,7 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         interactiveOrUnknownSessionsAnalyzed: 100,
         transcriptsScanned: true,
       },
-      transcriptInvocations: { btwCommandUses: 100 },
+      transcriptInvocations: { clearCommandUses: 100 },
     });
     expect(result.score).toBe(100);
     expect(result.evidence[0]).not.toMatch(/capped/);
@@ -135,9 +136,91 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         interactiveOrUnknownSessionsAnalyzed: 100,
         transcriptsScanned: true,
       },
-      transcriptInvocations: { btwCommandUses: 37 },
+      transcriptInvocations: { clearCommandUses: 37 },
     });
     expect(result.score).toBe(37);
+  });
+
+  it("Test 12a: numerator excludes /btw and /rewind (CCE-79)", () => {
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {
+        btwCommandUses: 100,
+        rewindCommandUses: 100,
+        clearCommandUses: 0,
+        compactCommandUses: 0,
+      },
+    });
+    expect(result.score).toBe(0);
+  });
+
+  it("Test 12b: /btw cumulative surfaces as evidence text (CCE-79)", () => {
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: { clearCommandUses: 5 },
+      signalsSummary: { cliBtwUseCountAllTime: 42 },
+    });
+    expect(result.evidence[0]).toMatch(
+      /Plus 42 all-time \/btw invocations \(cumulative, not in ratio\)/,
+    );
+  });
+
+  it("Test 12c: /btw evidence text omitted when cliBtwUseCountAllTime is 0 (CCE-79)", () => {
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: { clearCommandUses: 5 },
+      signalsSummary: { cliBtwUseCountAllTime: 0 },
+    });
+    expect(result.evidence[0]).not.toMatch(/Plus .* all-time \/btw/);
+  });
+
+  it("Test 12d: /clear + /compact in numerator (regression, CCE-79)", () => {
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 10,
+        interactiveOrUnknownSessionsAnalyzed: 10,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: { clearCommandUses: 5, compactCommandUses: 3 },
+    });
+    expect(result.score).toBe(80);
+  });
+
+  it("Test 12e: cap behavior preserved on narrowed numerator (CCE-79)", () => {
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 10,
+        interactiveOrUnknownSessionsAnalyzed: 10,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: { clearCommandUses: 15, compactCommandUses: 15 },
+    });
+    expect(result.score).toBe(100);
+    expect(result.evidence[0]).toMatch(/capped from \d+%/);
+  });
+
+  it("Test 12f: rubric memory target is 60 (CCE-79)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { fileURLToPath } = await import("node:url");
+    const { dirname, resolve } = await import("node:path");
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const rubric = JSON.parse(
+      readFileSync(resolve(__dirname, "../../app/data/rubric.json"), "utf8"),
+    );
+    const memDim = rubric.dimensions.find((d) => d.id === "memory");
+    expect(memDim.target).toBe(60);
   });
 });
 
