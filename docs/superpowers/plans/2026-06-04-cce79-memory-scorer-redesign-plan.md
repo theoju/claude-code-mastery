@@ -25,6 +25,11 @@
 | `/Users/theo/Projects/claude-extensions/scripts/__tests__/_fixtures.mjs`                                   | `makeSignals` / `makeAssessment` test fixtures.                  | Modify                         |
 | `/Users/theo/Projects/claude-extensions/scripts/__tests__/memory-customization-execution-scorers.test.mjs` | Memory + Customization EXECUTION scorer tests (16+ cases today). | Modify                         |
 | `/Users/theo/Projects/claude-extensions/CLAUDE.md`                                                         | Project memory; CCE-78 cumulative-vs-windowed rule lives here.   | Modify                         |
+| `/Users/theo/Projects/claude-extensions/docs/superpowers/specs/2026-05-25-probe-implementation-status.md`  | Probe tracker; memory-scorer narrative + per-section footnote.   | Modify                         |
+| `/Users/theo/Projects/claude-extensions/app/data/probe-catalog.json`                                       | Probe catalog; 3 description-only annotations.                   | Modify                         |
+| `/Users/theo/Projects/claude-extensions/scripts/run-assessment.mjs`                                        | signalsSummary builder; consumer survey verify-only.             | Verify only (no edit expected) |
+| `/Users/theo/Projects/claude-extensions/app/lib/__tests__/rubric-predicates.test.ts`                       | rubric-predicates fixture; consumer survey verify-only.          | Verify only (no edit expected) |
+| `/Users/theo/Projects/claude-extensions/scripts/__tests__/build-signals-summary.test.mjs`                  | build-signals-summary tests; consumer survey verify-only.        | Verify only (no edit expected) |
 
 ---
 
@@ -565,7 +570,7 @@ The current block enumerates `/btw`, `/clear`, `/compact`, `/rewind` and quotes 
 </li>
 ```
 
-(Use the existing `<li>` block as `old_string`. Anchor on the unique opening `<strong>Memory &amp; Context Management</strong>` line.)
+**Anchor disambiguation:** `<strong>Memory &amp; Context Management</strong>` appears twice in `page.tsx` — once at line 188 (the `<li>` formula block, our target) and once at line 251 (a follow-up `<p>` reference paragraph). Use the preceding `<li>` token (line 187) plus the closing `</li>` at the end of the block as bracketing anchors so the Edit `old_string` is unique. Concretely, start `old_string` at line 187 `          <li>` and end it at the closing `          </li>` of the Memory block (currently around line 215). The `new_string` replaces the entire `<li>...</li>` pair with the new JSX above.
 
 - [ ] **Step 5.3: Build to confirm no TSX syntax error.**
 
@@ -630,7 +635,42 @@ Expected: a `## Hard rules` bullet starting with that phrase, currently citing C
 
 - [ ] **Step 7.2: Append a new bullet right after the CCE-78 rule.**
 
-Use Edit to add the bullet. The exact anchor is the closing reference of the CCE-78 rule (the "**CCE-79**." sentence at the end of the bullet). Append immediately after the closing newline of that bullet, before the next `- **` bullet starts:
+Use Edit with this exact anchor (the closing reference of the CCE-78 rule ends at line 151 with `is **CCE-79**.` — verified unique via grep). Replace that single line plus its trailing newline with itself plus the new bullet:
+
+```
+old_string:   is **CCE-79**.
+- **Verify denominator semantics for every ratio scorer.**
+new_string:   is **CCE-79**.
+- **Per-field semantic categorization before adding to any numerator.** When
+  adding a new field to a ratio numerator (or summing multiple fields into
+  one), classify each field on two independent axes BEFORE writing the
+  `sum`:
+
+  | Axis              | Possible classes                                       |
+  | ----------------- | ------------------------------------------------------ |
+  | (a) Time window   | windowed (e.g., 30-day) / cumulative (lifetime)        |
+  | (b) Counter class | session-coverage (deduped per session) / raw invocation count |
+
+  If the new field's class on either axis differs from existing numerator
+  inputs, it doesn't belong in the same `sum`. Route it to a separate
+  surface: evidence text (cumulative), separate predicate (binary), or
+  a separate ratio with a matched denominator (windowed-but-different-class).
+  CCE-79 (PR TBD) is the reference case: the original Memory Execution
+  numerator summed `/btw + /clear + /compact + /rewind` even though `/btw`
+  was cumulative-all-time and `/rewind` was a near-zero binary signal —
+  three classes in one sum. Redesign restricted the numerator to the two
+  session-coverage signals (`/clear + /compact`), surfaced `/btw` as
+  cumulative evidence text, kept `/rewind` only as a next-action probe,
+  and recalibrated the rubric target 92 → 60 to match the narrowed
+  realistic ceiling. Source: per-field table in
+  `docs/superpowers/specs/2026-06-04-cce79-memory-scorer-redesign-design.md`
+  §Context.
+- **Verify denominator semantics for every ratio scorer.**
+```
+
+The first and last lines of the `old_string` / `new_string` (the anchor sentence + the opening of the next bullet) bracket the insertion. Verify in the actual file that the **next bullet** immediately following the CCE-78 rule is the "Verify denominator semantics for every ratio scorer" bullet; if a prior commit reordered the bullets, adjust the bracket accordingly.
+
+The reference markdown bullet to insert (broken out separately for readability — same content as inside the `new_string` above):
 
 ```md
 - **Per-field semantic categorization before adding to any numerator.** When
@@ -678,6 +718,177 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
 )"
 ```
+
+### Task 7a: Update probe tracker spec (CLAUDE.md hard rule)
+
+**Files:**
+
+- Modify: `/Users/theo/Projects/claude-extensions/docs/superpowers/specs/2026-05-25-probe-implementation-status.md`
+
+**Rationale:** CLAUDE.md hard rule "Keep the probe tracker in sync with every probe change" requires the tracker to update in the same PR as any scorer change. CCE-79 changes the memory scorer's formula description in the tracker's narrative paragraph, even though it adds no new probes / catalog entries / signalsSummary keys (so the five machine-enforced header counts are unchanged).
+
+- [ ] **Step 7a.1: Update the narrative paragraph describing the memory scorer.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+sed -n '222,230p' docs/superpowers/specs/2026-05-25-probe-implementation-status.md
+```
+
+Expected: a paragraph beginning "Post-CCE-76, `memory` and `customization` are transcript-derived Execution scorers (`scripts/score.mjs` — memory reads the four memory hygiene commands `/btw`+`/clear`+`/compact`+`/rewind`; customization reads `/color`+`/voice`+`/focus`).".
+
+Apply this Edit:
+
+```
+old_string: memory reads the four memory hygiene commands
+`/btw`+`/clear`+`/compact`+`/rewind`; customization reads `/color`+`/voice`+`/focus`).
+new_string: memory reads the two session-coverage hygiene commands
+`/clear`+`/compact` (CCE-79: `/btw` rerouted to cumulative evidence text via
+`cliBtwUseCountAllTime`; `/rewind` retained as a binary next-action probe
+only); customization reads `/color`+`/voice`+`/focus`).
+```
+
+- [ ] **Step 7a.2: Re-derive and verify the five machine-enforced header counts are unchanged.**
+
+CCE-79 adds no new probes, no new catalog entries, no new signalsSummary keys, no new dimensions, no new next-actions. The header counts should be byte-identical to pre-CCE-79.
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+npx vitest run scripts/__tests__/tracker-counts.test.mjs 2>&1 | tail -10
+```
+
+Expected: tracker-counts tests all PASS. If any count fails, stop and investigate — likely the rubric target change unexpectedly altered an enumeration, or the probe-catalog edit in Task 7b mis-fired.
+
+- [ ] **Step 7a.3: Append a CCE-79 note to the per-section footnote.**
+
+The footnote at line 287 reads `[^memory-customization-exec]: As of PR #116 (CCE-76, spec 2026-06-01) … The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).`. Update it to acknowledge CCE-79:
+
+```
+old_string: The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).
+new_string: The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys); CCE-79 narrowed the memory Execution ratio numerator to `/clear`+`/compact` without adding/removing any key, so header counts remain unchanged.
+```
+
+- [ ] **Step 7a.4: Commit.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+git add docs/superpowers/specs/2026-05-25-probe-implementation-status.md
+git commit -m "$(cat <<'EOF'
+docs(tracker): reflect Memory scorer narrowing — CCE-79
+
+Updates the memory-scorer narrative paragraph and per-section footnote to
+match the redesigned Memory Execution ratio (numerator narrowed to
+/clear + /compact). No probe / catalog / signalsSummary key added or
+removed, so the five machine-enforced header counts (asserted by
+tracker-counts.test.mjs) stay byte-identical.
+
+CLAUDE.md hard rule: probe tracker updated in the same PR as the scorer
+change.
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+```
+
+### Task 7b: Annotate probe-catalog descriptions (3 fields)
+
+**Files:**
+
+- Modify: `/Users/theo/Projects/claude-extensions/app/data/probe-catalog.json` — 3 entries (`btwCommandUses`, `cliBtwUseCountAllTime`, `rewindCommandUses`)
+
+**Rationale:** The catalog descriptions currently reference CCE-78's windowing fix but not CCE-79's deeper restructuring. Future readers triaging "why is /btw not in the memory ratio?" should land on the CCE-79 narrative directly from the catalog. Minimal one-line appendages — no schema changes, no key changes.
+
+- [ ] **Step 7b.1: Update `btwCommandUses` description.**
+
+```
+old_string: "description": "30-day windowed session-coverage count of /btw. Side-channel command rarely lands in session JSONL, so history.jsonl is the primary source. Note: NOT blended with cliBtwUseCountAllTime — that's a separate cumulative all-time counter exposed for 'have you ever adopted' predicates only. CCE-78. Boris tip 33."
+new_string: "description": "30-day windowed session-coverage count of /btw. Side-channel command rarely lands in session JSONL, so history.jsonl is the primary source. Note: NOT blended with cliBtwUseCountAllTime — that's a separate cumulative all-time counter exposed for 'have you ever adopted' predicates only. CCE-78. CCE-79: also removed from the memory Execution ratio numerator (still computed for predicates / catalog presence). Boris tip 33."
+```
+
+- [ ] **Step 7b.2: Update `cliBtwUseCountAllTime` description.**
+
+```
+old_string: "description": "Cumulative all-time count of /btw invocations maintained by Claude Code. Habit-only adoption signal (Boris tip 33+54) — backs the tip 33 predicate. Distinct from btwCommandUses which is 30-day windowed session-coverage; mixing the two in a ratio would corrupt window semantics (CCE-78)."
+new_string: "description": "Cumulative all-time count of /btw invocations maintained by Claude Code. Habit-only adoption signal (Boris tip 33+54) — backs the tip 33 predicate. Distinct from btwCommandUses which is 30-day windowed session-coverage; mixing the two in a ratio would corrupt window semantics (CCE-78). CCE-79: surfaces as cumulative evidence text in the memory Execution scorer (\"Plus N all-time /btw invocations\"), not in the ratio."
+```
+
+- [ ] **Step 7b.3: Update `rewindCommandUses` description.**
+
+```
+old_string: "description": "Count of /rewind invocations. Backtracks to a prior conversational state. Boris tip 62."
+new_string: "description": "Count of /rewind invocations. Backtracks to a prior conversational state. CCE-79: removed from the memory Execution ratio numerator (near-zero in transcripts because /rewind is the Esc-Esc keyboard shortcut, rarely typed as a slash-command); retained only as a binary next-action probe via rubric satisfiedWhen. Boris tip 62."
+```
+
+- [ ] **Step 7b.4: Validate JSON syntax.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+node -e "JSON.parse(require('fs').readFileSync('app/data/probe-catalog.json', 'utf8')); console.log('OK')"
+```
+
+Expected: `OK`. Any syntax error means a stray quote in the description text — fix and re-run.
+
+- [ ] **Step 7b.5: Run tracker-counts again to confirm probe-catalog entry count unchanged.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+npx vitest run scripts/__tests__/tracker-counts.test.mjs 2>&1 | tail -5
+```
+
+Expected: PASS. The catalog gained no keys; descriptions changed only.
+
+- [ ] **Step 7b.6: Commit.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+git add app/data/probe-catalog.json
+git commit -m "$(cat <<'EOF'
+docs(catalog): annotate /btw + /rewind probe descriptions — CCE-79
+
+Three probe-catalog entries (btwCommandUses, cliBtwUseCountAllTime,
+rewindCommandUses) now reference the CCE-79 restructuring so future
+readers tracing "why is /btw not in the memory ratio?" land on the
+explanation directly from the catalog. No schema / key changes —
+descriptions only. Tracker header counts unchanged.
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+```
+
+### Task 7c: Verify-only — consumer survey (no edits expected)
+
+**Goal:** Per lens 3 review, three downstream consumers were flagged as touching `btwCommandUses` / `rewindCommandUses` but **not** requiring edits under the CCE-79 design (the fields stay computed; only the scorer drops them from `sum`). Explicit verification here makes the "no edit" decision auditable.
+
+- [ ] **Step 7c.1: Verify `run-assessment.mjs` still propagates both fields into `signalsSummary`.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+grep -n "btwCommandUses\|rewindCommandUses" scripts/run-assessment.mjs
+```
+
+Expected: both fields still present (currently line 129 and 139). No edit. Confirms `signalsSummary` consumers downstream of the scorer continue to see the fields.
+
+- [ ] **Step 7c.2: Verify `rubric-predicates.test.ts` fixture still passes after the rubric target change.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+npx vitest run app/lib/__tests__/rubric-predicates.test.ts 2>&1 | tail -10
+```
+
+Expected: PASS. The fixture sets `rewindCommandUses: 2, btwCommandUses: 1, cliBtwUseCountAllTime: 1`; the `rewindCommandUses>=1` predicate (Boris tip 62) survives per spec Non-goal #3.
+
+- [ ] **Step 7c.3: Verify `build-signals-summary.test.mjs` still asserts both fields in signalsSummary.**
+
+```bash
+cd /Users/theo/Projects/claude-extensions
+npx vitest run scripts/__tests__/build-signals-summary.test.mjs 2>&1 | tail -10
+```
+
+Expected: PASS. The fields stay in `signalsSummary` (computed for predicate ergonomics + catalog presence even though dropped from the memory ratio sum).
+
+- [ ] **Step 7c.4: No commit (verification only).**
+
+If any of the three verifications fail, that's a real regression — stop, debug, and add a targeted commit before /ship. If all pass, note in the post-impl gate report: "Consumer survey: 3/3 verified unaffected."
 
 ---
 
