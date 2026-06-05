@@ -190,19 +190,24 @@ export default function MethodologyPage() {
               min(sum / interactiveOrUnknownSessionsAnalyzed, 1) × 100
             </span>
             , where <span className="mono">sum</span> is the inline MAX-merge of
-            transcript and history counts for <span className="mono">/btw</span>
-            , <span className="mono">/clear</span>,{" "}
-            <span className="mono">/compact</span>, and{" "}
-            <span className="mono">/rewind</span> (session-coverage hits — each
+            transcript and history counts for{" "}
+            <span className="mono">/clear</span> and{" "}
+            <span className="mono">/compact</span> (session-coverage hits — each
             command contributes at most once per session). These are posture
             commands, so the denominator must include the same session kinds the
-            numerator is counted from. Rubric target is 92; the radar vertex
+            numerator is counted from. Rubric target is 60; the radar vertex
             displays{" "}
-            <span className="mono">clamp(round(rawScore / 92 × 100))</span>.
+            <span className="mono">clamp(round(rawScore / 60 × 100))</span>.
             When <span className="mono">rawRatio &gt; 1</span> (multiple memory
             commands per session), the score saturates at 100 and the evidence
             string surfaces <em>&quot;capped from N%&quot;</em> so the
             over-coverage stays visible rather than being silently truncated.
+            CCE-79 narrowed the numerator: <span className="mono">/btw</span>{" "}
+            (cumulative all-time invocation count) now surfaces as cumulative
+            evidence text rather than in the ratio, and{" "}
+            <span className="mono">/rewind</span> (keyboard-shortcut signal,
+            near-zero in transcripts) remains a binary next-action probe but not
+            a ratio input.
             <span className="block mt-1 text-xs text-[color:var(--color-mute)]">
               Universe: <span className="mono">interactive_cli ∪ unknown</span>.
               The numerator-subset-of-denominator hard rule applies: the
