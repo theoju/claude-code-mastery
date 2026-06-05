@@ -978,11 +978,13 @@ export const EXECUTION_SCORERS = {
     { transcripts: true, universe: "interactive_or_unknown" },
     (s) => {
       const denom = s.insights.interactiveOrUnknownSessionsAnalyzed;
-      const btw = maxProbe(s, "btwCommandUses");
+      // CCE-79: numerator restricted to session-coverage signals only.
+      // /btw (cumulative all-time) shown as evidence text, not in ratio.
+      // /rewind (keyboard-shortcut, near-zero signal) dropped from ratio;
+      // kept as a binary next-action probe via rubric satisfiedWhen.
       const clear = maxProbe(s, "clearCommandUses");
       const compact = maxProbe(s, "compactCommandUses");
-      const rewind = maxProbe(s, "rewindCommandUses");
-      const sum = btw + clear + compact + rewind;
+      const sum = clear + compact;
       const rawRatio = sum / denom;
       const ratio = Math.min(rawRatio, 1);
       const score = Math.round(ratio * 100);
@@ -990,14 +992,17 @@ export const EXECUTION_SCORERS = {
         rawRatio > 1
           ? ` — capped from ${pct(rawRatio * 100)}% (multiple memory commands per session)`
           : "";
+      const btwAllTime = s.signalsSummary?.cliBtwUseCountAllTime ?? 0;
+      const btwEvidence =
+        btwAllTime > 0
+          ? ` Plus ${btwAllTime} all-time /btw invocations (cumulative, not in ratio).`
+          : "";
       const evidence = [
-        `Memory hygiene commands: ${sum} session-coverage hits across ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix}`,
+        `Memory hygiene commands: ${sum} session-coverage hits across ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix}.${btwEvidence}`,
       ];
       const gaps = [];
       if (sum === 0) {
-        gaps.push(
-          "No /btw, /clear, /compact, or /rewind in any interactive session",
-        );
+        gaps.push("No /clear or /compact in any interactive session");
       }
       return { score, evidence, gaps, gapReason: null };
     },
