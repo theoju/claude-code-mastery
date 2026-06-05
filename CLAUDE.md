@@ -149,6 +149,31 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   and rerouting the tip 33 predicate. The follow-up redesign for the
   Memory Execution scorer (per-field semantics rather than fungible sum)
   is **CCE-79**.
+- **Per-field semantic categorization before adding to any numerator.** When
+  adding a new field to a ratio numerator (or summing multiple fields into
+  one), classify each field on two independent axes BEFORE writing the
+  `sum`:
+
+  | Axis              | Possible classes                                              |
+  | ----------------- | ------------------------------------------------------------- |
+  | (a) Time window   | windowed (e.g., 30-day) / cumulative (lifetime)               |
+  | (b) Counter class | session-coverage (deduped per session) / raw invocation count |
+
+  If the new field's class on either axis differs from existing numerator
+  inputs, it doesn't belong in the same `sum`. Route it to a separate
+  surface: evidence text (cumulative), separate predicate (binary), or
+  a separate ratio with a matched denominator (windowed-but-different-class).
+  CCE-79 (PR TBD) is the reference case: the original Memory Execution
+  numerator summed `/btw + /clear + /compact + /rewind` even though `/btw`
+  was cumulative-all-time and `/rewind` was a near-zero binary signal —
+  three classes in one sum. Redesign restricted the numerator to the two
+  session-coverage signals (`/clear + /compact`), surfaced `/btw` as
+  cumulative evidence text, kept `/rewind` only as a next-action probe,
+  and recalibrated the rubric target 92 → 60 to match the narrowed
+  realistic ceiling. Source: per-field table in
+  `docs/superpowers/specs/2026-06-04-cce79-memory-scorer-redesign-design.md`
+  §Context.
+
 - **Verify denominator semantics for every ratio scorer.** A scorer
   measuring user posture (permissions, plan mode, learning) must restrict
   its denominator to sessions whose posture is actually settable by the

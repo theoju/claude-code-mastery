@@ -284,7 +284,9 @@ export function makeAssessment(overrides = {}) {
       weight: d.weight,
     })),
     trends: Object.fromEntries(rubric.dimensions.map((d) => [d.id, "flat"])),
-    signalsSummary: {},
+    signalsSummary: {
+      cliBtwUseCountAllTime: 0,
+    },
     ...overrides,
   };
 }

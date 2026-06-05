@@ -74,7 +74,8 @@ self-assessment scores against the 75 canonical tips only. (See Finding F1.)
   _this_ probe. Independent of whether the parent dim is E-scored on other
   signals: e.g. tips 4 (`claudeMdExists`) and 45 (`autoMemoryEnabled`) live in
   the now-E-scored `memory` dim, but the memory Execution scorer reads
-  btw/clear/compact/rewind, not these flags. Renders as _unmeasured_, not zero.
+  `/clear`+`/compact` (CCE-79: numerator narrowed from the original four-command
+  blend), not these flags. Renders as _unmeasured_, not zero.
 
 ## Tracking-status legend
 
@@ -220,8 +221,10 @@ These drive the **Execution** scorers (no `satisfiedWhen`; consumed directly in
 
 **No dimension currently routes Execution to `noTelemetry()`.** Post-CCE-76,
 `memory` and `customization` are transcript-derived Execution scorers
-(`scripts/score.mjs` — memory reads the four memory hygiene commands
-`/btw`+`/clear`+`/compact`+`/rewind`; customization reads `/color`+`/voice`+`/focus`).
+(`scripts/score.mjs` — memory reads the two session-coverage hygiene commands
+`/clear`+`/compact` (CCE-79: `/btw` rerouted to cumulative evidence text via
+`cliBtwUseCountAllTime`; `/rewind` retained as a binary next-action probe
+only); customization reads `/color`+`/voice`+`/focus`).
 `model-effort` is **partially** measured: the model half (Opus usage, tip 2) is
 scored from transcripts; effort level stays settings-only. Individual _signals_
 inside a scored dimension may still be Execution-unmeasured when the scorer
@@ -284,7 +287,7 @@ had no telemetry-dated detectors).
 
 [^journal-stage-credit]: As of PR #113 (CCE-72, spec 2026-06-01), `gatherShipJournal` counts stage execution across all three journal format generations: singular `entry.stage`, legacy-numeric `stages_run`, and new-string `stages_run`. `simplifyCommandUses` is MAX-merged with the journal's `simplifyStageCount` at the projection layer (`run-assessment.mjs`). `shipVerifyStageRecent` consumes the now-broader `stage2Count` automatically. The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).
 
-[^memory-customization-exec]: As of PR #116 (CCE-76, spec 2026-06-01), these posture-command counters and the new `interactiveOrUnknownSessionsAnalyzed` denominator feed the Memory and Customization Execution scorers. Both scorers gate on `transcripts: true` and the new `interactive_or_unknown` universe option in `withGates`. The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).
+[^memory-customization-exec]: As of PR #116 (CCE-76, spec 2026-06-01), these posture-command counters and the new `interactiveOrUnknownSessionsAnalyzed` denominator feed the Memory and Customization Execution scorers. Both scorers gate on `transcripts: true` and the new `interactive_or_unknown` universe option in `withGates`. The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys); CCE-79 narrowed the memory Execution ratio numerator to `/clear`+`/compact` without adding/removing any key, so header counts remain unchanged.
 
 ---
 
