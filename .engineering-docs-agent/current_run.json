@@ -1,0 +1,21 @@
+{
+  "current_run": {
+    "started_at": "2026-06-06T08:03:53.522434+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: docs/site-src/specs/2026-06-01-mkdocs-upgrade-design.md internal_links: broken internal link(s): index.md, self-assessment.md, ship-pattern.md, boris-tips-reference-2026-05-10.md, tip-classification-2026-05-10.md, whats-new.md, docs/self-assessment.md, docs/site-src/self-assessment.md, docs/ship-pattern.md, docs/site-src/ship-pattern.md, ./foo"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
