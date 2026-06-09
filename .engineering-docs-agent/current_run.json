@@ -1,0 +1,22 @@
+{
+  "current_run": {
+    "started_at": "2026-06-09T08:22:03.949193+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: source-collector",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-ship-journal-stage-credit.md footnotes: orphan refs: [^journal-stage-credit]; orphan defs: none"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
