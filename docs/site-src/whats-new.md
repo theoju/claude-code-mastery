@@ -1,3 +1,10 @@
+---
+status: draft
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/121
+synthesized_into: []
+---
+
 # What's New
 
 The engineering-docs-agent appends entries here on each nightly run
@@ -5,5 +12,78 @@ when it detects merged work worth surfacing in a user-facing
 changelog. Most entries are written by the agent and reviewed via
 the `docs-agent/YYYY-MM-DD` PR.
 
-<!-- The first authored entry will land below on the first nightly
-     after the mkdocs upgrade ships. -->
+## 2026-06-17T08:50:41.055512+00:00
+- PR #101: Adds a new Conventions entry to CLAUDE.md documenting the `/progression` timeline's dual milestone-source architecture: telemetry detectors (`scripts/progression.mjs`) self-date from session `start_time` across full history, while config detectors (`scripts/config-progression.mjs`) stamp `firstSeenAt` at first-observed and freeze it in `app/data/progression-config.json`. Records the deliberate first-run caveat that causes all 8 config milestones to share an identical `2026-05-09T08:37:16.111Z` timestamp. Also documents the coverage gap — 3 of 12 scored dimensions (`scheduled`, `remote`, `verification`) have no milestone detector, tracked as CCE-33 — and fixes the file-map (adds `config-progression.mjs`, corrects the stale `/insights history` comment on `app/progression/page.tsx`).
+- PR #100: PR #100 bootstraps the engineering-docs-agent plugin integration on the claude-code-self-assessment repository. It introduces the plugin host config (`.engineering-docs-agent/config.yml`) using `framework: none` — reflecting that the repo uses plain GitHub-rendered markdown rather than a full SSG — along with seeded state files (`state.json`, `state.example.json`) and a GitHub Actions nightly workflow (`.github/workflows/docs-agent-nightly.yml`) derived from the dogfood reference with fixes for app-token wiring (CCE-45), OAuth validation (CCE-49), forensics upload (CCE-41), and Jira wiring (CCE-53). A synthetic mkdocs scaffold originally included in the branch was removed after CCE-64 landed `framework: none` as a first-class plugin config value.
+- PR #102: Changed `dismissed_gap_flags` in `.engineering-docs-agent/state.json` from an empty JSON array (`[]`) to an empty JSON object (`{}`). This one-character fix corrects a schema validation error that caused the docs-agent nightly orchestrator to exit with code 2 within ~0.2 seconds of startup, before any subagent could be dispatched.
+- PR #104: PR #104 adds a 12-line DSL grammar block to the `/self-assessment` skill documenting all 7 `satisfiedWhen` operator classes with a pointer to the canonical evaluator in `app/lib/assessment.ts`. It also ships the design spec and implementation plan for the predicate-ranker feature (PR 2 of 2), which will extract `evaluatePredicate` to a Node-shareable `scripts/predicate.mjs` and pre-compute ranked next-actions into `assessment.json.rankedNextActions` so the skill becomes a trivial reader rather than re-implementing the DSL filter.
+- PR #106: Centralized the `satisfiedWhen` DSL evaluator into a canonical `scripts/predicate.mjs` module and collapsed the duplicate implementation in `app/lib/assessment.ts` to a 2-line passthrough re-export enforced by a CI reference-identity test. Added `scripts/rank-next-actions.mjs` which filters already-satisfied next-actions via the canonical evaluator and ranks the remainder by weight × deficit with a deterministic 5-tier tie-break. Wired the ranker into `scripts/run-assessment.mjs` so every `npm run assess` now writes a pre-computed `rankedNextActions[10]` array into `app/data/assessment.json`. Added a named regression test pinning the originating production bug (`loopCommandUses=14` must exclude `babysit-loop`). Simplified `.claude/skills/self-assessment/SKILL.md` to read from the pre-computed list rather than re-deriving it, and added two CLAUDE.md hard rules locking the contract end-to-end.
+- PR #107: Pure test-hardening follow-up to PR #106: adds an explicit regression test that pins the internal `axisOrder()` enum (unknown axis values sort as tier 2, adjacent to `"either"`, not ahead of `"platform"`), and extends the existing predicate equality test to assert that string-typed LHS values (`{ x: "5" }`) satisfy `x=5`, locking the `String(value) === lit` cross-type-coercion contract. Also removes a superseded stash entry. No production code was modified.
+- PR #108: Added three new telemetry-dated milestone detectors to `scripts/progression.mjs` — `scheduled` (tip 48, fires on first `/loop`/`/schedule`/`/babysit` invocation), `remote` (tip 35, fires on first `RemoteTrigger`/`PushNotification`/`SendMessage` tool call), and `verification` (tip 73, fires on first `/go`). Closes the `/progression` timeline coverage gap: the catalog previously covered 8 of 12 scored dimensions; this brings it to 11. Supporting change extends `scanTranscriptModes` in `_usage-data.mjs` with a per-session `commands: Set<string>` field (purely additive) to supply the two transcript-dependent detectors. The probe-tracker spec is updated in the same PR per the hard rule, with a new Progression layer (3 rows) and Part 2 evidence updates for tips 35/48/73; the five machine-enforced header counts are unchanged (75/12/48/47/71). Live verification confirmed all three milestones fire with backdated telemetry timestamps.
+- PR #110: Introduced a formal posture-vs-volume command partition in the transcript scanner (`scripts/_usage-data.mjs`). Posture commands (/color, /voice, /focus, /btw, /clear, /compact, /simplify, /rewind, /fewer-permission-prompts) are now counted only from interactive_cli and unknown sessions, eliminating inflation caused by observer and SDK-orchestrated sessions echoing the primary session's command markup. Volume commands (/loop, /schedule, /babysit, /go, /batch) continue to be counted across all session kinds, preserving genuine autonomous-workflow signal. A fail-loud `assertCommandPartition` module-load assertion guards disjointness and completeness of the two sets. Eleven new unit tests and an updated probe-implementation-status tracker accompany the change; a design spec and implementation plan were committed under docs/superpowers/.
+- PR #111: Two-line edit to the docs-agent nightly GitHub Actions workflow: (1) migrated the GitHub App token input from the deprecated `app-id` (secrets) to `client-id` (vars) to conform with the upstream `actions/create-github-app-token@v3` interface; (2) moved `JIRA_EMAIL` from `secrets` to `vars`, correctly reflecting that it is a basic-auth username rather than a credential.
+- PR #113: Introduced a pure helper `stageRanInEntry(entry, legacyNumber, newName)` in `scripts/signals.mjs` that collapses detection of `/ship` journal stage execution across all three `~/.claude/ship/journal.jsonl` format generations (singular `entry.stage`, legacy-numeric `stages_run` array, new-string `stages_run` array) into a single strict-equality `Array.includes` check. `gatherShipJournal` was widened to use this helper for both `stage2Count` (verify-agent, previously only matching singular-stage entries, missing ~41% of the cohort) and a new `simplifyStageCount` counter for Stage 3 (simplify). In `run-assessment.mjs`, `simplifyCommandUses` is MAX-merged with `shipJournal.simplifyStageCount`, mirroring the v0.9.16 `/color` pattern. The production call-site lookback was widened from 14 to `insightsLookbackDays` (default 30) to align journal-derived signals with transcript-derived ones. The probe-tracker spec received a `[^journal-stage-credit]` footnote on three affected rows, and a CLAUDE.md Conventions bullet documents the `stageRanInEntry` pattern and canonical stage 0–7 mapping.
+- PR #114: Four completed engineering plan documents were moved from `docs/superpowers/plans/` into `docs/superpowers/plans/archived/`. The archived plans correspond to shipped features: runtime adoption probes (PR #94), CCE-33 progression detectors (PR #108), per-command partition (PR #110), and the predicate ranker (PR #104). This is a pure file-move housekeeping operation; no plan content was altered.
+- PR #116: PR #116 (CCE-76) completes the Execution-scorer coverage across all twelve scored dimensions by replacing the stub `noTelemetry()` returns for the `memory` and `customization` dimensions with real ratio scorers. The new scorers use `withGates({ transcripts: true, universe: "interactive_or_unknown" })`, consuming seven partition-gated posture-command counters (`/btw`, `/clear`, `/compact`, `/rewind` for Memory; `/color`, `/voice`, `/focus` for Customization) counted as session-coverage signals (once per session that used the command, not per invocation). A new `interactiveOrUnknownSessionsAnalyzed` denominator (`interactive_cli ∪ unknown` sessions) is introduced to enforce the numerator-subset-of-denominator hard rule from PR #97. The `focusCommandUses` and `rewindCommandUses` counters are also unified from per-message to per-session increments, matching the canonical pattern used by the other five posture counters. Post-merge, Memory scores ex 16 and Customization scores ex 3; the Execution composite drops from 77 to 66 — an honest measurement of previously hidden deficits, not a regression. The CLAUDE.md scoring-model paragraph and the dashboard Methodology page are updated to reflect that all twelve dimensions now carry Execution scores.
+- PR #117: Version bump to 0.9.18, bundling 13 PRs landed since v0.9.17. Headline changes: Memory and Terminal & Customization Execution scorers now use transcript-derived posture-command counters (replacing noTelemetry stubs), completing Execution coverage across all 12 scored dimensions. A per-command POSTURE/VOLUME partition prevents observer/SDK sessions from inflating posture counters, with a fail-loud boundary assertion at module load. The /ship workflow's Stage 2 (verify-agent) and Stage 3 (simplify) dispatch counters now correctly recognise all three journal format generations, fixing an adoption-signal undercount. The predicate evaluator was canonicalised to a single scripts/predicate.mjs source with a passthrough re-export in the TypeScript layer, and pre-computed rankedNextActions now land in assessment.json. The /progression timeline gained telemetry-dated detectors for the scheduled, remote, and verification dimensions. Additional fixes: state.json dismissed_gap_flags shape corrected from array to object, Jira workflow migrated to client-id auth, 4 landed plans archived, and the engineering-docs-agent plugin onboarded to this repo. Test count grew from 647 to 666.
+- PR #118: Archived two already-shipped plan documents — CCE-72 (/ship Stage 2/3 credit across journal formats) and CCE-76 (Memory + Customization Execution scorers) — by performing a mechanical `git mv` into `docs/superpowers/plans/archived/`. No file content was changed; only the directory location changed.
+- PR #119: Removed the Math.max blend that was conflating `~/.claude.json`'s cumulative all-time `btwUseCount` with the 30-day windowed session-coverage counter `btwCommandUses` in `signalsSummary`. A new separate field `cliBtwUseCountAllTime` now carries the cumulative source, and the Boris tip 33/54 `btw-side-channel` predicate is rerouted from `btwCommandUses>=1` to `cliBtwUseCountAllTime>=1` — matching the "have you ever adopted this habit" intent. The `signalsSummary` surface is now semantically honest: windowed and cumulative counters are no longer fungibly summed. A CLAUDE.md hard rule was added to prevent future scorer authors from reintroducing the same blend. Memory Execution score is unchanged (16) because the scorer body already used `maxProbe()` directly; only the summary surface was corrupted. Probe catalog and tracker updated: probes 47→48, signalsSummary keys 71→72.
+- PR #120: v0.9.19 release bundling two PRs: (1) CCE-78 scoring-honesty fix — the `signalsSummary.btwCommandUses` projection in `scripts/run-assessment.mjs` no longer Math.max-blends the cumulative all-time `~/.claude.json#btwUseCount` into the 30-day windowed session-coverage counter. The cumulative figure is now exposed as a separate `cliBtwUseCountAllTime` field, and the rubric predicate for tips 33/54 (`btw-side-channel`) is rerouted to use `cliBtwUseCountAllTime>=1`. Memory Execution score is unaffected; the fix restores honesty to the `signalsSummary` surface and adds a CLAUDE.md hard rule on cumulative-vs-windowed counter semantics. (2) CCE-72 and CCE-76 plans archived as housekeeping after v0.9.18 shipped them.
+- PR #121: Upgraded the engineering-docs-agent integration from `framework: none` to `framework: mkdocs`, standing up a published Material-theme docs site at https://theoju.github.io/claude-code-self-assessment/. The change introduces two CI workflows — a push-to-main deploy pipeline (`docs-agent-pages.yml`) and a PR-level `mkdocs build --strict` gate (`docs-build-check.yml`) — alongside a `mkdocs.yml` config with search, awesome-pages, and literate-nav plugins, and a pinned `requirements-docs.txt`. Existing flat `docs/*.md` source files were migrated verbatim into `docs/site-src/`, nine broken relative cross-tree links were repaired as absolute GitHub blob URLs, and the engineering-docs-agent config was flipped to `framework: mkdocs` with `base_url`, `build_workflow`, and `whats_new_file` populated. Six downstream path references in README, CLAUDE.md, rubric.json, slash commands, and the in-app ship-pattern page were retargeted. Three new vitest test files (21 cases) cover path migration, scaffold correctness, and config contract.
+- PR #122: Post-merge documentation follow-up to PR #121 / CCE-81 (the mkdocs upgrade). Three files updated, all docs-only: (1) CLAUDE.md gains two new Conventions bullets — one documenting that `actions/configure-pages@v6 enablement: true` does NOT self-bootstrap GitHub Pages on a first deploy (the GITHUB_TOKEN lacks admin scope; fix is `gh api -X POST .../pages -f build_type=workflow`), and one warning that monitor scripts must avoid zsh reserved names `status`/`pipestatus` or the shell crashes with a read-only error; (2) the mkdocs upgrade spec gains a POST-IMPLEMENTATION CORRECTION block under Gate 5 recording the actual recovery steps; (3) the mkdocs upgrade plan gains a 'Post-merge outcomes' section detailing three deviations from the planned rollout (Pages failure, CCE-81 filed post-execution, monitor zsh crash).
+- PR #125: Dropped the misleading `enablement: true` block from the docs-agent GitHub Pages workflow (`.github/workflows/docs-agent-pages.yml`) — it was a silent no-op after Pages had already been bootstrapped manually during the CCE-81 incident. Flipped the matching vitest assertion from expecting the line present to asserting its absence, providing a regression guard against re-introduction. Added a one-line 'Resolved by' footer to the POST-IMPLEMENTATION CORRECTION block in the mkdocs-upgrade spec. Shortened the CLAUDE.md gotcha bullet to point at the plugin's CLAUDE.md as the durable source rather than duplicating the full explanation.
+- PR #127: Adds a new Conventions bullet to CLAUDE.md requiring that plan-step verification use the actual consumer tool (e.g., `mkdocs build --strict`, `npx tsc --noEmit`) rather than bare filesystem checks (`test -f`). The rule is byte-identical to the same bullet landing in the ADIS and engineering-docs-agent repos as part of a coordinated three-repo propagation. No code, tests, or configuration changed — this is a pure documentation/conventions update.
+
+## 2026-06-02 — Docs site live on GitHub Pages (CCE-81, PR #121)
+
+The project's documentation is now published at
+**<https://theoju.github.io/claude-code-self-assessment/>** via a
+Material-theme [MkDocs](https://www.mkdocs.org/) site.
+
+### What shipped
+
+- **`mkdocs.yml`** — site config with the Material theme and three plugins:
+  `search`, `awesome-pages`, and `literate-nav` (nav driven by
+  `docs/site-src/SUMMARY.md`). Pinned dependency set in
+  `requirements-docs.txt` (`mkdocs==1.6.1`, `mkdocs-material==9.5.49`,
+  `pymdown-extensions==10.11.2`, plus the two nav plugins).
+
+- **Deploy workflow** (`.github/workflows/docs-agent-pages.yml`) — triggers
+  on pushes to `main` that touch `docs/site-src/**`, `mkdocs.yml`,
+  `requirements-docs.txt`, or the workflow file itself. Runs
+  `mkdocs build --strict`, uploads the `site/` artifact, and deploys via
+  `actions/deploy-pages@v5`. A `.nojekyll` sentinel is written into the
+  artifact so GitHub Pages serves the mkdocs output verbatim.
+
+- **PR gate** (`.github/workflows/docs-build-check.yml`) — runs
+  `mkdocs build --strict --site-dir /tmp/site` on every pull request that
+  touches docs sources. Broken links and missing nav entries now fail CI
+  before merge rather than after deploy.
+
+- **`docs/site-src/`** — existing flat `docs/*.md` files migrated verbatim
+  here; nine broken relative cross-tree links repaired as absolute GitHub
+  blob URLs. Six downstream path references in README, CLAUDE.md,
+  `rubric.json`, slash-command files, and the in-app ship-pattern page
+  retargeted to the new location.
+
+- **Engineering-docs-agent config** (`.engineering-docs-agent/config.yml`)
+  flipped to `framework: mkdocs` with `base_url`, `build_workflow`, and
+  `whats_new_file` populated. This activates the nightly publish-verifier
+  stage, which confirms the Pages build ran for the current HEAD and that
+  the base URL is reachable.
+
+### First-deploy note
+
+`actions/configure-pages@v6 enablement: true` does **not** bootstrap GitHub
+Pages on an empty repo — the `GITHUB_TOKEN` lacks the admin scope for
+`POST /repos/.../pages`. The first deploy required a one-time manual call:
+
+```bash
+gh api -X POST repos/theoju/claude-code-self-assessment/pages \
+  -f build_type=workflow
+```
+
+Once Pages exists, subsequent workflow runs proceed without intervention.
+The `enablement: true` line was removed from the workflow after this was
+confirmed. See [CLAUDE.md](https://github.com/theoju/claude-code-self-assessment/blob/main/CLAUDE.md)
+for the full post-implementation note.

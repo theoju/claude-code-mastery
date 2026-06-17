@@ -1,0 +1,29 @@
+{
+  "current_run": {
+    "started_at": "2026-06-17T08:50:41.055512+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-31-predicate-ranker-design.md citation_exists: cites nonexistent path 'scripts/__tests__/run-assessment.test.mjs'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-ship-journal-stage-credit.md footnotes: orphan refs: [^journal-stage-credit]; orphan defs: none",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-upgrade.md citation_exists: cites nonexistent path 'docs/whats-new.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-04-plan-step-verification-convention.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "time_budget_exceeded: fact-checked 2/13 pages (budget 2700s); skipping the rest",
+      "time_budget_exceeded: gap-checked 0/20 PRs (budget 2700s); skipping the rest"
+    ],
+    "fact_check_warnings": [],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
