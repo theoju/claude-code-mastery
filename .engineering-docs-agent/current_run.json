@@ -1,0 +1,30 @@
+{
+  "current_run": {
+    "started_at": "2026-06-18T08:45:39.745829+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-06-18-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-predicate-ranker.md citation_exists: cites nonexistent path 'app/data/assessment.json'",
+      "lint_block: docs/site-src/2026-06-01-progression-detectors-cce33.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/whats-new.md frontmatter_schema: no frontmatter or YAML parse error",
+      "lint_block: docs/site-src/2026-06-03-pages-enablement-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "time_budget_exceeded: fact-checked 0/13 pages (budget 2700s); skipping the rest",
+      "time_budget_exceeded: gap-checked 0/20 PRs (budget 2700s); skipping the rest"
+    ],
+    "fact_check_warnings": [],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
