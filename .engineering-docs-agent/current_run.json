@@ -1,0 +1,32 @@
+{
+  "current_run": {
+    "started_at": "2026-06-19T08:54:26.726165+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-30-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-31-predicate-ranker.md citation_exists: cites nonexistent path 'app/data/assessment.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-19-progression-detectors-cce33.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-site-migration.md citation_exists: cites nonexistent path 'docs/images/foo.png'; cites nonexistent path 'images/foo.png'; cites nonexistent path 'docs/ship-pattern.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-pages-enablement-zsh-monitor-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-05-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "time_budget_exceeded: fact-checked 4/8 pages (budget 2700s); skipping the rest",
+      "time_budget_exceeded: gap-checked 0/20 PRs (budget 2700s); skipping the rest"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-05-27-engineering-docs-agent-bootstrap.md`: The workflow comment notes this is a `framework: mkdocs` host, so the mkdocs toolchain itself is not installed here (vs `.github/workflows/docs-agent-nightly.yml`)",
+      "`docs/site-src/2026-05-31-predicate-ranker-design.md`: Error-handling table: 'Signal field missing | Treated as `0` / `false` \u2192 action kept'. Test-coverage table also states: 'missing signal treated as 0'. (vs `scripts/__tests__/predicate.test.mjs`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
