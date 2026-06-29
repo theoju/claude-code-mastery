@@ -1,0 +1,38 @@
+{
+  "current_run": {
+    "started_at": "2026-06-29T08:46:27.501171+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-06-01-predicate-evaluator-ranked-next-actions.md citation_exists: cites nonexistent path 'scripts/__tests__/run-assessment.test.mjs'; cites nonexistent path 'app/data/assessment.json'",
+      "lint_block: docs/site-src/2026-06-01-progression-milestone-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-01-per-command-partition.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-05-31-per-command-partition.md'",
+      "lint_block: docs/site-src/2026-06-01-ship-journal-stage-credit.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-06-01-ship-journal-stage-credit.md'",
+      "lint_block: docs/site-src/plans/2026-06-01-mkdocs-upgrade.md citation_exists: cites nonexistent path 'docs/boris-tips-reference-2026-05-10.md'; cites nonexistent path 'docs/self-assessment.md'; cites nonexistent path 'docs/ship-pattern.md'; cites nonexistent path 'docs/tip-classification-2026-05-10.md'",
+      "lint_block: docs/site-src/specs/2026-06-01-mkdocs-upgrade-design.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-consumer-tool-verification-convention.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "time_budget_exceeded: fact-checked 7/11 pages (budget 2700s); skipping the rest",
+      "time_budget_exceeded: gap-checked 0/20 PRs (budget 2700s); skipping the rest"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md`: Config snapshot shows top-level `framework: mkdocs`, `lenses.core.root: docs/site-src/`, and `agent_editable_paths: [docs/site-src/]` (vs `.engineering-docs-agent/config.yml`)",
+      "`docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md`: agent_editable_paths declares `docs/site-src/` as the editable boundary \u2014 implied both by the snapshot and by 'Paths outside `agent_editable_paths` are never touched' (vs `.engineering-docs-agent/config.yml`)",
+      "`docs/site-src/2026-05-31-predicate-ranker-design.md`: DSL grammar block documents `op: >= | <= | > | < | == | !=` \u2014 listing `==` as the equality operator (vs `scripts/predicate.mjs`)",
+      "`docs/site-src/2026-05-31-predicate-ranker-design.md`: Contract table lists `rankedNextActions` fields: `id` (string), `dimension` (string), `title` (string), `score` (number \u2014 computed weight \u00d7 deficit), `satisfied` (boolean) (vs `app/lib/assessment.ts`)",
+      "`docs/site-src/2026-05-31-predicate-ranker.md`: Supported operators: `>=`, `<=`, `>`, `<`, `===`, `!==`, `==`, `!=` (vs `scripts/predicate.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: The `interactive_or_unknown` universe counts sessions where `classifySessionKind` returned `'interactive_cli'` or the conservative fallback `'unknown'` (no transcript present). (vs `scripts/_usage-data.mjs`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
