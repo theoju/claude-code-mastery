@@ -1,0 +1,37 @@
+{
+  "current_run": {
+    "started_at": "2026-07-02T08:13:32.216777+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-progression-detector-coverage.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-posture-volume-command-partition.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-05-31-per-command-partition.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-docs-agent-nightly-auth-migration.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-v0.9.18-release.md citation_exists: cites nonexistent path 'chore/release-0.9.18'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-v0.9.19-release.md citation_exists: cites nonexistent path 'chore/release-X.Y.Z'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-gotchas.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-pages-enablement-cleanup.md internal_links: broken internal link(s): 2026-06-01-mkdocs-upgrade-design.md, 2026-06-01-mkdocs-upgrade-design.md, 2026-06-01-mkdocs-upgrade-design.md",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-pages-enablement-cleanup.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-04-plan-verification-consumer-tool-rule.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: Two other dimensions \u2014 learning (the \u2605 Insight banner scan) and parallel (worktree-usage detection) \u2014 already mixed transcript-derived signals into Execution scoring via withGates({ transcripts: true, \u2026 }) (vs `scripts/score.mjs`)",
+      "`docs/site-src/2026-06-02-cliBtwUseCount-unblend.md`: In practice the Memory Execution scorer itself was unaffected \u2014 CCE-79 had already narrowed that scorer's numerator to /clear + /compact and routed /btw to evidence text only \u2014 so this was a latent corruption on the summary surface, not an active scoring regression. (vs `docs/superpowers/specs/2026-06-04-cce79-memory-scorer-redesign-design.md`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
