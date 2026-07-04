@@ -1,0 +1,34 @@
+{
+  "current_run": {
+    "started_at": "2026-07-04T08:05:31.098296+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-progression-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-upgrade.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-docs-site-architecture.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-github-pages-enablement-cleanup.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-04-plan-verification-convention.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-per-command-partition.md`: \"the scanner reads `projectsRoot/*/*.jsonl` (two levels deep), while subagent transcripts live three levels deeper at `projects/<project>/<uuid>/subagents/agent-*.jsonl`.\" (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-01-per-command-partition.md`: \"each transcript is classified once via `classifySessionKind(path)` (`interactive_cli`, `sdk_orchestrated`, `observer`, `subagent`, or `unknown`, based on the `entrypoint` field found in the first five lines).\" (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: \"app/components/RadarChart.tsx's existing 'is `gapReason !== null`' check picks that up automatically \u2014 no rendering change was needed.\" (vs `app/components/RadarChart.tsx`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: \"The seven posture-command counters in `scanTranscriptInvocations` (`_usage-data.mjs`) were already gated by `allowPosture` to `sessionKind === \\\"interactive_cli\\\" || sessionKind === \\\"unknown\\\"`\" (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-02-cce78-btw-unblend-fix.md`: \"What this doesn't fix\": CCE-78 does not redesign the rest of the Memory Execution numerator, which \u2014 as of this PR \u2014 still sums other fields with mixed windowed/cumulative and coverage/count semantics (the `probe-catalog.json` entries for `rewindCommandUses` and the ratio-numerator composition still flag TODOs). That broader redesign is tracked separately as CCE-79 and lands in a later PR. (vs `app/data/probe-catalog.json`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
