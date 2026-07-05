@@ -1,0 +1,36 @@
+{
+  "current_run": {
+    "started_at": "2026-07-05T08:10:25.591877+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "prose_contamination_rescued: content-validator",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-onboarding.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-canonical-predicate-evaluator.md citation_exists: cites nonexistent path 'app/data/assessment.json'",
+      "lint_block: docs/site-src/2026-06-01-progression-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-01-command-partition-scoring.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-05-31-per-command-partition.md'",
+      "lint_block: docs/site-src/2026-06-02-mkdocs-upgrade-decision.md citation_exists: cites nonexistent path 'docs/whats-new.md'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-lessons.md internal_links: broken internal link(s): 2026-06-01-mkdocs-upgrade-design.md, 2026-06-01-mkdocs-upgrade-design.md",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: \"In the author's environment (per the design doc's live-verification run), the Execution composite dropped from 77 to 66 after this PR... both came in low \u2014 16 and 3 on their initial baseline.\" (vs `docs/superpowers/specs/2026-06-01-memory-customization-execution-scorers-design.md`)",
+      "`docs/site-src/2026-06-02-mkdocs-docs-site-architecture.md`: \"Both workflows share the identical `paths:` filter, so a change that doesn't touch docs sources never triggers either one\" (vs `.github/workflows/docs-build-check.yml`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
