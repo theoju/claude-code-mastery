@@ -1,0 +1,37 @@
+{
+  "current_run": {
+    "started_at": "2026-07-07T08:15:35.942824+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-lessons.md internal_links: broken internal link(s): 2026-06-01-mkdocs-upgrade-design.md",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-docs-site.md citation_exists: cites nonexistent path 'docs/self-assessment.md'; cites nonexistent path 'docs/ship-pattern.md'; cites nonexistent path 'docs/boris-tips-reference-2026-05-10.md'; cites nonexistent path 'docs/tip-classification-2026-05-10.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-upgrade-decision.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-pages-enablement-noop-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-04-plan-verification-consumer-tool-convention.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker",
+      "schema_invalid: fact-checker: 'ok' is a required property",
+      "fact_checker_unavailable: docs/site-src/2026-06-01-progression-detectors.md"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-canonical-predicate-evaluator-and-ranked-next-actions.md`: `scripts/__tests__/run-assessment-ranking.test.mjs` \u2014 end-to-end: the pipeline actually writes `rankedNextActions` into `assessment.json`. (vs `scripts/__tests__/run-assessment-ranking.test.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: `scanTranscriptInvocations` in `scripts/_usage-data.mjs` already scans `~/.claude/projects/*/*.jsonl` for seven \"posture\" slash commands \u2014 `/color`, `/voice`, `/focus`, `/btw`, `/clear`, `/compact`, `/rewind` \u2014 gated so that only `interactive_cli` and `unknown`-classified sessions count. (Repeated later: \"Five of the seven posture counters...\" and \"All seven posture counters are session-coverage counts now\".) (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-01-release-v0.9.18-notes.md`: \"Model & Effort Tuning remains partially measured \u2014 the Opus-usage half is scored from transcripts, but effort level (`/effort max` and friends) is still settings-only, so there's no transcript signal to score it against yet.\" (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-02-cliBtwUseCount-unblend.md`: `/btw` is a side-channel command ... so `scripts/_usage-data.mjs` falls back to `~/.claude/history.jsonl` to catch it. That's a legitimate MAX-merge \u2014 history.jsonl and transcripts are two observations of the same windowed signal. (vs `scripts/_usage-data.mjs`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
