@@ -1,0 +1,39 @@
+{
+  "current_run": {
+    "started_at": "2026-07-08T07:56:00.448524+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-predicate-evaluator-and-ranked-next-actions.md citation_exists: cites nonexistent path '../../scripts/predicate.mjs'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-progression-detector-coverage.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-release-v0-9-18.md citation_exists: cites nonexistent path 'chore/release-0.9.18'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-v0.9.19-release-notes.md citation_exists: cites nonexistent path 'chore/release-0.9.19'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-migration.md citation_exists: cites nonexistent path 'docs/self-assessment.md'; cites nonexistent path 'docs/ship-pattern.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-gotchas.md internal_links: broken internal link(s): 2026-06-01-mkdocs-upgrade-design.md, 2026-06-01-mkdocs-upgrade.md, 2026-06-01-mkdocs-upgrade-design.md",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-gotchas.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-github-pages-enablement-noop.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-04-plan-verification-convention.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker",
+      "schema_invalid: fact-checker: 'ok' is a required property",
+      "fact_checker_unavailable: docs/site-src/2026-06-02-unblend-btw-usage-metric.md",
+      "schema_invalid: gap-detector: 'pr_id' is a required property"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-02-docs-site-architecture.md`: Both workflows share the same `paths:` filter, so a commit touching only `scripts/` or `app/` never triggers either one. (Also stated in the table: docs-build-check.yml triggers on `docs/site-src/**`, `mkdocs.yml`, `requirements-docs.txt`, or the workflow file itself; docs-agent-pages.yml triggers on 'the same path filter'.) (vs `.github/workflows/docs-build-check.yml`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
