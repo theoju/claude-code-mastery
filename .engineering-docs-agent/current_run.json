@@ -1,0 +1,33 @@
+{
+  "current_run": {
+    "started_at": "2026-07-09T08:16:42.295206+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-onboarding.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-progression-detector-coverage.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-02-release-v0.9.19.md citation_exists: cites nonexistent path 'chore/release-0.9.19'",
+      "lint_block: docs/site-src/2026-06-02-mkdocs-framework-migration.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-pages-enablement-noop-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-02-unblend-btw-command-uses.md`: \"btwCommandUses\" in signalsSummary is now maxProbe(signals, \"btwCommandUses\") only \u2014 windowed session-coverage, no all-time component. It still feeds the Memory Execution ratio numerator (see app/lib/__tests__/rubric-predicates.test.ts and scripts/__tests__/build-signals-summary.test.mjs for the split coverage). (vs `app/data/probe-catalog.json`)",
+      "`docs/site-src/2026-06-02-unblend-btw-command-uses.md`: The Memory Execution ratio's /btw numerator now genuinely tracks recent behavior. A user who used /btw heavily a year ago but not in the last 30 days no longer gets free credit for it. (vs `docs/superpowers/specs/2026-05-25-probe-implementation-status.md`)",
+      "`docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-lessons.md`: \"Where this is recorded\": the Pages recovery detail is cross-referenced into \"docs/superpowers/plans/2026-06-01-mkdocs-upgrade.md \u2014 the rollout sequence's gate table.\" (vs `docs/superpowers/plans/2026-06-01-mkdocs-upgrade.md`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
