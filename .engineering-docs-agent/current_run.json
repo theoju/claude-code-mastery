@@ -1,0 +1,35 @@
+{
+  "current_run": {
+    "started_at": "2026-07-10T08:15:33.285661+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-progression-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-ship-journal-stage-credit.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-06-01-ship-journal-stage-credit.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-docs-site-architecture.md internal_links: broken internal link(s): ./foo",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-docs-site-architecture.md citation_exists: cites nonexistent path 'docs/boris-tips-reference-2026-05-10.md'; cites nonexistent path 'docs/self-assessment.md'; cites nonexistent path 'docs/ship-pattern.md'; cites nonexistent path 'docs/tip-classification-2026-05-10.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-mkdocs-framework-adoption-decision.md citation_exists: cites nonexistent path 'docs/boris-tips-reference-2026-05-10.md'; cites nonexistent path 'docs/self-assessment.md'; cites nonexistent path 'docs/ship-pattern.md'; cites nonexistent path 'docs/tip-classification-2026-05-10.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-gotchas.md internal_links: broken internal link(s): 2026-06-01-mkdocs-upgrade-design.md",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-gotchas.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-github-pages-enablement-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker",
+      "schema_invalid: gap-detector: 'pr_id' is a required property"
+    ],
+    "fact_check_warnings": [],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
