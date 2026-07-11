@@ -1,0 +1,33 @@
+{
+  "current_run": {
+    "started_at": "2026-07-11T07:44:49.432879+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-progression-detector-coverage.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-02-mkdocs-docs-site-launch.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-02-github-pages-enablement-and-monitor-shell-gotchas.md internal_links: broken internal link(s): 2026-06-01-mkdocs-upgrade-design.md, 2026-06-01-mkdocs-upgrade-design.md",
+      "lint_block: docs/site-src/2026-06-02-github-pages-enablement-and-monitor-shell-gotchas.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-pages-enablement-cleanup.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-cce-33-scheduled-remote-verification-detectors.md`: Before PR #108 the detector catalog covered 8 of the 12 scored dashboard dimensions (automation, integrations, learning, memory, model-effort, parallel, permissions, planning). (vs `scripts/progression.mjs`)",
+      "`docs/site-src/2026-06-01-cce-33-scheduled-remote-verification-detectors.md`: This PR closes the detector-coverage gap: all 12 scored dimensions now have a progression detector. (vs `scripts/progression.mjs`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
