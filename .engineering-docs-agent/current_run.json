@@ -1,0 +1,39 @@
+{
+  "current_run": {
+    "started_at": "2026-07-13T08:14:27.966740+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-06-01-predicate-evaluator-and-ranked-next-actions.md citation_exists: cites nonexistent path 'app/data/assessment.json'",
+      "lint_block: docs/site-src/2026-06-01-progression-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-01-ship-journal-stage-credit.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-06-01-ship-journal-stage-credit.md'",
+      "lint_block: docs/site-src/2026-06-02-mkdocs-github-pages-migration.md citation_exists: cites nonexistent path 'docs/whats-new.md'",
+      "lint_block: docs/site-src/2026-06-02-docs-site-build-pipeline.md citation_exists: cites nonexistent path 'images/self-assessment-dashboard.png'; cites nonexistent path 'docs/self-assessment.md'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-gotchas.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-pages-enablement-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool-rule.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker",
+      "schema_invalid: fact-checker: 'ok' is a required property",
+      "fact_checker_unavailable: docs/site-src/2026-06-01-per-command-partition-scoring.md",
+      "schema_invalid: gap-detector: 'pr_id' is a required property"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: \"The seven posture-gated slash commands (/color, /voice, /focus, /btw, /clear, /compact, /simplify, /rewind, /fewer-permission-prompts \u2014 see POSTURE_COMMANDS in scripts/_usage-data.mjs)\" (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: \"...ahead of the session-coverage pattern the other five posture counters (/simplify, /btw, /voice, /clear, /compact, /color, /fewer-permission-prompts) already used.\" (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: \"All seven posture counters are now uniform units \u2014 one session-coverage hit each\" (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-02-unblend-btw-counter-semantics.md`: The rubric's `btw-side-channel` predicate (Boris tips 33/54) was rerouted from `btwCommandUses>=1` to `cliBtwUseCountAllTime>=1`. (vs `docs/superpowers/specs/2026-05-25-probe-implementation-status.md`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
