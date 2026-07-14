@@ -1,0 +1,37 @@
+{
+  "current_run": {
+    "started_at": "2026-07-14T07:45:44.296305+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-predicate-evaluator-canonicalization.md citation_exists: cites nonexistent path '../../scripts/predicate.mjs'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-progression-milestone-detector-coverage.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-per-command-partition.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-05-31-per-command-partition.md'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-01-nightly-workflow-auth-migration.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-02-github-pages-enablement-gotcha.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-03-github-pages-enablement-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-06-04-plan-verification-consumer-tool-convention.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: Both dimensions now render solid vertices on the Execution radar instead of italic-unmeasured ones \u2014 app/components/RadarChart.tsx already branches on gapReason === null, so no rendering code needed to change once the scorers stopped returning unavailable(...). (vs `app/components/RadarChart.tsx`)",
+      "`docs/site-src/2026-06-02-cce78-btwusecount-unblend.md`: the 30-day windowed, transcript+`history.jsonl` session-coverage count for `/btw` usage (a `maxProbe(signals, \"btwCommandUses\")` call, same pattern used for `/focus`, `/schedule`, `/loop`, and the other posture commands) (vs `docs/superpowers/specs/2026-05-25-probe-implementation-status.md`)",
+      "`docs/site-src/2026-06-02-mkdocs-github-pages-upgrade.md`: \"Verbatim migration. The existing flat files moved into docs/site-src/ unchanged: self-assessment.md, ship-pattern.md, boris-tips-reference-2026-05-10.md, tip-classification-2026-05-10.md, and the images/ directory. No content rewriting happened in this PR \u2014 that's deliberately out of scope (see the design spec's non-goals).\" (vs `docs/superpowers/plans/2026-06-01-mkdocs-upgrade.md`)",
+      "`docs/site-src/2026-06-02-mkdocs-github-pages-upgrade.md`: \"Two workflows, two jobs.\" (describing docs-build-check.yml and docs-agent-pages.yml) (vs `.github/workflows/docs-agent-pages.yml`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
