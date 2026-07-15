@@ -1,0 +1,39 @@
+{
+  "current_run": {
+    "started_at": "2026-07-15T07:46:18.133279+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "schema_invalid: pr-summarizer: Additional properties are not allowed ('page_hint_note' was unexpected)",
+      "prose_contamination_rescued: page-author",
+      "prose_contamination_rescued: content-validator",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-predicate-evaluator-and-ranked-next-actions.md internal_links: broken internal link(s): /scripts/predicate.mjs, /scripts/rank-next-actions.mjs",
+      "lint_block: docs/site-src/2026-06-01-progression-detector-coverage.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-01-release-v0.9.18.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-lessons.md internal_links: broken internal link(s): 2026-06-01-mkdocs-upgrade-design.md, 2026-06-01-mkdocs-upgrade-design.md",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker",
+      "schema_invalid: gap-detector: None is not of type 'boolean'"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-predicate-ranker-plan.md`: document the satisfiedWhen grammar inline in SKILL.md \u2014 an explicit reference for the eight operator classes (path, !path, >=/<=/>/<, =/=v|w|x, !=, ~regex, A & B) (vs `scripts/predicate.mjs`)",
+      "`docs/site-src/2026-06-01-predicate-ranker-plan.md`: extract evaluatePredicate ... into a dependency-free, Node-shareable scripts/predicate.mjs. scripts/run-assessment.mjs then imports it, pre-computes the filtered + weight\u00d7deficit-ranked top-10 list once per run, and writes it to a new assessment.json.rankedNextActions field. (vs `scripts/run-assessment.mjs`)",
+      "`docs/site-src/2026-06-01-per-command-posture-volume-partition.md`: the scanner's traversal reads exactly `projectsRoot/*/*.jsonl` \u2014 two levels deep. Real subagent transcripts live three levels deeper, so they're invisible to this scanner today (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: Example evidence text: \"Customization commands: 30 session-coverage hits across 10 interactive_cli\u222aunknown sessions (300.00%) \u2014 capped from 300% (multiple customization commands per session)\" \u2014 implying the primary displayed percentage is the uncapped 300%. (vs `scripts/score.mjs`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
