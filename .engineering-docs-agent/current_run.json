@@ -1,0 +1,37 @@
+{
+  "current_run": {
+    "started_at": "2026-07-16T07:48:07.814492+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "prose_contamination_rescued: content-validator",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-06-01-predicate-evaluator-and-ranked-next-actions.md citation_exists: cites nonexistent path 'app/data/assessment.json'",
+      "lint_block: docs/site-src/2026-06-01-progression-detector-coverage.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-docs-pages-enablement-cleanup.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-07-16-plan-verification-consumer-tool-convention.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "schema_invalid: fact-checker: 'ok' is a required property",
+      "fact_checker_unavailable: docs/site-src/2026-06-01-per-command-partition.md",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: The seven posture-command counters in scanTranscriptInvocations (scripts/_usage-data.mjs) are gated by allowPosture, which is true for interactive_cli or \"unknown\" sessions (vs `scripts/_usage-data.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: Customization commands: 4 session-coverage hits across 120 interactive_cli\u222aunknown sessions (3.33%) \u2014 capped from 250% (multiple customization commands per session) (vs `scripts/score.mjs`)",
+      "`docs/site-src/2026-06-01-memory-customization-execution-scorers.md`: parallel (worktree-usage transcript scan) and learning (\u2605 Insight banner scan) already mixed transcript signals into Execution scoring through withGates({ transcripts: true, ... }) (vs `scripts/score.mjs`)",
+      "`docs/site-src/2026-06-02-docs-publishing-pipeline.md`: Describing `docs-agent-pages.yml`'s `build` job: \"checkout \u2192 `configure-pages` \u2192 `setup-python@v6`, pinned to `3.12` with `pip` caching keyed on `requirements-docs.txt` \u2192 install deps \u2192 `mkdocs build --strict` \u2192 `touch site/.nojekyll` \u2026 \u2192 `upload-pages-artifact@v5`\" (vs `docs/superpowers/plans/2026-06-01-mkdocs-upgrade.md`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
