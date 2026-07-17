@@ -1,3 +1,10 @@
+---
+status: draft
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/121
+synthesized_into: []
+---
+
 # Claude Code Self-Assessment
 
 A personal dashboard that scores your Claude Code usage against
@@ -5,6 +12,12 @@ A personal dashboard that scores your Claude Code usage against
 and a two-axis Self-Assessment rubric. All scoring is local — no
 telemetry, no external service, nothing leaves your machine unless
 you enable the Slack notifier.
+
+This site is built with MkDocs Material from `docs/site-src/` and
+published to GitHub Pages on every push to `main` that touches the
+docs source; a PR-level `mkdocs build --strict` gate catches broken
+links before they merge. See [What's New](whats-new.md) for the
+migration writeup.
 
 ## Read next
 
