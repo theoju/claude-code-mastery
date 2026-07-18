@@ -1,0 +1,36 @@
+{
+  "current_run": {
+    "started_at": "2026-07-18T07:44:17.182729+00:00",
+    "head_sha": "d944f379dca4725b931c727635fa6c20c1e7c72b",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: source-collector",
+      "schema_invalid: pr-summarizer: Additional properties are not allowed ('page_hint_note' was unexpected)",
+      "prose_contamination_rescued: page-author",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-onboarding.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-02-release-v0.9.19.md citation_exists: cites nonexistent path 'chore/release-X.Y.Z'",
+      "lint_block: docs/site-src/2026-06-02-mkdocs-migration.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-github-pages-enablement-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker",
+      "schema_invalid: fact-checker: 'ok' is a required property",
+      "fact_checker_unavailable: docs/site-src/2026-06-01-cce-33-progression-detectors.md"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-per-command-partition.md`: the scanner's traversal only reads `projectsRoot/*/*.jsonl` \u2014 two levels deep \u2014 so subagent transcripts (three levels deeper) are never reached by this scanner in the first place (vs `scripts/_usage-data.mjs`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
