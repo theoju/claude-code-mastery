@@ -1,3 +1,10 @@
+---
+status: draft
+sources:
+  - https://github.com/theoju/claude-code-self-assessment/pull/121
+synthesized_into: []
+---
+
 # Claude Code Self-Assessment
 
 A personal dashboard that scores your Claude Code usage against
@@ -5,6 +12,14 @@ A personal dashboard that scores your Claude Code usage against
 and a two-axis Self-Assessment rubric. All scoring is local — no
 telemetry, no external service, nothing leaves your machine unless
 you enable the Slack notifier.
+
+This site itself is built with [mkdocs](https://www.mkdocs.org/) +
+Material and published to GitHub Pages on every push to `main` that
+touches `docs/site-src/**`, `mkdocs.yml`, or `requirements-docs.txt`
+(`docs-agent-pages.yml`). A `mkdocs build --strict` check gates every
+PR that touches the same paths, so a broken link fails the PR instead
+of the deploy. See [What's New](whats-new.md#2026-06-02--docs-site-now-published-via-mkdocs)
+for the migration writeup.
 
 ## Read next
 
