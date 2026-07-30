@@ -1,25 +1,228 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   Design language — "tray-icon dialect"
+   Cool graphite instrument panel with a single electric-blue accent.
+   Migrated from the warm/gold palette; all original token NAMES are kept
+   (values changed) so page-level var() references cascade without edits.
+   ========================================================================== */
+
 @theme {
-  --color-ink: #0b0d0f;
-  --color-panel: #12151a;
-  --color-panel-2: #1a1f26;
-  --color-line: #2a313b;
-  --color-mute: #8b96a6;
-  --color-text: #e6edf3;
-  --color-accent: #d4a84b;
-  --color-good: #4ade80;
-  --color-warn: #f59e0b;
-  --color-bad: #ef4444;
+  /* --- grounds --- */
+  --color-ink: #0a0a0d; /* canvas — cool near-black (was #0b0d0f warm) */
+  --color-panel: #101116; /* cards / nav surface (was #12151a) */
+  --color-panel-2: #171a21; /* raised / inset surface (was #1a1f26) */
+
+  /* --- lines --- */
+  --color-line: #262b34; /* hairline border (cooler than #2a313b) */
+  --color-line-2: #333a46; /* stronger divider */
+
+  /* --- text / icon --- */
+  --color-text: #e7eaef; /* primary text (was #e6edf3) */
+  --color-icon: #c9ced6; /* icon stroke grey (from the reference) */
+  --color-mute: #838b96; /* secondary text (cooler than #8b96a6) */
+  --color-faint: #5c626c; /* eyebrows / tertiary */
+
+  /* --- accent (the headline change: gold -> blue) --- */
+  --color-accent: #4d8bff; /* interactive blue (was #d4a84b gold) */
+  --color-accent-2: #3b82f6; /* emphasis / the notification dot */
+  --color-accent-soft: rgba(77, 139, 255, 0.13);
+
+  /* --- semantic (kept distinct from the accent) --- */
+  --color-good: #52d98a;
+  --color-warn: #f5a623;
+  --color-bad: #f0616d; /* rosier red, distinct from warn on graphite */
+
+  /* --- compat aliases: these were REFERENCED but never defined; two were
+     rendering as invalid color (InsightsNarrative button, timeline ring).
+     Defining them here fixes those bugs and completes the cascade. --- */
+  --color-bg: #0a0a0d; /* alias of ink */
+  --color-fg: #e7eaef; /* alias of text */
+  --color-card: #14161c; /* subtle raised card (probes page) */
+
+  /* --- shape --- */
+  --radius-btn: 11px;
+  --radius-card: 14px;
+
+  /* --- depth --- */
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.45), 0 24px 48px -26px rgba(0, 0, 0, 0.7);
+  --shadow-pop:
+    0 1px 2px rgba(0, 0, 0, 0.5), 0 18px 40px -18px rgba(0, 0, 0, 0.75);
 }
 
-html, body {
+/* ---------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------- */
+
+html,
+body {
   background: var(--color-ink);
   color: var(--color-text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", Inter, sans-serif;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "SF Pro Text",
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* faint top-center accent glow — instrument-panel atmosphere, not noise */
+body {
+  background-image: radial-gradient(
+    120% 78% at 50% -12%,
+    rgba(77, 139, 255, 0.06),
+    transparent 55%
+  );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 .mono {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   Primitives — signature treatment shared across every page
+   ------------------------------------------------------------------------- */
+
+/* tabular numerals for any stat / score / metric */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* uppercase tracked eyebrow / section label */
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-faint);
+}
+
+/* hairline card with soft depth — the dominant container primitive */
+.card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* rounded-square control from the reference (search / bell / help) */
+.icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-line);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--color-icon);
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.16s ease;
+}
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: color-mix(in srgb, var(--color-icon) 22%, transparent);
+}
+.icon-btn:active {
+  transform: translateY(0.5px);
+}
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* the punched notification dot */
+.dot-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--color-accent-2);
+  box-shadow: 0 0 0 3px var(--color-panel);
+}
+
+/* pill / chip */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.18em 0.6em;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-mute);
+}
+.pill-accent {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  background: var(--color-accent-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Interaction / a11y
+   ------------------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgba(77, 139, 255, 0.28);
+  color: #fff;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+/* thin cool scrollbars to match the instrument panel */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-2) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line-2);
+  border-radius: 999px;
+  border: 3px solid var(--color-ink);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-mute);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

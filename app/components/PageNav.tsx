@@ -29,51 +29,43 @@ interface Props {
   context?: { label: string; parentKey?: PageKey };
 }
 
+const ITEM_BASE =
+  "rounded-lg px-3 py-1.5 text-xs uppercase tracking-[0.14em] transition-colors";
+
 export default function PageNav({ current, context }: Props) {
   return (
     <nav
       aria-label="Primary"
-      className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-6 text-xs uppercase tracking-[0.15em]"
+      className="flex flex-wrap items-center gap-1 mb-8 -mx-1 px-1 py-2 border-b border-[color:var(--color-line)]"
     >
-      {PRIMARY.map((item, i) => {
+      {PRIMARY.map((item) => {
         const active =
           item.key === current ||
           (context?.parentKey === item.key && current !== "dashboard");
-        const isLast = i === PRIMARY.length - 1 && !context;
-        return (
-          <span key={item.key} className="flex items-baseline gap-x-4">
-            {active ? (
-              <span
-                aria-current="page"
-                className="text-[color:var(--color-fg,#e5e7eb)] font-semibold"
-              >
-                {item.label}
-              </span>
-            ) : (
-              <Link
-                href={item.href}
-                className="text-[color:var(--color-mute)] hover:text-[color:var(--color-accent)] transition-colors"
-              >
-                {item.label}
-              </Link>
-            )}
-            {!isLast && (
-              <span
-                aria-hidden="true"
-                className="text-[color:var(--color-line)]"
-              >
-                ·
-              </span>
-            )}
+        return active ? (
+          <span
+            key={item.key}
+            aria-current="page"
+            className={`${ITEM_BASE} font-semibold text-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] border border-[color:color-mix(in_srgb,var(--color-accent)_35%,transparent)]`}
+          >
+            {item.label}
           </span>
+        ) : (
+          <Link
+            key={item.key}
+            href={item.href}
+            className={`${ITEM_BASE} border border-transparent text-[color:var(--color-mute)] hover:text-[color:var(--color-text)] hover:bg-white/5`}
+          >
+            {item.label}
+          </Link>
         );
       })}
       {context && (
-        <span className="flex items-baseline gap-x-4">
-          <span aria-hidden="true" className="text-[color:var(--color-line)]">
+        <span className="flex items-center gap-2 ml-1">
+          <span aria-hidden="true" className="text-[color:var(--color-line-2)]">
             ›
           </span>
-          <span className="text-[color:var(--color-fg,#e5e7eb)] font-semibold normal-case tracking-normal text-sm">
+          <span className="text-[color:var(--color-text)] font-medium text-sm">
             {context.label}
           </span>
         </span>
