@@ -491,6 +491,46 @@ model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
   watched system. Always confirm by direct query (`gh run view <ID>
 --json status,conclusion,jobs`) before treating monitor failure as
   evidence the underlying task failed.
+- **A missing binary is a PATH bug until proven otherwise — and Claude Code's
+  shell is not your terminal's shell.** A Homebrew Intel→ARM migration
+  (`/usr/local` → `/opt/homebrew`) removes every formula in the old prefix,
+  so `node`, `npm`, and `gh` can vanish while `brew` itself still works. Two
+  independent failures stack, and fixing only one leaves you confused:
+  **(a)** the tools are genuinely uninstalled — confirm with
+  `brew list --versions node gh` (empty output = really gone, reinstall with
+  `brew install node gh`); **(b)** `~/.zprofile` still evals
+  `$(/usr/local/bin/brew shellenv)` for a `brew` that no longer exists, so
+  every **login** and **non-interactive** shell gets no Homebrew at all,
+  while the **interactive** terminal keeps working via the separate
+  `eval` in `~/.zshrc`. That split is the diagnostic signature: your terminal
+  is fine, Claude Code's shell finds nothing. **Diagnose by comparing shell
+  types before concluding a tool is uninstalled** —
+  `zsh -lc 'which node'` (login, reads `.zprofile`) vs
+  `zsh -ic 'which node'` (interactive, reads `.zshrc`) vs
+  `zsh -c 'which node'` (plain, reads only `.zshenv`). Fix `.zprofile` to
+  point at `/opt/homebrew/bin/brew`; leave `.zshenv` alone (Homebrew
+  recommends `.zprofile`, and `shellenv` in `.zshenv` runs on every script
+  invocation). **Two corollaries.** First, an _already-running_ Claude Code
+  session inherits the PATH captured at session start and will not see the
+  fix — use absolute paths (`/opt/homebrew/bin/gh`) to keep working, and
+  restart to pick it up. Second, `npm -g` packages installed under the old
+  node are stranded in `/usr/local/lib/node_modules`: they still _run_
+  (their shebangs resolve `node` via PATH) but stay frozen at their old
+  version, which reads as stale-version warnings rather than breakage.
+  Reinstalling each with the new npm lands it in `/opt/homebrew` and
+  shadows the orphan. `/usr/local/bin` itself is **not** a dead Homebrew
+  prefix — it holds live Docker/gcloud/python.org tooling; never clean it
+  out wholesale. Encountered 2026-07-30; cost a full session's diagnosis.
+- **Broken `node_modules` after a node reinstall is usually the npm
+  optional-dependency bug**, not a corrupt lockfile. Symptom:
+  `Cannot find module @rollup/rollup-darwin-arm64` failing vitest at
+  startup, before any test runs
+  ([npm/cli#4828](https://github.com/npm/cli/issues/4828)). Fix with
+  `npm ci` — it removes `node_modules` itself (no `rm -rf`, which
+  `block-destructive.sh` blocks anyway) and reinstalls from the tracked
+  lockfile without rewriting `package-lock.json`. Prefer it over
+  `rm node_modules package-lock.json && npm i`, which regenerates the
+  lockfile and can silently bump transitive versions.
 - **Plan-step verification must use the actual consumer tool, not just filesystem checks.** When a plan step produces a published artifact — a markdown link inside a built docs site, a TypeScript import, a JSON Schema reference, an OpenAPI route — the verification step must invoke the tool that consumes the artifact (`mkdocs build --strict`, `npx tsc --noEmit`, `ajv validate`, etc.), not `test -f`. A filesystem path can resolve correctly on disk while violating the consumer's validity contract (e.g., mkdocs strict-mode rejects link targets outside `docs_dir`, regardless of whether `test -f` passes). Reference incident: ADIS PR #411 broke docker-push because Task δ.2's `test -f` verified the runbook existed on disk; the published link to it from `docs/site-src/ops/runbooks.md` failed `mkdocs build --strict`. Closed by PR #416. The cost of running the real consumer tool in a plan step is a one-off; the cost of a half-verified plan landing is a deploy outage.
 
 ## Issue tracking
