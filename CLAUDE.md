@@ -102,7 +102,7 @@ engineering-docs-agent's nightly fills in lens pages + `whats-new.md`.
 ## Tests
 
 ```bash
-npx vitest run            # 564 tests across 39 files, ~5s
+npx vitest run            # 695 tests across 48 files, ~3s
 ```
 
 If a test fails after a scoring change, update the fixture in
@@ -531,6 +531,40 @@ model-effort, parallel, permissions, planning`) — **`scheduled`, `remote`,
   lockfile without rewriting `package-lock.json`. Prefer it over
   `rm node_modules package-lock.json && npm i`, which regenerates the
   lockfile and can silently bump transitive versions.
+- **"How many Boris tips?" also has several answers — name which one.**
+  Directly analogous to the probe-count rule above, and the source of a
+  recurring "the docs contradict themselves" false alarm (raised again by a
+  `/graphify` extraction agent on 2026-07-30). The three numbers are all
+  correct about different things: **87** is the _upstream corpus_ advertised
+  at howborisusesclaudecode.com (`README.md` intro and the rubric-provenance
+  line); **86** is how many _numbered items_ the reference doc
+  `docs/site-src/boris-tips-reference-2026-05-10.md` actually captures across
+  its 10 threads; **75** is the _tracked set_ this repo indexes in
+  `app/data/boris-tip-index.json` and reports tracking status for. Only the
+  75 is load-bearing for scoring — `rubric.json` next-actions currently cite
+  43 distinct `borisTip` numbers, a subset of it. Before "fixing" an
+  apparent mismatch, work out which of the three a given sentence means;
+  re-deriving the wrong one into a doc is how the numbers drift apart in the
+  first place. Related known gap, unresolved and deliberately preserved: the
+  classification doc's row numbers and the reference doc's tip numbers
+  diverge (row 44 = iMessage vs reference tip 44 = Code Review), while
+  `rubric.json` follows the reference numbering.
+- **`/graphify` on this repo has two known structural artifacts — don't read
+  either as an architecture finding.** First, `app/data/boris-tip-index.json`
+  is an object of 75 uniform records, and AST extraction fragments each into
+  its own 5-node community (`label` / `tab` / `topic` / `volume` + parent).
+  That inflated the 2026-07-30 build from ~87 real subsystems to **161
+  communities**, and made the JSON's `tips` key the **#1 god node at 76
+  edges** — an artifact of the file's shape, not a hub in the codebase.
+  Discount both before drawing conclusions, and label that community family
+  as one group rather than hand-naming 74 of them. Second, the semantic
+  (LLM) pass runs one subagent per chunk, and agents freely emit edges
+  pointing at concepts owned by _other_ chunks: that build had **226
+  dangling-endpoint edges (~10% of 2,309 raw)**, all silently dropped at
+  build time (2,309 → 2,064). The health gate reports them at the extraction
+  stage while the built `graph.json` shows zero, so the two numbers
+  disagreeing is expected, not corruption. Treat graph edge counts as
+  lossy-by-construction unless the corpus fits in a single chunk.
 - **Plan-step verification must use the actual consumer tool, not just filesystem checks.** When a plan step produces a published artifact — a markdown link inside a built docs site, a TypeScript import, a JSON Schema reference, an OpenAPI route — the verification step must invoke the tool that consumes the artifact (`mkdocs build --strict`, `npx tsc --noEmit`, `ajv validate`, etc.), not `test -f`. A filesystem path can resolve correctly on disk while violating the consumer's validity contract (e.g., mkdocs strict-mode rejects link targets outside `docs_dir`, regardless of whether `test -f` passes). Reference incident: ADIS PR #411 broke docker-push because Task δ.2's `test -f` verified the runbook existed on disk; the published link to it from `docs/site-src/ops/runbooks.md` failed `mkdocs build --strict`. Closed by PR #416. The cost of running the real consumer tool in a plan step is a one-off; the cost of a half-verified plan landing is a deploy outage.
 
 ## Issue tracking
