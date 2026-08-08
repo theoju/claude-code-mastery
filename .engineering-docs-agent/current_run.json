@@ -1,0 +1,37 @@
+{
+  "current_run": {
+    "started_at": "2026-08-08T07:55:59.069649+00:00",
+    "head_sha": "e7850c0b4f3866cd726bb6ba9d1e7b5ea267b433",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-onboarding.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-predicate-dsl-grammar.md citation_exists: cites nonexistent symbol 'evaluatePredicate' in 'app/lib/assessment.ts'",
+      "lint_block: docs/site-src/2026-06-01-progression-milestone-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-02-memory-scoring-btw-unblend.md citation_exists: cites nonexistent symbol 'buildSignalsSummary' in 'scripts/run-assessment.mjs'",
+      "lint_block: docs/site-src/2026-06-02-v0.9.19-release-notes.md citation_exists: cites nonexistent path 'chore/release-X.Y.Z'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-monitor-zsh-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-github-pages-enablement-cleanup.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [
+      "`docs/site-src/2026-06-01-ship-journal-stage-credit.md`: Both counters, plus totalRuns and lastRunAt, are still gated by the same lookback-window cutoff and the same entry.outcome === \"shipped\" check as before \u2014 only the stage-detection logic changed. (vs `scripts/signals.mjs`)",
+      "`docs/site-src/2026-07-30-dashboard-graphite-retheme.md`: --color-bg, --color-fg, and --color-card were referenced elsewhere in the app (the InsightsNarrative button and a timeline ring, per the file's own comment) but were never defined as theme tokens, so they rendered as invalid color. (vs `app/globals.css`)",
+      "`docs/site-src/2026-07-30-dashboard-graphite-retheme.md`: the inactive/hover states route through the same cooled --color-mute / --color-text / --color-line-2 tokens (vs `app/components/PageNav.tsx`)",
+      "`docs/site-src/2026-07-30-graphify-tip-count-learnings.md`: `app/data/rubric.json` next-actions currently cite 43 distinct `borisTip` numbers, a subset of that 75. (vs `app/data/rubric.json`)"
+    ],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
