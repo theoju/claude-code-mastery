@@ -1,0 +1,34 @@
+{
+  "current_run": {
+    "started_at": "2026-08-09T07:57:27.378064+00:00",
+    "head_sha": "e7850c0b4f3866cd726bb6ba9d1e7b5ea267b433",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: page-author",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-onboarding.md citation_exists: cites nonexistent path 'theoju/engineering-docs-agent/.github/workflows/docs-agent-nightly.yml'; cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-predicate-evaluator-single-source.md citation_exists: cites nonexistent symbol 'evaluatePredicate' in 'app/lib/assessment.ts'",
+      "lint_block: docs/site-src/2026-06-01-ranked-next-actions-precomputed.md citation_exists: cites nonexistent symbol 'evaluatePredicate' in 'app/lib/assessment.ts'",
+      "lint_block: docs/site-src/2026-06-01-progression-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-01-ship-journal-stage-credit.md citation_exists: cites nonexistent symbol 'stageRanInEntry' in 'scripts/signals.mjs'; cites nonexistent symbol 'gatherShipJournal' in 'scripts/signals.mjs'",
+      "lint_block: docs/site-src/2026-06-02-release-v0.9.19.md citation_exists: cites nonexistent path 'chore/release-X.Y.Z'",
+      "lint_block: docs/site-src/2026-06-02-mkdocs-migration-decision.md citation_exists: cites nonexistent path 'docs/ship-pattern.md'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-github-pages-enablement-fix.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
