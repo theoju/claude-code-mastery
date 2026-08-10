@@ -1,0 +1,36 @@
+{
+  "current_run": {
+    "started_at": "2026-08-10T08:47:56.993384+00:00",
+    "head_sha": "e7850c0b4f3866cd726bb6ba9d1e7b5ea267b433",
+    "partial": true,
+    "partial_reasons": [
+      "prose_contamination_rescued: source-collector",
+      "prose_contamination_rescued: page-author",
+      "lint_block: docs/site-src/2026-05-29-progression-dual-source-architecture.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-29-progression-coverage-gap-cce-33.md citation_exists: cites nonexistent path 'app/data/progression.json'; cites nonexistent path 'app/data/progression-config.json'",
+      "lint_block: docs/site-src/2026-05-31-engineering-docs-agent-bootstrap.md citation_exists: cites nonexistent path 'templates/workflow-run.yml'",
+      "lint_block: docs/site-src/2026-06-01-self-assessment-predicate-dsl-grammar.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-05-31-predicate-ranker.md'; cites nonexistent symbol 'evaluatePredicate' in 'app/lib/assessment.ts'",
+      "lint_block: docs/site-src/2026-06-01-canonical-predicate-evaluator-and-ranked-next-actions.md citation_exists: cites nonexistent path '../../scripts/predicate.mjs'",
+      "lint_block: docs/site-src/2026-06-01-progression-scheduled-remote-verification-detectors.md citation_exists: cites nonexistent path 'app/data/progression.json'",
+      "lint_block: docs/site-src/2026-06-01-posture-volume-command-partition.md citation_exists: cites nonexistent path 'docs/superpowers/plans/2026-05-31-per-command-partition.md'",
+      "lint_block: docs/site-src/2026-06-02-cce78-btw-unblend-fix.md citation_exists: cites nonexistent symbol 'buildSignalsSummary' in 'scripts/run-assessment.mjs'",
+      "lint_block: docs/site-src/2026-06-02-mkdocs-docs-site-migration.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-02-pages-enablement-and-zsh-monitor-lessons.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-03-pages-enablement-cleanup.md citation_exists: cites nonexistent path 'scripts/enable_pages.py'",
+      "lint_block: docs/site-src/2026-06-04-plan-verification-consumer-tool.md citation_exists: cites nonexistent path 'docs/site-src/ops/runbooks.md'",
+      "prose_contamination_rescued: fact-checker"
+    ],
+    "fact_check_warnings": [],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
