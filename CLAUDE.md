@@ -96,7 +96,7 @@ verified on every PR by `.github/workflows/docs-build-check.yml`. The
 engineering-docs-agent's nightly fills in lens pages + `whats-new.md`.
 
 - Spec: `docs/superpowers/specs/2026-06-01-mkdocs-upgrade-design.md`
-- Plan: `docs/superpowers/plans/2026-06-01-mkdocs-upgrade.md`
+- Plan: `docs/superpowers/plans/archived/2026-06-01-mkdocs-upgrade.md`
 - Config: `.engineering-docs-agent/config.yml` (`framework: mkdocs`)
 
 ## Tests
