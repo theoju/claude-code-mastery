@@ -4,4 +4,5 @@
 - Reference
     - [Boris Tips](boris-tips-reference-2026-05-10.md)
     - [Tip Classification](tip-classification-2026-05-10.md)
+    - [Graphify Artifacts & Tip-Count Disambiguation](2026-07-30-graphify-artifacts-and-tip-count-disambiguation.md)
 - [What's New](whats-new.md)
