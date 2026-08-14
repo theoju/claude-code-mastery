@@ -3,7 +3,7 @@ status: draft
 sources:
   - https://github.com/theoju/claude-code-self-assessment/pull/110
 synthesized_into: []
-doc_kind: architecture
+doc_kind: decision
 ---
 
 # Command partition scoring

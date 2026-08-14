@@ -64,6 +64,8 @@ throughout the app cascade the new palette without any per-component edit.
 
 ## Scope
 
-Purely visual/CSS plus the one shared nav component. No API, schema, or
-scoring-logic impact — nothing here touches `scripts/score.mjs`, the rubric,
-or `assessment.json`'s shape.
+Purely visual/CSS plus the one shared nav component, with a `.gitignore`
+touch alongside them. No API, schema, or scoring-logic impact — nothing here
+touches `scripts/score.mjs`, the rubric, or `assessment.json`'s shape. Three
+files changed in total: `app/globals.css`, `app/components/PageNav.tsx`, and
+`.gitignore`.

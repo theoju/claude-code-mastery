@@ -20,9 +20,13 @@ Concretely: run `mkdocs build --strict`, `npx tsc --noEmit`, `ajv validate`,
 or whatever the real consumer is. Don't settle for `test -f`.
 
 This landed as a new convention bullet in `CLAUDE.md`, and it's not local to
-this repo — the same rule landed byte-identically across three sibling repos
-(ADIS, engineering-docs-agent, and this one) in the same cycle, because all
-three publish artifacts whose validity a filesystem check can't see.
+this repo — the same rule landed byte-identically (MD5-verified) across three
+sibling repos in the same cycle: advanced-data-import-system (PR #417),
+engineering-docs-agent (PR #106), and this one (PR #127). No application code
+changed in any of the three; each PR touched only its repo's own `CLAUDE.md`.
+All three publish artifacts whose validity a filesystem check can't see, so
+keeping the wording identical across repos matters — it's a shared planning
+convention, not three independent decisions that happen to agree.
 
 ## Why
 
