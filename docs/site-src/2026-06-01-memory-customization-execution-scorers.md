@@ -3,7 +3,7 @@ status: draft
 sources:
   - https://github.com/theoju/claude-code-self-assessment/pull/116
 synthesized_into: []
-doc_kind: decision
+doc_kind: architecture
 ---
 
 # Memory & Customization get real Execution scorers (CCE-76)
