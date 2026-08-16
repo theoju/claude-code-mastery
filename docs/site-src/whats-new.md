@@ -12,6 +12,9 @@ when it detects merged work worth surfacing in a user-facing
 changelog. Most entries are written by the agent and reviewed via
 the `docs-agent/YYYY-MM-DD` PR.
 
+## 2026-08-16T07:40:06.563542+00:00
+- PR #190: Advanced the engineering-docs-agent's collection bookmark in `.engineering-docs-agent/state.json` to commit 316cb69, ending a temporary hold that had kept the nightly PR-collection range pinned in place. Only the `last_successful_run`/bookmark values change; the state file's schema is unaffected.
+
 ## 2026-08-13T08:40:00.656336+00:00
 - PR #101: Added a Conventions entry to CLAUDE.md documenting the /progression timeline's dual milestone-source architecture: telemetry milestones (scripts/progression.mjs) self-dated from session start_time over full history, and config milestones (scripts/config-progression.mjs) which have no embedded timestamp and are instead frozen at the firstSeenAt of the first assessment run. It also explicitly records the known coverage gap — scheduled, remote, and verification dimensions have no milestone detector yet — tracked as CCE-33.
 - PR #100: Bootstraps the claude-code-self-assessment repository onto the engineering-docs-agent plugin, adding host configuration (.engineering-docs-agent/config.yml), a state seed file, and a nightly GitHub Actions workflow that invokes the docs agent. The plugin is configured with framework: none, so generated docs render as plain markdown via GitHub rather than through a static site generator.
