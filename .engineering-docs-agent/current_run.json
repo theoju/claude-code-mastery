@@ -1,0 +1,22 @@
+{
+  "current_run": {
+    "started_at": "2026-08-17T07:58:01.139960+00:00",
+    "head_sha": "91bc2b7aa7304251c082df1a19b2c5a99aaef6eb",
+    "partial": false,
+    "partial_reasons": [
+      "authoring_hard_cap_squeezed: run.time_budget_seconds (2700s) plus the merge poll (900s) plus the 285s post-run tail already fills the GitHub App token's 3600s TTL, so the authoring hard cap is held at the budget instead of 3104s. Page authoring can be cut mid-PR-group again and such a run earns no baseline advance. Lower run.time_budget_seconds or merge.checks_timeout_seconds."
+    ],
+    "fact_check_warnings": [],
+    "source_drift": [],
+    "citation_drift": {
+      "checked": 0,
+      "ok": 0,
+      "relocated": [],
+      "ambiguous": [],
+      "gone": [],
+      "pages_review_needed": []
+    },
+    "core_drift": [],
+    "pr_number": null
+  }
+}
