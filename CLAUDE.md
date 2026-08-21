@@ -9,7 +9,7 @@ Anthropic API calls, no telemetry uploaded.
 ```bash
 npm run dev            # Next.js dev server (Turbopack) on http://localhost:3737
 npm run build          # production build
-npm run lint           # next lint
+npm run lint           # eslint (flat config, eslint.config.mjs)
 
 npm run assess         # score local setup → write assessment.json (+ Slack if enabled)
 npm run assess:print   # same, but --print --no-slack (full dimension block to stdout)

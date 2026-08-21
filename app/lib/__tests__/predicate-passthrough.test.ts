@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { evaluatePredicate as fromTs } from "@/app/lib/assessment";
-// @ts-expect-error — .mjs has no type declarations; this is intentional
+// Imported straight from the .mjs source on purpose — the TS re-export must be
+// reference-equal to it (see CLAUDE.md "DSL evaluator has one source").
 import { evaluatePredicate as fromMjs } from "@/scripts/predicate.mjs";
 
 describe("evaluatePredicate — TS/MJS passthrough", () => {

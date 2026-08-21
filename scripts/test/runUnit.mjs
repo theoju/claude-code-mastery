@@ -1,7 +1,7 @@
 // Spawns vitest with V8 coverage and parses the resulting JSON summary.
 
 import { spawn } from "node:child_process";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 

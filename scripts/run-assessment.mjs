@@ -5,7 +5,6 @@
 //   node scripts/run-assessment.mjs [--no-slack] [--no-write] [--print]
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
