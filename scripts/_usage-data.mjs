@@ -620,12 +620,38 @@ export async function scanTranscriptModes(path) {
   };
 }
 
-// Classify a session by transcript-file inspection. Cheap: only reads
-// the first ~5 lines until a recognized signal is found.
+// The complete set of entrypoints a human drives directly. CCE-164: this is
+// an ALLOW-LIST on purpose — see classifySessionKind for why the inverse
+// (enumerating the machine-driven ones) shipped a 3.8x denominator inflation.
+const INTERACTIVE_ENTRYPOINTS = new Set(["cli", "claude-desktop"]);
+
+// How far into a transcript to look for the first row carrying `entrypoint`.
+// CCE-164 corpus census (639 transcripts, 2026-08-20): the field appears at
+// line p50=3, p90=6, max=83. The previous bound of 5 truncated that tail and
+// left 39 sessions unclassified. 200 clears it with room; the loop still
+// breaks on the first entrypoint row, so the common case reads three lines.
+const ENTRYPOINT_SCAN_BOUND = 200;
+
+// Classify a session by transcript-file inspection. Cheap: breaks at the
+// first row carrying `entrypoint` (typically line 3).
 //
 // Posture scorers (permissions, plan, learning) must restrict their
 // universe to "interactive_cli" — SDK/observer/subagent sessions don't
 // honor user-level settings and would silently dilute the ratio.
+//
+// CCE-164: this classifier FAILS CLOSED. An entrypoint that is not in
+// INTERACTIVE_ENTRYPOINTS is machine-driven, full stop — it does not fall
+// through to "unknown". The previous shape enumerated the SDK entrypoints it
+// knew ("sdk-cli") and let everything else land in "unknown", which the
+// `interactive_or_unknown` universe then ADMITS. When `sdk-py` appeared
+// upstream, 226 automated agent sessions silently entered the posture
+// universe and diluted the Memory Execution denominator 353 vs 93.
+// Under-counting a posture denominator is conservative; over-counting is the
+// bug that shipped. Adding a genuinely interactive entrypoint is a one-line
+// change to the set above, covered by a test that names each value.
+//
+// "unknown" now means exactly one thing: no `entrypoint` row was found
+// (missing transcript, unreadable file, or a shape that lacks the field).
 export async function classifySessionKind(path) {
   if (path.includes("/subagents/agent-")) return "subagent";
 
@@ -635,7 +661,7 @@ export async function classifySessionKind(path) {
   let scanned = 0;
   try {
     for await (const raw of rl) {
-      if (++scanned > 5) break;
+      if (++scanned > ENTRYPOINT_SCAN_BOUND) break;
       if (!raw) continue;
       let entry;
       try {
@@ -645,12 +671,10 @@ export async function classifySessionKind(path) {
       }
       const ep = entry.entrypoint;
       if (typeof ep !== "string") continue;
-      if (ep === "cli" || ep === "claude-desktop") return "interactive_cli";
-      if (ep === "sdk-cli") {
-        return path.includes("observer-sessions")
-          ? "observer"
-          : "sdk_orchestrated";
-      }
+      if (INTERACTIVE_ENTRYPOINTS.has(ep)) return "interactive_cli";
+      return path.includes("observer-sessions")
+        ? "observer"
+        : "sdk_orchestrated";
     }
   } finally {
     rl.close();

@@ -7,6 +7,12 @@
 the `_meta` sidecar), `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`),
 `scripts/_usage-data.mjs` (transcript scanners),
 `scripts/run-assessment.mjs#buildSignalsSummary` (74 `signalsSummary` keys).
+**CCE-164** (2026-08-20) fixed `classifySessionKind`, which had been
+misclassifying 43% of in-window sessions as `unknown` — see the
+`[^partition]` footnote. **No probe-set change**: no probes, catalog entries,
+or `signalsSummary` keys were added or removed, so the five machine-enforced
+header counts above are unchanged. What changed is what the existing
+`interactive_cli` / `unknown` buckets *contain*.
 Snapshot current as of **CCE-33 branch** (adds three progression milestone detectors for
 `scheduled` tip 48, `remote` tip 35, `verification` tip 73 — no probe-set change,
 no count changes). **v0.9.17** shipped two
@@ -285,7 +291,7 @@ had no telemetry-dated detectors).
 > it is **E** (Execution flavor, consistent with the Insights / cooked telemetry
 > layer's conventions).
 
-[^partition]: As of PR #110 (spec 2026-05-31), the nine posture commands listed below (`color`, `voice`, `focus`, `btw`, `clear`, `compact`, `simplify`, `rewind`, `fewer-permission-prompts`) are counted from transcripts only when `classifySessionKind` returns `interactive_cli` or `unknown`. Observer and SDK-orchestrated sessions still echo the primary session's `<command-name>` markup but no longer inflate posture counters. The five volume commands (`loop`, `schedule`, `babysit`, `go`, `batch`) remain counted across every scanned session kind. See `scripts/_usage-data.mjs` `POSTURE_COMMANDS` / `VOLUME_COMMANDS` for the canonical partition.
+[^partition]: As of PR #110 (spec 2026-05-31), the nine posture commands listed below (`color`, `voice`, `focus`, `btw`, `clear`, `compact`, `simplify`, `rewind`, `fewer-permission-prompts`) are counted from transcripts only when `classifySessionKind` returns `interactive_cli` or `unknown`. Observer and SDK-orchestrated sessions still echo the primary session's `<command-name>` markup but no longer inflate posture counters. The five volume commands (`loop`, `schedule`, `babysit`, `go`, `batch`) remain counted across every scanned session kind. See `scripts/_usage-data.mjs` `POSTURE_COMMANDS` / `VOLUME_COMMANDS` for the canonical partition. **CCE-164 (2026-08-20) corrected what `unknown` means.** The classifier enumerated the machine-driven entrypoints it knew (`sdk-cli`) and let everything else fall through to `unknown`, which `interactive_or_unknown` then *admits* — so when `sdk-py` appeared upstream, 226 automated agent sessions entered the posture universe and inflated the Memory Execution denominator to 353 against a true 93. A second defect, a 5-line scan bound, hid a further 39 sessions whose `entrypoint` row sits deeper (corpus max: line 83). The classifier now uses an allow-list (`INTERACTIVE_ENTRYPOINTS = {cli, claude-desktop}`) and **fails closed**: any other entrypoint is `observer` or `sdk_orchestrated`, never `unknown`. `unknown` now means exactly one thing — no `entrypoint` row was found at all. Full analysis: `docs/superpowers/specs/2026-08-20-cce164-session-classifier-defect-design.md`.
 
 [^journal-stage-credit]: As of PR #113 (CCE-72, spec 2026-06-01), `gatherShipJournal` counts stage execution across all three journal format generations: singular `entry.stage`, legacy-numeric `stages_run`, and new-string `stages_run`. `simplifyCommandUses` is MAX-merged with the journal's `simplifyStageCount` at the projection layer (`run-assessment.mjs`). `shipVerifyStageRecent` consumes the now-broader `stage2Count` automatically. The five machine-enforced header counts are unchanged (no new probes / catalog entries / signalsSummary keys).
 
