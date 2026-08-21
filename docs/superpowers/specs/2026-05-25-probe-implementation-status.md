@@ -3,10 +3,10 @@
 **Date:** 2026-05-25
 **Status:** Living tracker — update on every probe add/remove.
 **Validated against:** `app/data/boris-tip-index.json` (75 tips), `app/data/rubric.json`
-(12 dimensions / 48 next-actions), `app/data/probe-catalog.json` (48 probes +
+(12 dimensions / 48 next-actions), `app/data/probe-catalog.json` (50 probes +
 the `_meta` sidecar), `scripts/score.mjs` (`SCORERS` + `EXECUTION_SCORERS`),
 `scripts/_usage-data.mjs` (transcript scanners),
-`scripts/run-assessment.mjs#buildSignalsSummary` (72 `signalsSummary` keys).
+`scripts/run-assessment.mjs#buildSignalsSummary` (74 `signalsSummary` keys).
 Snapshot current as of **CCE-33 branch** (adds three progression milestone detectors for
 `scheduled` tip 48, `remote` tip 35, `verification` tip 73 — no probe-set change,
 no count changes). **v0.9.17** shipped two
@@ -178,6 +178,8 @@ the LHS of `satisfiedWhen` predicates. "Catalog" = present in `probe-catalog.jso
 | `clearCommandUses`[^memory-customization-exec]   | `clearCommandUses>=1` (memory)                                                                                           | ✅      | P\*  |
 | `compactCommandUses`[^memory-customization-exec] | `compactCommandUses>=1` (memory)                                                                                         | ✅      | P\*  |
 | `colorCommandUses`[^memory-customization-exec]   | `colorCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
+| `memoryToolSessionCount`                         | — (Execution ratio input, CCE-163: claude-mem/graphify session coverage)                                                 | ✅      | E    |
+| `memoryHygieneSessions`                          | — (Execution ratio numerator, CCE-163: /clear ∪ /compact ∪ memory tools)                                                 | ✅      | E    |
 | `fewerPermsCommandUses`                          | `fewerPermsCommandUses>=1` (permissions)                                                                                 | ✅      | P\*  |
 | `focusCommandUses`[^memory-customization-exec]   | `focusCommandUses>=1` (customization)                                                                                    | ✅      | P\*  |
 | `scheduleCommandUses`                            | `scheduleCommandUses>=1` (scheduled)                                                                                     | ✅      | P\*  |

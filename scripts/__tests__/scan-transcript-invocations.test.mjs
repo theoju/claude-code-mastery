@@ -104,6 +104,8 @@ describe("scanTranscriptInvocations", () => {
       colorCommandUses: 0,
       fewerPermsCommandUses: 0,
       effortMaxCommandUses: 0,
+      memoryToolSessionCount: 0,
+      memoryHygieneSessions: 0,
     });
   });
 
@@ -477,5 +479,97 @@ describe("scanTranscriptInvocations", () => {
       lookbackDays: 30,
     });
     expect(r.goCommandUses).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CCE-163 — memory-tool session coverage.
+//
+// Source-level gate tests, deliberately not fixture-fed: PR #97 shipped a
+// numerator whose gates did not match its denominator, and the fixture-fed
+// scorer tests passed the whole way. These drive the real scanner so a
+// gate-drop at the counting layer fails CI.
+// ---------------------------------------------------------------------------
+describe("scanTranscriptInvocations — memory tooling (CCE-163)", () => {
+  const entrypoint = (ep) =>
+    JSON.stringify({ type: "user", entrypoint: ep, timestamp: "2026-05-09T12:00:00Z", message: { role: "user", content: "hi" } });
+
+  const toolUse = (name, input = {}) =>
+    JSON.stringify({
+      type: "assistant",
+      timestamp: "2026-05-09T12:00:01Z",
+      message: { role: "assistant", content: [{ type: "tool_use", name, input }] },
+    });
+
+  const scan = () =>
+    scanTranscriptInvocations({
+      projectsRoot,
+      now: new Date("2026-05-10T00:00:00Z"),
+      lookbackDays: 30,
+    });
+
+  it("counts a claude-mem MCP call in an interactive session", async () => {
+    writeSession("interactive", [
+      entrypoint("cli"),
+      toolUse("mcp__plugin_claude-mem_mcp-search__search"),
+    ]);
+    const r = await scan();
+    expect(r.memoryToolSessionCount).toBe(1);
+    expect(r.memoryHygieneSessions).toBe(1);
+  });
+
+  it("counts graphify via both Bash and the Skill tool", async () => {
+    writeSession("viabash", [entrypoint("cli"), toolUse("Bash", { command: "graphify query 'x'" })]);
+    writeSession("viaskill", [entrypoint("cli"), toolUse("Skill", { skill: "graphify" })]);
+    const r = await scan();
+    expect(r.memoryToolSessionCount).toBe(2);
+  });
+
+  it("does NOT count an sdk_orchestrated session — gated to interactive_cli ∪ unknown", async () => {
+    writeSession("sdkrun", [
+      entrypoint("sdk-cli"),
+      toolUse("mcp__plugin_claude-mem_mcp-search__search"),
+    ]);
+    const r = await scan();
+    expect(r.memoryToolSessionCount).toBe(0);
+    expect(r.memoryHygieneSessions).toBe(0);
+  });
+
+  it("does NOT count an MCP tool LISTING with no tool_use entry", async () => {
+    // The trap this whole design turns on: every session's system prompt
+    // carries the MCP tool listing, so text matching reported 1,513 sessions
+    // against 15 real invocations in the 30-day survey.
+    writeSession("listingonly", [
+      entrypoint("cli"),
+      assistantText(
+        "Available: mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline",
+      ),
+      userText("mcp__plugin_claude-mem_mcp-search__smart_search sounds useful"),
+    ]);
+    const r = await scan();
+    expect(r.memoryToolSessionCount).toBe(0);
+  });
+
+  it("counts a session once regardless of invocation volume", async () => {
+    writeSession("heavy", [
+      entrypoint("cli"),
+      ...Array.from({ length: 40 }, () => toolUse("Bash", { command: "graphify update" })),
+    ]);
+    const r = await scan();
+    expect(r.memoryToolSessionCount).toBe(1);
+  });
+
+  it("unions mechanisms per session rather than summing them", async () => {
+    // One session using /clear AND a memory tool contributes 1, not 2.
+    writeSession("both", [
+      entrypoint("cli"),
+      userText("<command-name>/clear</command-name>"),
+      toolUse("Bash", { command: "graphify query 'x'" }),
+    ]);
+    writeSession("toolonly", [entrypoint("cli"), toolUse("Skill", { skill: "graphify" })]);
+    const r = await scan();
+    expect(r.memoryHygieneSessions).toBe(2);
+    expect(r.memoryToolSessionCount).toBe(2);
+    expect(r.clearCommandUses).toBe(1);
   });
 });

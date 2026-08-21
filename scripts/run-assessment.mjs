@@ -140,6 +140,12 @@ export function buildSignalsSummary(signals) {
     voiceCommandUses: maxProbe(signals, "voiceCommandUses"),
     clearCommandUses: maxProbe(signals, "clearCommandUses"),
     compactCommandUses: maxProbe(signals, "compactCommandUses"),
+    // CCE-163: transcript-only. Memory tooling is invoked as tool calls, not
+    // typed slash commands, so there is no history.jsonl counterpart to merge.
+    memoryToolSessionCount:
+      signals.transcriptInvocations?.memoryToolSessionCount ?? 0,
+    memoryHygieneSessions:
+      signals.transcriptInvocations?.memoryHygieneSessions ?? 0,
     colorCommandUses: maxProbe(signals, "colorCommandUses"),
     fewerPermsCommandUses: maxProbe(signals, "fewerPermsCommandUses"),
     // Tip 34 (Boris): the /effort max reflex. Transcript-only — /effort

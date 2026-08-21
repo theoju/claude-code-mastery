@@ -233,6 +233,35 @@ function assistantToolUseName(line) {
   return null;
 }
 
+// CCE-163: external memory tooling counts toward Memory Execution alongside
+// /clear and /compact. Detection MUST parse tool_use entries — matching raw
+// transcript text is wrong here, because the MCP tool *listing* is injected
+// into every session's system prompt: a text grep for "claude-mem" matched
+// 1,513 sessions against 15 real invocations in the 30-day survey.
+export function isMemoryToolUse(item) {
+  if (item?.type !== "tool_use" || typeof item.name !== "string") return false;
+  if (item.name.includes("claude-mem")) return true;
+  if (item.name === "Skill") {
+    const skill = item.input?.skill;
+    if (typeof skill === "string" && /graphify/i.test(skill)) return true;
+  }
+  if (item.name === "Bash") {
+    const cmd = item.input?.command;
+    if (typeof cmd === "string" && /\bgraphify\b/.test(cmd)) return true;
+  }
+  return false;
+}
+
+// True when an assistant turn contains at least one memory-tool invocation.
+// Unlike assistantToolUseName this inspects every content block, not just the
+// first — a turn can call Bash and a memory tool in the same message.
+export function hasMemoryToolUse(line) {
+  if (line?.type !== "assistant" || !line.message) return false;
+  const c = line.message.content;
+  if (!Array.isArray(c)) return false;
+  return c.some(isMemoryToolUse);
+}
+
 export async function scanTranscriptInvocations(options = {}) {
   const counts = {
     goCommandUses: 0,
@@ -251,6 +280,9 @@ export async function scanTranscriptInvocations(options = {}) {
     colorCommandUses: 0,
     fewerPermsCommandUses: 0,
     effortMaxCommandUses: 0,
+    // CCE-163: session-coverage counters for the Memory Execution union.
+    memoryToolSessionCount: 0,
+    memoryHygieneSessions: 0,
   };
   // Vitest skip: when integration tests run gatherSignals without injecting
   // projectsRoot, don't walk the developer's real ~/.claude/projects/.
@@ -313,6 +345,7 @@ export async function scanTranscriptInvocations(options = {}) {
     let sessionHasFewerPerms = false;
     let sessionHasEffortMax = false;
     let sessionHasFocus = false;
+    let sessionHasMemoryTool = false;
     let sessionHasRewind = false;
     const window = [];
 
@@ -347,6 +380,11 @@ export async function scanTranscriptInvocations(options = {}) {
         // <command-name> markup, so it sits outside the partition.
         if (hasEffortMax(uText)) sessionHasEffortMax = true;
       }
+
+      // Gated to interactive_cli ∪ unknown exactly like posture commands:
+      // the union numerator must stay a subset of the Execution denominator's
+      // universe, or the ratio can exceed 100% (PR #97 failure mode).
+      if (allowPosture && hasMemoryToolUse(line)) sessionHasMemoryTool = true;
 
       const toolName = assistantToolUseName(line);
       if (toolName === "ExitPlanMode") {
@@ -415,6 +453,13 @@ export async function scanTranscriptInvocations(options = {}) {
     if (sessionHasEffortMax) counts.effortMaxCommandUses++;
     if (sessionHasFocus) counts.focusCommandUses++;
     if (sessionHasRewind) counts.rewindCommandUses++;
+    if (sessionHasMemoryTool) counts.memoryToolSessionCount++;
+    // Union, not sum: a session using /clear AND /compact AND a memory tool
+    // counts once. This keeps the numerator in the same counter class
+    // (session-coverage) as its denominator.
+    if (sessionHasClear || sessionHasCompact || sessionHasMemoryTool) {
+      counts.memoryHygieneSessions++;
+    }
   }
   return counts;
 }
