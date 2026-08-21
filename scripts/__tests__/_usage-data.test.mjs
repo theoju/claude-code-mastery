@@ -520,7 +520,7 @@ describe("classifySessionKind", () => {
     expect(await classifySessionKind(path)).toBe("sdk_orchestrated");
   });
 
-  it("returns 'unknown' when no entrypoint is found within first 5 lines", async () => {
+  it("returns 'unknown' when the transcript carries no entrypoint row at all", async () => {
     const dir = mkdtempSync(join(tmpdir(), "kind-"));
     const path = join(dir, "session.jsonl");
     writeFileSync(
@@ -537,6 +537,105 @@ describe("classifySessionKind", () => {
     const path = join(dir, "session.jsonl");
     writeFileSync(path, "");
     expect(await classifySessionKind(path)).toBe("unknown");
+  });
+
+  // --- CCE-164: the classifier must fail CLOSED on unrecognized entrypoints,
+  // and must look past the leading non-entrypoint rows modern transcripts emit.
+
+  it("classifies entrypoint=sdk-py as sdk_orchestrated, not unknown", async () => {
+    // Defect 1. sdk-py was unhandled, fell through to "unknown", and the
+    // interactive_or_unknown universe then admitted 226 automated agent
+    // sessions into the posture denominator.
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    writeFileSync(
+      path,
+      JSON.stringify({ type: "user", entrypoint: "sdk-py" }) + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("sdk_orchestrated");
+  });
+
+  it("classifies an unrecognized future entrypoint as sdk_orchestrated (fails closed)", async () => {
+    // The regression guard for the defect CLASS, not just the sdk-py instance:
+    // a machine-driven entrypoint nobody has seen yet must never default into
+    // the posture universe.
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    writeFileSync(
+      path,
+      JSON.stringify({ type: "user", entrypoint: "sdk-rb-not-yet-invented" }) +
+        "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("sdk_orchestrated");
+  });
+
+  it("classifies a non-cli entrypoint under observer-sessions as observer", async () => {
+    // The observer path check applies to every machine-driven entrypoint,
+    // not only sdk-cli.
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
+    const projectDir = join(dir, "-Users-theo--claude-mem-observer-sessions");
+    mkdirSync(projectDir, { recursive: true });
+    const path = join(projectDir, "session.jsonl");
+    writeFileSync(
+      path,
+      JSON.stringify({ type: "user", entrypoint: "sdk-py" }) + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("observer");
+  });
+
+  it("finds an entrypoint row preceded by queue-operation and attachment rows", async () => {
+    // Defect 2, in the shape it actually occurs: real transcripts lead with
+    // queue-operation / attachment rows that carry no entrypoint.
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    const lines = [
+      JSON.stringify({ type: "queue-operation", operation: "enqueue" }),
+      JSON.stringify({ type: "attachment", attachment: {} }),
+      JSON.stringify({ type: "attachment", attachment: {} }),
+      JSON.stringify({ type: "queue-operation", operation: "drain" }),
+      JSON.stringify({ type: "ai-title" }),
+      JSON.stringify({ type: "user", entrypoint: "cli" }),
+    ];
+    writeFileSync(path, lines.join("\n") + "\n");
+    expect(await classifySessionKind(path)).toBe("interactive_cli");
+  });
+
+  it("finds an entrypoint row at line 80 (past the old 5-line bound)", async () => {
+    // Corpus max observed was line 83; the scan bound must clear it.
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    const noise = Array.from({ length: 79 }, (_, i) =>
+      JSON.stringify({ type: "queue-operation", n: i }),
+    );
+    noise.push(JSON.stringify({ type: "user", entrypoint: "cli" }));
+    writeFileSync(path, noise.join("\n") + "\n");
+    expect(await classifySessionKind(path)).toBe("interactive_cli");
+  });
+
+  it("stops scanning at the bound rather than reading the whole file", async () => {
+    // The bound is a real ceiling, not Infinity — a pathological transcript
+    // must not turn an O(1) classification into a full-file read.
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
+    const path = join(dir, "session.jsonl");
+    const noise = Array.from({ length: 250 }, (_, i) =>
+      JSON.stringify({ type: "queue-operation", n: i }),
+    );
+    noise.push(JSON.stringify({ type: "user", entrypoint: "cli" }));
+    writeFileSync(path, noise.join("\n") + "\n");
+    expect(await classifySessionKind(path)).toBe("unknown");
+  });
+
+  it("short-circuits to subagent even when the file carries entrypoint=cli", async () => {
+    // Path check must win over content inspection.
+    const dir = mkdtempSync(join(tmpdir(), "kind-"));
+    const subDir = join(dir, "abc-session", "subagents");
+    mkdirSync(subDir, { recursive: true });
+    const path = join(subDir, "agent-deadbeef.jsonl");
+    writeFileSync(
+      path,
+      JSON.stringify({ type: "user", entrypoint: "cli" }) + "\n",
+    );
+    expect(await classifySessionKind(path)).toBe("subagent");
   });
 });
 

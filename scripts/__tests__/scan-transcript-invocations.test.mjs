@@ -573,3 +573,88 @@ describe("scanTranscriptInvocations — memory tooling (CCE-163)", () => {
     expect(r.clearCommandUses).toBe(1);
   });
 });
+
+describe("scanTranscriptInvocations — posture gate closes on unrecognized entrypoints (CCE-164)", () => {
+  const entrypoint = (ep) =>
+    JSON.stringify({
+      type: "user",
+      entrypoint: ep,
+      timestamp: "2026-05-09T12:00:00Z",
+      message: { role: "user", content: "hi" },
+    });
+
+  const toolUse = (name, input = {}) =>
+    JSON.stringify({
+      type: "assistant",
+      timestamp: "2026-05-09T12:00:01Z",
+      message: {
+        role: "assistant",
+        content: [{ type: "tool_use", name, input }],
+      },
+    });
+
+  const scan = () =>
+    scanTranscriptInvocations({
+      projectsRoot,
+      now: new Date("2026-05-10T00:00:00Z"),
+      lookbackDays: 30,
+    });
+
+  it("does not count posture commands from an sdk-py session", async () => {
+    // The numerator half of the CCE-164 defect. allowPosture is derived from
+    // classifySessionKind, so before the fix an sdk-py session read as
+    // "unknown" and its /clear counted as user posture.
+    writeSession("py", [entrypoint("sdk-py"), userMarkup("/clear")]);
+    const r = await scan();
+    expect(r.clearCommandUses).toBe(0);
+    expect(r.memoryHygieneSessions).toBe(0);
+  });
+
+  it("does not count memory-tool use from an sdk-py session", async () => {
+    writeSession("py-tool", [
+      entrypoint("sdk-py"),
+      toolUse("mcp__plugin_claude-mem_mcp-search__search"),
+    ]);
+    const r = await scan();
+    expect(r.memoryToolSessionCount).toBe(0);
+    expect(r.memoryHygieneSessions).toBe(0);
+  });
+
+  it("does not count posture commands from an unrecognized future entrypoint", async () => {
+    writeSession("future", [
+      entrypoint("sdk-rb-not-yet-invented"),
+      userMarkup("/compact"),
+    ]);
+    const r = await scan();
+    expect(r.compactCommandUses).toBe(0);
+    expect(r.memoryHygieneSessions).toBe(0);
+  });
+
+  it("still counts volume commands from an sdk-py session", async () => {
+    // The partition must survive the fix: autonomous-workflow signal is real
+    // regardless of which session kind emitted it (PR #110). A blanket
+    // "exclude non-interactive sessions" fix is exactly what regressed
+    // `scheduled` 75 -> 63 in v0.9.17 and had to be reverted.
+    writeSession("py-vol", [entrypoint("sdk-py"), userMarkup("/schedule")]);
+    const r = await scan();
+    expect(r.scheduleCommandUses).toBe(1);
+  });
+
+  it("counts posture commands from an interactive session whose entrypoint row is buried", async () => {
+    // The denominator and numerator must agree about the same session: a real
+    // transcript leads with queue-operation / attachment rows.
+    writeSession("buried", [
+      JSON.stringify({ type: "queue-operation", operation: "enqueue" }),
+      JSON.stringify({ type: "attachment", attachment: {} }),
+      JSON.stringify({ type: "attachment", attachment: {} }),
+      JSON.stringify({ type: "queue-operation", operation: "drain" }),
+      JSON.stringify({ type: "ai-title" }),
+      JSON.stringify({ type: "mode" }),
+      entrypoint("cli"),
+      userMarkup("/clear"),
+    ]);
+    const r = await scan();
+    expect(r.clearCommandUses).toBe(1);
+    expect(r.memoryHygieneSessions).toBe(1);
+  });
+});

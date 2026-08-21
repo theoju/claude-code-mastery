@@ -102,7 +102,7 @@ engineering-docs-agent's nightly fills in lens pages + `whats-new.md`.
 ## Tests
 
 ```bash
-npx vitest run            # 734 tests across 49 files, ~3s
+npx vitest run            # 761 tests across 49 files, ~3s
 ```
 
 If a test fails after a scoring change, update the fixture in
@@ -194,6 +194,32 @@ two-axis Slack/console renderers don't fall back to the unmeasured form.
   denominator's, and back it with a source-level
   `gatherInsightsSignals` test (not just a fixture-fed scorer test) so a
   future gate-drop at the counting layer fails CI.
+- **Session-kind classification must fail closed.** `classifySessionKind`
+  in [/Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs](/Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs)
+  decides which sessions count as user-driven. It uses an **allow-list** —
+  `INTERACTIVE_ENTRYPOINTS = {cli, claude-desktop}` — and every other
+  `entrypoint` value resolves to `observer` or `sdk_orchestrated`. **Never
+  invert this into "enumerate the SDK entrypoints and let the rest fall
+  through to `unknown`."** `unknown` is *admitted* by the
+  `interactive_or_unknown` universe, so an unrecognized entrypoint that
+  degrades to `unknown` silently enters the posture denominator. That is
+  exactly what shipped: `sdk-py` was unhandled, 226 automated agent sessions
+  landed in `unknown`, and the Memory Execution denominator read **353
+  against a true 93** — a 3.8x dilution that scored a well-instrumented
+  machine at 37/100 (CCE-164, 2026-08-20). Under-counting a posture
+  denominator is conservative; over-counting is the bug. **Second defect in
+  the same function:** the scan bound was 5 lines, but modern transcripts
+  lead with `queue-operation` and `attachment` rows and the corpus census
+  put the first `entrypoint` row as deep as **line 83** — 39 further
+  sessions were misclassified. The bound is now `ENTRYPOINT_SCAN_BOUND = 200`
+  and the loop still breaks on the first `entrypoint` row (p50 = 3).
+  **Diagnostic reflex:** if a posture Execution score looks implausibly low,
+  print `sessionsByKind` **before** touching the scorer — a large `unknown`
+  bucket is a classifier bug, not user behavior. After CCE-164, `unknown`
+  means exactly one thing: no `entrypoint` row was found (missing transcript
+  or unreadable file), and it is 0 across all 639 transcripts on this
+  machine. Spec:
+  `docs/superpowers/specs/2026-08-20-cce164-session-classifier-defect-design.md`.
 - **Command counting honors the posture-vs-volume partition** —
   `POSTURE_COMMANDS` / `VOLUME_COMMANDS` in
   [/Users/theo/Projects/claude-extensions/scripts/\_usage-data.mjs](/Users/theo/Projects/claude-extensions/scripts/_usage-data.mjs)

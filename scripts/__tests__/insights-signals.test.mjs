@@ -871,3 +871,113 @@ describe("interactiveOrUnknownSessionsAnalyzed (CCE-76)", () => {
     }
   });
 });
+
+describe("session-kind gating at the source layer (CCE-164)", () => {
+  it("keeps sdk-py sessions out of the posture universe", async () => {
+    // The defect: sdk-py was an unhandled entrypoint, so classifySessionKind
+    // returned "unknown" and interactive_or_unknown ADMITTED 226 automated
+    // agent sessions into the Memory Execution denominator (353 vs 93).
+    // Asserted here at the counting layer, not via a scorer fixture — a
+    // fixture-fed scorer test cannot catch a gate dropped in this function.
+    for (const id of ["int-1", "int-2"]) {
+      writeMeta(dir, id, { start_time: TWENTY_DAYS_AGO });
+      writeTranscript(dir, "-Users-x-Projects-app", id, [
+        { type: "user", entrypoint: "cli" },
+      ]);
+    }
+    for (const id of ["py-1", "py-2", "py-3"]) {
+      writeMeta(dir, id, { start_time: TWENTY_DAYS_AGO });
+      writeTranscript(dir, "-Users-x-Projects-app", id, [
+        { type: "user", entrypoint: "sdk-py" },
+      ]);
+    }
+
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+
+    expect(r.sessionsAnalyzed).toBe(5);
+    expect(r.sessionsByKind).toEqual({
+      interactive_cli: 2,
+      sdk_orchestrated: 3,
+      observer: 0,
+      subagent: 0,
+      unknown: 0,
+    });
+    expect(r.interactiveSessionsAnalyzed).toBe(2);
+    // The load-bearing assertion: 2, not 5.
+    expect(r.interactiveOrUnknownSessionsAnalyzed).toBe(2);
+  });
+
+  it("keeps an unrecognized future entrypoint out of the posture universe", async () => {
+    // Guards the defect CLASS. If a later Anthropic release adds another
+    // machine-driven entrypoint, it must not silently re-inflate the
+    // denominator the way sdk-py did.
+    writeMeta(dir, "int-1", { start_time: TWENTY_DAYS_AGO });
+    writeTranscript(dir, "-Users-x-Projects-app", "int-1", [
+      { type: "user", entrypoint: "cli" },
+    ]);
+    writeMeta(dir, "future-1", { start_time: TWENTY_DAYS_AGO });
+    writeTranscript(dir, "-Users-x-Projects-app", "future-1", [
+      { type: "user", entrypoint: "sdk-rb-not-yet-invented" },
+    ]);
+
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+
+    expect(r.sessionsByKind.unknown).toBe(0);
+    expect(r.sessionsByKind.sdk_orchestrated).toBe(1);
+    expect(r.interactiveOrUnknownSessionsAnalyzed).toBe(1);
+  });
+
+  it("still classifies a session whose entrypoint row is preceded by queue-operation rows", async () => {
+    // Real transcripts lead with queue-operation / attachment rows that carry
+    // no entrypoint. The old 5-line scan bound gave up before reaching it.
+    writeMeta(dir, "deep-1", { start_time: TWENTY_DAYS_AGO });
+    writeTranscript(dir, "-Users-x-Projects-app", "deep-1", [
+      { type: "queue-operation", operation: "enqueue" },
+      { type: "attachment", attachment: {} },
+      { type: "attachment", attachment: {} },
+      { type: "queue-operation", operation: "drain" },
+      { type: "ai-title" },
+      { type: "mode" },
+      { type: "user", entrypoint: "cli" },
+    ]);
+
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+
+    expect(r.sessionsByKind.interactive_cli).toBe(1);
+    expect(r.sessionsByKind.unknown).toBe(0);
+    expect(r.interactiveSessionsAnalyzed).toBe(1);
+  });
+
+  it("still reports unknown for a session-meta record with no transcript", async () => {
+    // "unknown" keeps exactly one meaning after CCE-164: no entrypoint row was
+    // found. That case is genuinely unclassifiable and stays inside the
+    // conservative interactive_or_unknown universe by design.
+    writeMeta(dir, "orphan-1", { start_time: TWENTY_DAYS_AGO });
+
+    const r = await gatherInsightsSignals({
+      claudeHome: dir,
+      now: NOW,
+      lookbackDays: 30,
+      includeTranscripts: true,
+    });
+
+    expect(r.sessionsByKind.unknown).toBe(1);
+    expect(r.interactiveSessionsAnalyzed).toBe(0);
+    expect(r.interactiveOrUnknownSessionsAnalyzed).toBe(1);
+  });
+});
