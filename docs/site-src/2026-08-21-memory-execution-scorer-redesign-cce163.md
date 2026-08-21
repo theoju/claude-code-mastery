@@ -12,7 +12,7 @@ Memory & Context Management has been sitting at **Platform 100 / Execution
 33** — a Δ big enough to be the diagnostic case the dashboard exists to catch,
 except this time the gap was in the scorer, not the user. CCE-163 is the
 design record for why, and it lands on a fix: the Execution numerator now
-counts *any* deliberate context-management mechanism, not just two slash
+counts _any_ deliberate context-management mechanism, not just two slash
 commands.
 
 ## The old numerator, and what was wrong with it
@@ -30,7 +30,7 @@ instead of the property the dimension actually claims to score.
 1. **Auto-compact configuration fights its own Execution score.** The
    `CLAUDE_CODE_AUTO_COMPACT_WINDOW` setting feeds Platform Setup and the
    config-progression milestone walker — but configuring it well means you
-   type `/compact` *less*, which mechanically depresses the very Execution
+   type `/compact` _less_, which mechanically depresses the very Execution
    numerator the dimension is supposed to reward. The two halves of one
    dimension were pulling against each other.
 2. **External memory tooling was invisible.** Neither claude-mem nor graphify
@@ -49,17 +49,17 @@ elsewhere in this repo. The survey caught a trap worth keeping around for any
 future MCP-based signal:
 
 Naively grepping transcript text for `mcp__plugin_claude-mem` returned 1,513
-matching sessions. That number is a mirage — it's the MCP tool *listing*
+matching sessions. That number is a mirage — it's the MCP tool _listing_
 injected into every session's system prompt, not an actual invocation. The
 tell was that five unrelated tool names all matched roughly the same count
 (~3,393); real usage never distributes that evenly across distinct tools.
 Parsing `message.content[].type === "tool_use"` and matching on `name` gave
 the real counts:
 
-| Signal | Naive grep | Real `tool_use` entries |
-| --- | --- | --- |
-| claude-mem MCP calls | 1,513 sessions | 15 calls in 9 sessions |
-| graphify invocations | 15 sessions | 752 invocations in 127 sessions |
+| Signal               | Naive grep     | Real `tool_use` entries         |
+| -------------------- | -------------- | ------------------------------- |
+| claude-mem MCP calls | 1,513 sessions | 15 calls in 9 sessions          |
+| graphify invocations | 15 sessions    | 752 invocations in 127 sessions |
 
 Unfiltered session coverage (all 2,019 transcripts, before gating to the real
 `interactive_cli ∪ unknown` denominator) came out to:
@@ -87,14 +87,14 @@ Following the repo's per-field semantic rule (classify time window and
 counter class before summing anything into a ratio), the spec ran every
 candidate signal through that check:
 
-| Signal | Time window | Counter class | Verdict |
-| --- | --- | --- | --- |
-| `clearCommandUses` | 30-day windowed | session-coverage | numerator ✅ |
-| `compactCommandUses` | 30-day windowed | session-coverage | numerator ✅ |
-| graphify invocations | 30-day windowed | raw invocation count | ❌ as-is |
-| claude-mem `tool_use` | 30-day windowed | raw invocation count | ❌ as-is |
-| `autoCompactWindow` | config, no window | binary config | ❌ not a count |
-| `cliBtwUseCountAllTime` | cumulative | raw count | evidence only, unchanged |
+| Signal                  | Time window       | Counter class        | Verdict                  |
+| ----------------------- | ----------------- | -------------------- | ------------------------ |
+| `clearCommandUses`      | 30-day windowed   | session-coverage     | numerator ✅             |
+| `compactCommandUses`    | 30-day windowed   | session-coverage     | numerator ✅             |
+| graphify invocations    | 30-day windowed   | raw invocation count | ❌ as-is                 |
+| claude-mem `tool_use`   | 30-day windowed   | raw invocation count | ❌ as-is                 |
+| `autoCompactWindow`     | config, no window | binary config        | ❌ not a count           |
+| `cliBtwUseCountAllTime` | cumulative        | raw count            | evidence only, unchanged |
 
 752 raw graphify invocations cannot be added to 70 session-coverage hits —
 that's the identical CCE-78/CCE-79 defect of blending counter classes into
@@ -178,11 +178,23 @@ Deliberate context management: 79 of 353 interactive_cli∪unknown sessions (22.
   /clear 47 · /compact 23 · memory tools 25   (union, not sum — overlap 16)
 ```
 
+!!! note "The 353 denominator was itself wrong, and was fixed afterwards"
+
+    That figure is the measurement as it stood when CCE-163 was designed.
+    [CCE-164](https://github.com/theoju/claude-code-self-assessment/pull/199)
+    landed after it and found the denominator inflated roughly 3.8× — 353
+    against a true 93 — because `classifySessionKind` failed *open*, letting
+    unrecognized entrypoints degrade to `unknown` and enter the
+    `interactive_cli ∪ unknown` posture universe. Read the ratio above as a
+    record of the design-time numerator work, not as the dimension's current
+    score. The numerator redesign described here and the denominator fix are
+    independent; both were needed.
+
 The rubric target (`app/data/rubric.json`, dimension id `memory`) stays at 60
 rather than being scaled up in proportion to the broadened numerator
 (79/70 ≈ 1.13, which would suggest ~68). The spec's reasoning: the target
 answers a behavioral question — in what fraction of interactive sessions
-*should* a user deliberately manage context — not a measurement question. It
+_should_ a user deliberately manage context — not a measurement question. It
 was never calibrated to the old numerator's observed ceiling, so correcting
 an undercount should raise this user's score (33 → 37), not be cancelled out
 by scaling the target to hold it flat. `scripts/__tests__/memory-customization-execution-scorers.test.mjs`
@@ -202,7 +214,7 @@ afterwards, in `scripts/run-assessment.mjs`. That expression was always
 counter (97) was correct the whole time. The fix reads
 `s.settings?.cliBtwUseCount` — the same source
 `buildSignalsSummary` uses. Worth remembering: the first CCE-163
-implementation attempt reproduced the identical mistake for the *new* fields,
+implementation attempt reproduced the identical mistake for the _new_ fields,
 and was only caught because the evidence line printed `memory tools 0`
 against a `signalsSummary` that showed 25.
 
