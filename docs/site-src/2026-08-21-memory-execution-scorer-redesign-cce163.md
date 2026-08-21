@@ -222,9 +222,17 @@ against a `signalsSummary` that showed 25.
 
 The union-based numerator, the auto-compact evidence-only decision, and the
 held-at-60 target are all implemented and covered by tests as described
-above. The probe-tracker sync obligation (updating
-`docs/superpowers/specs/2026-05-25-probe-implementation-status.md`'s
-machine-enforced header counts alongside the two new `probe-catalog.json`
-entries) is called out in the spec's verification plan and should be checked
-against the tracker's current header counts before this page is folded into
-permanent architecture documentation.
+above. `app/data/probe-catalog.json` carries exactly 50 entries, and the
+tracker's own header (`docs/superpowers/specs/2026-05-25-probe-implementation-status.md`)
+declares "50 probes" — so the two new CCE-163 entries
+(`memoryToolSessionCount`, `memoryHygieneSessions`) are already counted in
+the machine-enforced header, and that half of the probe-tracker sync
+obligation is satisfied.
+
+One loose end: the tracker's header narrative gives CCE-164 its own callout
+sentence ("**CCE-164** (2026-08-20) fixed `classifySessionKind`…") the way
+it did for every earlier probe-adding change (CCE-29, CCE-25, #94, #96/#97),
+but has no equivalent sentence for CCE-163's two new entries. The counts are
+correct; the changelog prose that explains *why* the count is 50 isn't. Add
+that sentence before folding this page into permanent architecture
+documentation.

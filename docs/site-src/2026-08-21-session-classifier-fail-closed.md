@@ -79,6 +79,22 @@ found at all — a missing transcript, an unreadable file, or a shape that
 genuinely lacks the field. On the corpus this incident was measured
 against, that was zero sessions out of 639.
 
+## Regression coverage
+
+The fail-closed behavior is asserted directly, not just described. The
+`classifySessionKind` describe block in `scripts/__tests__/_usage-data.test.mjs`
+covers `sdk-py` by name ("classifies entrypoint=sdk-py as sdk_orchestrated,
+not unknown") and, separately, the defect *class* rather than the one
+instance: "classifies an unrecognized future entrypoint as sdk_orchestrated
+(fails closed)" feeds a made-up `sdk-rb-not-yet-invented` value through the
+classifier and asserts it still resolves to `sdk_orchestrated`. That second
+test is the one that matters going forward — it's the guard that stops the
+next unseen SDK entrypoint from repeating this incident. A third test,
+"finds an entrypoint row preceded by queue-operation and attachment rows,"
+covers the scan-bound fix by reproducing the actual leading-row shape (`queue-operation`,
+`attachment`, `ai-title`) that pushed real transcripts past the old 5-line
+bound.
+
 ## Why this direction, not the other one
 
 Under-counting a posture denominator is conservative — a genuinely
