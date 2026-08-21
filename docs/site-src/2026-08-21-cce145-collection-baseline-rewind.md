@@ -43,6 +43,9 @@ the 0.9.20 release-bump PR) back to `017f671a` — the merge of PR #197,
 one commit earlier, which is the parent of PR #196's merge. That's the
 minimal rewind that reopens the collection window to include PRs #196,
 #198, #199, and #200 without re-processing anything further back.
+`state.json` on `main` now carries the rewound value in full
+(`017f671a3f30a7a3a5bc620172cbeb86f6f74240`), confirming the merge landed
+as intended.
 
 The change is confined entirely to the docs-agent's own tracking state —
 no application code, scorer logic, or user-facing behavior changed. Nothing

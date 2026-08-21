@@ -1,14 +1,11 @@
 {
   "current_run": {
-    "started_at": "2026-08-21T14:58:22.803241+00:00",
-    "head_sha": "d66daf1c9b3d7c374387ff99f1d820c13b086c9f",
-    "partial": true,
+    "started_at": "2026-08-21T16:36:28.628299+00:00",
+    "head_sha": "20b05d50a3f0c10bc6e1fd7ea39b06f04f8aa55a",
+    "partial": false,
     "partial_reasons": [
-      "authoring_hard_cap_squeezed: run.time_budget_seconds (2700s) plus the merge poll (900s) plus the 285s post-run tail already fills the GitHub App token's 3600s TTL, so the authoring hard cap is held at the budget instead of 3104s. Page authoring can be cut mid-PR-group again and such a run earns no baseline advance. Lower run.time_budget_seconds or merge.checks_timeout_seconds.",
-      "prose_contamination_rescued: source-collector",
-      "lint_block: /home/runner/work/claude-code-self-assessment/claude-code-self-assessment/docs/site-src/2026-08-21-claude-md-audit-command-scoring.md internal_links: broken internal link(s): docs/foo.md",
       "prose_contamination_rescued: fact-checker",
-      "pr_summaries_reused: 4/5 PRs served from cache, 4 pr-summarizer dispatches skipped"
+      "pr_summaries_reused: 5/6 PRs served from cache, 5 pr-summarizer dispatches skipped"
     ],
     "fact_check_warnings": [],
     "source_drift": [],

@@ -1,8 +1,8 @@
 {
   "version": "1",
   "last_successful_run": {
-    "head_sha": "017f671a3f30a7a3a5bc620172cbeb86f6f74240",
-    "completed_at": "2026-08-21T14:58:22.803241+00:00"
+    "head_sha": "20b05d50a3f0c10bc6e1fd7ea39b06f04f8aa55a",
+    "completed_at": "2026-08-21T16:36:28.628299+00:00"
   },
   "dismissed_gap_flags": {},
   "pr_summaries": {
@@ -30,7 +30,7 @@
     "theoju/claude-code-self-assessment#196": {
       "merge_sha": "d69710b5e1d7427501d6623b4eb404676ea37ac3",
       "fingerprint": "e6d7c2a0894b9d2f",
-      "last_seen_at": "2026-08-21T15:07:49.721446+00:00",
+      "last_seen_at": "2026-08-21T16:48:03.256883+00:00",
       "summary": {
         "pr_number": 196,
         "what_changed": "Reworked the `commands` criterion in the CLAUDE.md health auditor (`scripts/claude-md-audit.mjs`). It previously scored 7 points per fenced code block containing a recognized tool keyword, which rewarded fragmenting commands into many small blocks and ignored commands documented in linked `.md` files. The new `countCommandLines()` counts actual executable command lines inside fences (stripping `$ ` prompts, skipping blanks/comments), and `extractDocRefs`/`resolveLinkedCommands` follow backticked-path, markdown-link, and `@import` references to linked docs (bounded to the target root, `.md` only, max 25 files, 256 KB each) and credit their command lines at half weight (capped at 10 of the 20 possible points). The recognized tool-token list was also broadened to cover Python-first tooling (`uv`, `pytest`, `ruff`, `mypy`, `alembic`, `prefect`) alongside existing tokens. `scoreFile()` gains an optional 4th `opts.linkedCommandLines` parameter (default 0); all existing 3-arg call sites are unaffected.",
@@ -51,7 +51,7 @@
     "theoju/claude-code-self-assessment#198": {
       "merge_sha": "6c32f0f9434db9ade6f04b055b79aba0416de8fd",
       "fingerprint": "e6d7c2a0894b9d2f",
-      "last_seen_at": "2026-08-21T15:07:49.721446+00:00",
+      "last_seen_at": "2026-08-21T16:48:03.256883+00:00",
       "summary": {
         "pr_number": 198,
         "what_changed": "Lands a design spec (CCE-163) proposing a redesign of the Memory & Context Management Execution scorer, plus the telemetry survey and probe-catalog/test updates that back it \u2014 no scorer numerator change ships in this PR. The spec documents three measurement defects in the same class as CCE-161's fenced-block-counting bug, surveys 2,019 transcripts over a 30-day window, and finds graphify (127 sessions) as a real but currently uncounted usage signal, while noting claude-mem is passive hook capture (Platform posture, not Execution behavior). It recommends unioning session-coverage across /clear, /compact, graphify invocations, and claude-mem tool_use, gated against interactiveOrUnknownSessionsAnalyzed. One open decision \u2014 whether auto-compact configuration should be evidence-only (A) or suppress the manual-command expectation (B) \u2014 blocks implementation; the spec recommends (A).",
@@ -72,7 +72,7 @@
     "theoju/claude-code-self-assessment#199": {
       "merge_sha": "a23f96584972abbb61852b060f031f7cbb514725",
       "fingerprint": "e6d7c2a0894b9d2f",
-      "last_seen_at": "2026-08-21T15:07:49.721446+00:00",
+      "last_seen_at": "2026-08-21T16:48:03.256883+00:00",
       "summary": {
         "pr_number": 199,
         "what_changed": "Fixed the session-kind classifier (`classifySessionKind` in `scripts/_usage-data.mjs`) to fail closed on unrecognized transcript entrypoints. Previously it enumerated known SDK entrypoints and let anything else fall through to `unknown`, which is admitted by the `interactive_or_unknown` posture universe used by Memory & Terminal Execution scoring. An unhandled `sdk-py` entrypoint plus a 5-line scan bound (too shallow for transcripts that lead with `queue-operation`/`attachment` rows) caused 265 of 612 in-window sessions (43%) to misclassify as `unknown`, diluting the Memory Execution denominator to 353 against a true 93 (3.8x) and scoring a well-instrumented machine at 37/100. The fix inverts the classifier to an allow-list (`INTERACTIVE_ENTRYPOINTS = {cli, claude-desktop}`) so every other entrypoint resolves to `observer` or `sdk_orchestrated` instead of `unknown`, and raises the scan bound to `ENTRYPOINT_SCAN_BOUND = 200`.",
@@ -93,7 +93,7 @@
     "theoju/claude-code-self-assessment#200": {
       "merge_sha": "17f307579a2be94ff77373ae49154a21208d833a",
       "fingerprint": "e6d7c2a0894b9d2f",
-      "last_seen_at": "2026-08-21T15:07:49.721446+00:00",
+      "last_seen_at": "2026-08-21T16:48:03.256883+00:00",
       "summary": {
         "pr_number": 200,
         "what_changed": "Version-bump-only release PR (0.9.19 \u2192 0.9.20) that ships no new code itself \u2014 it aggregates 20 already-merged commits (73 files, +13,856/-1,092) into a tagged release. Headline groups covered by earlier PRs: the session-classifier fix chain (CCE-161\u2013164) that corrected posture-denominator dilution from misclassified sessions; the Memory Execution numerator redesign (CCE-79, #128); the new mkdocs docs site + GitHub Pages publishing (CCE-81/#121, CCE-82/#125); and a dashboard graphite/electric-blue retheme (#177).",
@@ -116,7 +116,7 @@
     "theoju/claude-code-self-assessment#202": {
       "merge_sha": "d66daf1c9b3d7c374387ff99f1d820c13b086c9f",
       "fingerprint": "e6d7c2a0894b9d2f",
-      "last_seen_at": "2026-08-21T15:07:49.721446+00:00",
+      "last_seen_at": "2026-08-21T16:48:03.256883+00:00",
       "summary": {
         "pr_number": 202,
         "what_changed": "Rewound the engineering-docs-agent's collection baseline bookmark (`last_successful_run.head_sha`) in `.engineering-docs-agent/state.json` from 17f30757 to 017f671a (the merge of PR #197, parent of #196's merge). This re-opens the nightly collection window to re-include PRs #196, #198, #199, and #200, allowing two docs pages that were stranded by a blocked nightly run to be re-authored on the next cycle. Data-only change; no code was touched.",
@@ -132,6 +132,29 @@
           }
         ],
         "notes": "Pure state/bookmark change confined to the docs-agent pipeline's own tracking file \u2014 no application code or user-facing behavior changed. The doc_target above is a lightweight operational note rather than an architecture-page edit, since core's available_sections has no operations/archive subdirectory yet."
+      }
+    },
+    "theoju/claude-code-self-assessment#204": {
+      "merge_sha": "a5219d762c07d2165de9d6cb592fe9365f7325e7",
+      "fingerprint": "e6d7c2a0894b9d2f",
+      "last_seen_at": "2026-08-21T16:48:03.256883+00:00",
+      "summary": {
+        "pr_number": 204,
+        "what_changed": "Set the engineering-docs-agent's nightly run time budget (`run.time_budget_seconds`) to 2100 seconds in `.engineering-docs-agent/config.yml`, capping how long a single automated docs run is allowed to execute.",
+        "why": "The GitHub App installation token used by the docs-agent has a fixed 3600-second TTL. A run that took longer than that risked having its token expire mid-run, breaking later pipeline stages (e.g. commits/PR creation) with an authentication failure. Capping the budget at 2100s leaves comfortable headroom before expiry.",
+        "breaking": false,
+        "doc_targets": [
+          {
+            "lens": "core",
+            "action": "create",
+            "page_hint": "2026-08-21-docs-agent-time-budget.md",
+            "doc_kind": "decision",
+            "notes": "No architecture/operations/archive section exists yet under the core lens (only 'images'), so this lands as a flat dated page at the lens root; migrate into an operations/ or archive/ section once one exists."
+          }
+        ],
+        "notes": null,
+        "error": null,
+        "partial": false
       }
     }
   }
