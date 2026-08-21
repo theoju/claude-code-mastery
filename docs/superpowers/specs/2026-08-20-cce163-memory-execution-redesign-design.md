@@ -1,6 +1,6 @@
 # Memory Execution scorer redesign
 
-**Status:** design — not implemented · **Ticket:** CCE-163 · **Date:** 2026-08-20
+**Status:** design approved — decision resolved 2026-08-20 · **Ticket:** CCE-163 · **Date:** 2026-08-20
 
 ## Context
 
@@ -158,8 +158,16 @@ recomputed over the `interactive_cli ∪ unknown` denominator.
   `docs/superpowers/specs/2026-05-25-probe-implementation-status.md` in the same
   PR, and the five header counts are machine-enforced.
 
-## Open decision
+## Decision — resolved
 
-The auto-compact question (A vs B) is a judgement about what the dashboard
-should mean, not a technical one. Recommendation is (A); implementation should
-not start until that is confirmed.
+**(A) Evidence only.** Confirmed by the user on 2026-08-20.
+
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW` is surfaced in the Execution evidence line
+and does not alter the ratio or the target. Option B was rejected because a
+config-dependent target makes scores incomparable across setups: two users with
+identical behavior would score differently. The "good config depresses the
+score" tension is addressed instead by broadening mechanism coverage — a user
+who has automated context management still scores through the tooling arm of the
+union.
+
+Implementation plan: `docs/superpowers/plans/2026-08-20-cce163-memory-execution-redesign.md`
