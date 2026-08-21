@@ -44,14 +44,21 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
     expect(result.score).toBe(100);
   });
 
-  it("Test 5: cap fires when sum exceeds denominator; evidence reports capped-from", () => {
+  it("Test 5: cap fires when the union exceeds the denominator; evidence reports capped-from (CCE-163)", () => {
+    // Under union semantics 80 + 80 no longer sums to 160 — max(80, 80) is 80,
+    // which is below the denominator. The cap now guards against inconsistent
+    // signals where the observed union itself exceeds the session count.
     const result = EXECUTION_SCORERS.memory({
       insights: {
         interactiveSessionsAnalyzed: 100,
         interactiveOrUnknownSessionsAnalyzed: 100,
         transcriptsScanned: true,
       },
-      transcriptInvocations: { clearCommandUses: 80, compactCommandUses: 80 },
+      transcriptInvocations: {
+        clearCommandUses: 80,
+        compactCommandUses: 80,
+        memoryHygieneSessions: 150,
+      },
     });
     expect(result.score).toBe(100);
     expect(result.evidence[0]).toMatch(/capped from \d+%/);
@@ -93,7 +100,7 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
     });
     expect(result.score).toBe(0);
     expect(result.gaps[0]).toMatch(
-      /No \/clear or \/compact in any interactive session/,
+      /No \/clear, \/compact, or memory-tool use in any interactive session/,
     );
   });
 
@@ -111,8 +118,11 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         rewindCommandUses: 0,
       },
     });
-    expect(result.score).toBe(19);
-    expect(result.evidence[0]).toMatch(/23 session-coverage hits across 120/);
+    // CCE-163: union, not sum. 15 /clear sessions and 8 /compact sessions may
+    // overlap, so the defensible numerator is max(15, 8) = 15, not 23.
+    // 15/120 = 12.5% -> 13.
+    expect(result.score).toBe(13);
+    expect(result.evidence[0]).toMatch(/15 of 120 interactive/);
     expect(result.evidence[0]).not.toMatch(/capped/);
   });
 
@@ -166,7 +176,7 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         transcriptsScanned: true,
       },
       transcriptInvocations: { clearCommandUses: 5 },
-      signalsSummary: { cliBtwUseCountAllTime: 42 },
+      settings: { cliBtwUseCount: 42 },
     });
     expect(result.evidence[0]).toMatch(
       /Plus 42 all-time \/btw invocations \(cumulative, not in ratio\)/,
@@ -181,12 +191,12 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
         transcriptsScanned: true,
       },
       transcriptInvocations: { clearCommandUses: 5 },
-      signalsSummary: { cliBtwUseCountAllTime: 0 },
+      settings: { cliBtwUseCount: 0 },
     });
     expect(result.evidence[0]).not.toMatch(/Plus .* all-time \/btw/);
   });
 
-  it("Test 12d: /clear + /compact in numerator (regression, CCE-79)", () => {
+  it("Test 12d: /clear ∪ /compact in numerator — union floor, not sum (CCE-79, revised CCE-163)", () => {
     const result = EXECUTION_SCORERS.memory({
       insights: {
         interactiveSessionsAnalyzed: 10,
@@ -195,7 +205,107 @@ describe("EXECUTION_SCORERS.memory (CCE-76)", () => {
       },
       transcriptInvocations: { clearCommandUses: 5, compactCommandUses: 3 },
     });
-    expect(result.score).toBe(80);
+    // The 3 /compact sessions may be a subset of the 5 /clear sessions, so 5
+    // is the tightest defensible floor: 5/10 = 50%. Summing to 8 would assert
+    // an overlap fact the signals do not carry.
+    expect(result.score).toBe(50);
+  });
+
+  it("Test 13: memory tooling alone lifts the score (CCE-163)", () => {
+    // The whole point of the redesign: a user who manages context with a
+    // knowledge graph instead of slash commands is no longer scored at zero.
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {
+        memoryToolSessionCount: 40,
+        memoryHygieneSessions: 40,
+      },
+    });
+    expect(result.score).toBe(40);
+    expect(result.evidence[0]).toMatch(/memory tools 40/);
+    expect(result.gaps).toHaveLength(0);
+  });
+
+  it("Test 14: a session using all three mechanisms counts once (CCE-163)", () => {
+    // Union, not sum. One session with /clear + /compact + a memory tool
+    // contributes 1 to a 10-session denominator, not 3.
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 10,
+        interactiveOrUnknownSessionsAnalyzed: 10,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {
+        clearCommandUses: 1,
+        compactCommandUses: 1,
+        memoryToolSessionCount: 1,
+        memoryHygieneSessions: 1,
+      },
+    });
+    expect(result.score).toBe(10);
+  });
+
+  it("Test 15: observed union wins when it exceeds every part (CCE-163)", () => {
+    // Disjoint mechanisms: 5 /clear sessions and 4 tooling sessions with no
+    // overlap give an observed union of 9, which must beat max(5, 4).
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {
+        clearCommandUses: 5,
+        memoryToolSessionCount: 4,
+        memoryHygieneSessions: 9,
+      },
+    });
+    expect(result.score).toBe(9);
+  });
+
+  it("Test 16: every session managing context scores exactly 100, never more (CCE-163)", () => {
+    const result = EXECUTION_SCORERS.memory({
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: {
+        clearCommandUses: 100,
+        compactCommandUses: 100,
+        memoryToolSessionCount: 100,
+        memoryHygieneSessions: 100,
+      },
+    });
+    expect(result.score).toBe(100);
+    expect(result.evidence[0]).not.toMatch(/capped/);
+  });
+
+  it("Test 17: auto-compact is evidence only — decision (A), CCE-163", () => {
+    const base = {
+      insights: {
+        interactiveSessionsAnalyzed: 100,
+        interactiveOrUnknownSessionsAnalyzed: 100,
+        transcriptsScanned: true,
+      },
+      transcriptInvocations: { memoryHygieneSessions: 30 },
+    };
+    const without = EXECUTION_SCORERS.memory(base);
+    const with_ = EXECUTION_SCORERS.memory({
+      ...base,
+      settings: { autoCompactWindow: 400000 },
+    });
+    // Same score: configuration must not move the ratio or the target, or two
+    // users with identical behavior would score differently.
+    expect(with_.score).toBe(without.score);
+    expect(with_.evidence[0]).toMatch(
+      /Auto-compact configured \(CLAUDE_CODE_AUTO_COMPACT_WINDOW=400000\)/,
+    );
+    expect(without.evidence[0]).not.toMatch(/Auto-compact configured/);
   });
 
   it("Test 12e: cap behavior preserved on narrowed numerator (CCE-79)", () => {

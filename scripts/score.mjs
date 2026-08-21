@@ -982,9 +982,28 @@ export const EXECUTION_SCORERS = {
       // /btw (cumulative all-time) shown as evidence text, not in ratio.
       // /rewind (keyboard-shortcut, near-zero signal) dropped from ratio;
       // kept as a binary next-action probe via rubric satisfiedWhen.
+      //
+      // CCE-163: the numerator is now the UNION of sessions showing any
+      // deliberate context management — /clear, /compact, or an external
+      // memory tool (claude-mem, graphify). Union, not sum: a session using
+      // three mechanisms counts once, which keeps the numerator in the same
+      // counter class (session-coverage) as its denominator.
+      //
+      // Why the Math.max: the union is computed inside the transcript scanner,
+      // which cannot see history.jsonl-only invocations, while clear/compact
+      // come from a transcript+history MAX-merge. The true union is >= each
+      // part, so taking the max of the observed union and each part yields the
+      // tightest defensible lower bound. Every input is session-coverage over
+      // the same universe, so the result still cannot exceed the denominator.
       const clear = maxProbe(s, "clearCommandUses");
       const compact = maxProbe(s, "compactCommandUses");
-      const sum = clear + compact;
+      // Read the raw signals, NOT signalsSummary: scorers receive the signals
+      // object, and signalsSummary is assembled afterwards in
+      // run-assessment.mjs, so s.signalsSummary is always undefined here.
+      const memoryTools = s.transcriptInvocations?.memoryToolSessionCount ?? 0;
+      const observedUnion =
+        s.transcriptInvocations?.memoryHygieneSessions ?? 0;
+      const sum = Math.max(observedUnion, clear, compact, memoryTools);
       const rawRatio = sum / denom;
       const ratio = Math.min(rawRatio, 1);
       const score = Math.round(ratio * 100);
@@ -992,17 +1011,32 @@ export const EXECUTION_SCORERS = {
         rawRatio > 1
           ? ` — capped from ${pct(rawRatio * 100)}% (multiple memory commands per session)`
           : "";
-      const btwAllTime = s.signalsSummary?.cliBtwUseCountAllTime ?? 0;
+      // Pre-existing CCE-78 defect found while implementing CCE-163: this
+      // read s.signalsSummary?.cliBtwUseCountAllTime, which is always
+      // undefined inside a scorer, so the /btw evidence sentence never
+      // rendered despite the counter being 97. Read the same source
+      // run-assessment.mjs uses to build that summary field.
+      const btwAllTime = s.settings?.cliBtwUseCount ?? 0;
       const btwEvidence =
         btwAllTime > 0
           ? ` Plus ${btwAllTime} all-time /btw invocations (cumulative, not in ratio).`
           : "";
+      // Decision (A), CCE-163: auto-compact configuration is surfaced as
+      // evidence and deliberately does NOT modify the ratio or the target.
+      // A config-dependent target would make scores incomparable across
+      // machines — two users with identical behavior would score differently.
+      const autoCompact = s.settings?.autoCompactWindow;
+      const autoCompactEvidence = autoCompact
+        ? ` Auto-compact configured (CLAUDE_CODE_AUTO_COMPACT_WINDOW=${autoCompact}) — scored on the Platform axis, not here.`
+        : "";
       const evidence = [
-        `Memory hygiene commands: ${sum} session-coverage hits across ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix}.${btwEvidence}`,
+        `Deliberate context management: ${sum} of ${denom} interactive_cli∪unknown sessions (${pct(ratio * 100)}%)${capSuffix} — /clear ${clear}, /compact ${compact}, memory tools ${memoryTools} (union, not sum).${btwEvidence}${autoCompactEvidence}`,
       ];
       const gaps = [];
       if (sum === 0) {
-        gaps.push("No /clear or /compact in any interactive session");
+        gaps.push(
+          "No /clear, /compact, or memory-tool use in any interactive session",
+        );
       }
       return { score, evidence, gaps, gapReason: null };
     },

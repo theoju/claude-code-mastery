@@ -936,6 +936,8 @@ describe("buildSignalsSummary", () => {
         "keybindingsConfigured",
         "loopCommandUses",
         "mcpServersConnected",
+        "memoryHygieneSessions",
+        "memoryToolSessionCount",
         "opus47AwarenessAdopted",
         "outputStyle",
         "parallelWorktreeAdoption",

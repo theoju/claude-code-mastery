@@ -136,12 +136,45 @@ Platform axis where it already is.
   a single config flag would pin the score near ceiling regardless of behavior.
 - **Retune the target again** — what CCE-79 did; treats the symptom.
 
-## Target derivation
+## Target derivation — outcome
 
-Do **not** carry over 60. Re-derive it after the numerator is implemented, from
-a real pipeline run with proper session-kind gating. The unfiltered union
-(9.8% of all sessions) is not the number to calibrate against — it must be
-recomputed over the `interactive_cli ∪ unknown` denominator.
+Measured after implementation, over the gated denominator:
+
+```
+Deliberate context management: 79 of 353 interactive_cli∪unknown sessions (22.38%)
+  /clear 47 · /compact 23 · memory tools 25   (union, not sum — overlap 16)
+```
+
+**Target held at 60.** This deviates from the plan's "do not carry over 60"
+instruction, so the reasoning is recorded rather than left implicit.
+
+The target answers a behavioral question — *in what fraction of interactive
+sessions should a user deliberately manage context?* — not a measurement
+question. It was never calibrated to the old numerator's observed maximum, so
+broadening the numerator does not mechanically invalidate it.
+
+The alternative considered was raising it in proportion to the broadening
+(79/70 ≈ 1.13, giving ~68). That was rejected: it would hold this user's score
+flat at ~31 despite the fix, which gets the semantics backwards. The old
+numerator *under-counted* real posture; correcting an undercount should raise
+the score of a user who was using uncounted mechanisms, which is exactly what
+happened (33 → 37). Scaling the target to cancel that out would preserve the
+original defect while appearing to fix it.
+
+**Caveat, explicit:** 60 is one machine's judgement, not a distribution. Moving
+it defensibly needs coverage data across several users' telemetry, which this
+repo does not have. Anyone with that data should revisit it.
+
+## Defect found during implementation
+
+The `/btw` evidence sentence added by CCE-79 never rendered. It read
+`s.signalsSummary?.cliBtwUseCountAllTime`, but scorers receive the *signals*
+object and `signalsSummary` is assembled afterwards in `run-assessment.mjs`, so
+that expression was always `undefined`. The counter was 97 the whole time.
+Fixed here to read `s.settings?.cliBtwUseCount` — the same source
+`buildSignalsSummary` uses. The first CCE-163 implementation attempt
+reproduced the identical mistake for the new fields and was caught by the
+evidence line printing `memory tools 0` against a signalsSummary showing 25.
 
 ## Verification plan
 

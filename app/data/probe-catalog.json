@@ -200,6 +200,16 @@
     "path": "~/.claude/history.jsonl",
     "description": "Count of /compact invocations. Boris tip 54."
   },
+  "memoryToolSessionCount": {
+    "source": "transcripts",
+    "path": "~/.claude/projects/*/*.jsonl (tool_use entries)",
+    "description": "Sessions invoking external memory tooling (claude-mem MCP, graphify). Parsed from tool_use blocks, never raw text — the MCP tool listing appears in every session's system prompt. CCE-163."
+  },
+  "memoryHygieneSessions": {
+    "source": "transcripts",
+    "path": "~/.claude/projects/*/*.jsonl (union coverage)",
+    "description": "Sessions showing any deliberate context management: /clear or /compact or a memory-tool invocation. Union, not sum — one session counts once. Numerator of the Memory Execution ratio. CCE-163."
+  },
   "colorCommandUses": {
     "source": "history",
     "path": "~/.claude/history.jsonl + transcript MAX-merge",
