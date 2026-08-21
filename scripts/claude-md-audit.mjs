@@ -1,13 +1,16 @@
 // Deterministic CLAUDE.md auditor. Pure: (target) -> { score, grade, files[], issues[] }.
 // Mirrors the claude-md-improver rubric (commands / architecture / patterns /
 // conciseness / currency / actionability) with weights 20/20/15/15/15/15 = 100.
+// commands = executable command LINES (not fenced-block count), with half-weight
+// credit for commands in linked rule/doc files. See
+// docs/superpowers/specs/2026-08-20-claude-md-commands-scorer-design.md
 //
 // Report-only: never writes to CLAUDE.md files. Designed to run headless from
 // the morning launchd routine alongside the existing assessment scorer.
 
 import { readFile, readdir, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join, relative } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { homedir } from "node:os";
 
 const FILE_NAMES = new Set(["CLAUDE.md", ".claude.md", ".claude.local.md"]);
@@ -28,6 +31,14 @@ const FRESH_DAYS = 30;
 const VERBOSE_LINES = 400;
 const THIN_LINES = 15;
 const MAX_DEPTH = 6;
+
+// commands criterion: points per executable command line found in the file
+// itself, and per line found in a linked rule/doc file (half weight, capped).
+const OWN_COMMAND_POINTS = 4;
+const LINKED_COMMAND_POINTS = 2;
+const LINKED_COMMAND_CAP = 10;
+const MAX_LINKED_DOCS = 25;
+const MAX_LINKED_BYTES = 256 * 1024;
 
 export function expandHome(p) {
   if (!p) return p;
@@ -100,20 +111,110 @@ const STALE_VERSION_PATTERNS = [
 const SPECIFIC_REF =
   /(`[^`]+`|\b[\w./-]+\.(?:js|ts|tsx|mjs|json|md|sh|py|go|rs)\b|\bnpm\s+\w+|\bgh\s+\w+|\bvitest\b)/;
 
-export function scoreFile(content, mtimeMs, now = Date.now()) {
+// Tool tokens that mark a fenced line as an executable command. Deliberately
+// broad — a Python-first repo documenting `uv run pytest` is as well-documented
+// as a Node repo documenting `npm test`.
+const TOOL_TOKEN =
+  /\b(?:npm|pnpm|yarn|bun|npx|deno|node|cargo|go run|go test|python3?|pytest|uv|pip|poetry|make|next|vitest|jest|playwright|docker|docker-compose|kubectl|helm|terraform|vercel|gh|git|ruff|mypy|eslint|prettier|alembic|prefect|psql|curl)\b/;
+
+/**
+ * Count executable command LINES inside fenced blocks.
+ *
+ * Counting lines rather than fences is the whole point: consolidating three
+ * command blocks into one well-organized block used to cost 14 of 20 points
+ * with the content unchanged, which rewarded fragmentation over clarity.
+ */
+export function countCommandLines(content) {
+  let inFence = false;
+  let count = 0;
+  for (const raw of String(content ?? "").split("\n")) {
+    if (/^\s*```/.test(raw)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (!inFence) continue;
+    const line = raw.trim().replace(/^\$\s+/, "");
+    if (!line || line.startsWith("#")) continue;
+    if (TOOL_TOKEN.test(line)) count += 1;
+  }
+  return count;
+}
+
+// Markdown references to sibling docs, in the three syntaxes a CLAUDE.md uses:
+// backticked path, markdown link, and @import.
+const DOC_REF = /`([\w./@-]+\.md)`|\]\(([^)\s]+\.md)\)|(?:^|\s)@([\w./-]+\.md)\b/g;
+
+/**
+ * Relative `.md` paths referenced from a CLAUDE.md. External URLs are dropped;
+ * resolution and existence checks happen in auditTarget (the I/O boundary).
+ */
+export function extractDocRefs(content) {
+  const out = new Set();
+  for (const m of String(content ?? "").matchAll(DOC_REF)) {
+    const ref = m[1] || m[2] || m[3];
+    if (!ref || /^[a-z][a-z0-9+.-]*:\/\//i.test(ref)) continue;
+    out.add(ref.replace(/^\.\//, ""));
+  }
+  return [...out];
+}
+
+/**
+ * Sum command lines across the `.md` files a CLAUDE.md points at. Bounded:
+ * inside the target root only, .md only, capped file count and size.
+ */
+export async function resolveLinkedCommands(claudeMdPath, root, content) {
+  const refs = extractDocRefs(content);
+  const seen = new Set();
+  let lines = 0;
+  let docs = 0;
+  for (const ref of refs) {
+    if (docs >= MAX_LINKED_DOCS) break;
+    for (const base of [dirname(claudeMdPath), root]) {
+      const full = resolve(base, ref);
+      const rel = relative(root, full);
+      if (!rel || rel.startsWith("..") || isAbsolute(rel)) continue;
+      if (seen.has(full) || FILE_NAMES.has(basename(full))) continue;
+      let st;
+      try {
+        st = await stat(full);
+      } catch {
+        continue;
+      }
+      if (!st.isFile() || st.size > MAX_LINKED_BYTES) continue;
+      seen.add(full);
+      docs += 1;
+      try {
+        lines += countCommandLines(await readFile(full, "utf8"));
+      } catch {
+        /* unreadable — no credit, no crash */
+      }
+      break;
+    }
+  }
+  return { linkedCommandLines: lines, linkedDocs: docs };
+}
+
+export function scoreFile(content, mtimeMs, now = Date.now(), opts = {}) {
   const lines = content.split("\n");
   const headings = lines.filter((l) => /^#{1,6}\s/.test(l));
   const ageDays = Math.max(0, (now - mtimeMs) / (1000 * 60 * 60 * 24));
   const issues = [];
 
-  // commands (20): fenced code blocks containing tooling invocations
-  const commandHits = (
-    content.match(
-      /```(?:bash|sh|zsh|console|shell)?[\s\S]*?(?:npm|pnpm|yarn|bun|cargo|go run|python|make|next|vitest|playwright|docker|kubectl|terraform|vercel|gh)\b[\s\S]*?```/gi
-    ) || []
-  ).length;
-  const commands = Math.min(20, commandHits * 7);
-  if (commands < 10) issues.push("commands: few executable command blocks");
+  // commands (20): executable command LINES, plus half-weight credit for
+  // commands living in linked rule/doc files. Extracting commands into
+  // `.claude/rules/*.md` or `docs/*.md` is good practice and no longer zeroes
+  // this score; it is still worth less than in-file commands, because an agent
+  // reading only CLAUDE.md never sees them.
+  const ownCommandLines = countCommandLines(content);
+  const linkedCommandLines = Math.max(0, Number(opts.linkedCommandLines) || 0);
+  const commands = Math.min(
+    20,
+    ownCommandLines * OWN_COMMAND_POINTS +
+      Math.min(LINKED_COMMAND_CAP, linkedCommandLines * LINKED_COMMAND_POINTS)
+  );
+  if (commands < 10) {
+    issues.push("commands: few executable commands (in file or linked docs)");
+  }
 
   // architecture (20): explicit heading AND substantive body underneath.
   // An empty "## Architecture" heading no longer earns 20 points.
@@ -186,6 +287,8 @@ export function scoreFile(content, mtimeMs, now = Date.now()) {
     score,
     breakdown: { commands, architecture, patterns, conciseness, currency, actionability },
     issues,
+    commandLines: ownCommandLines,
+    linkedCommandLines,
     lineCount: lines.length,
     ageDays: Math.round(ageDays),
   };
@@ -205,8 +308,9 @@ export async function auditTarget({ name, path }) {
     } catch {
       continue;
     }
-    const r = scoreFile(content, st.mtimeMs);
-    files.push({ path: relative(resolved, p), ...r, grade: gradeFor(r.score) });
+    const { linkedCommandLines, linkedDocs } = await resolveLinkedCommands(p, resolved, content);
+    const r = scoreFile(content, st.mtimeMs, Date.now(), { linkedCommandLines });
+    files.push({ path: relative(resolved, p), ...r, linkedDocs, grade: gradeFor(r.score) });
   }
   if (files.length === 0) {
     return { name: name || path, path: resolved, missing: true, files: [], score: null, grade: "F" };

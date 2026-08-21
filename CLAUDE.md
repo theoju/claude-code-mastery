@@ -102,7 +102,7 @@ engineering-docs-agent's nightly fills in lens pages + `whats-new.md`.
 ## Tests
 
 ```bash
-npx vitest run            # 695 tests across 48 files, ~3s
+npx vitest run            # 734 tests across 49 files, ~3s
 ```
 
 If a test fails after a scoring change, update the fixture in
