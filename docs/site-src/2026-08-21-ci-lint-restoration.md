@@ -67,10 +67,27 @@ previously merged with *zero* automated verification of any kind — a partial
 gate (say, tests only) would have left the exact failure mode (dead lint,
 uncaught type errors) that motivated the ticket only half-fixed.
 
-## What's still open
+## Follow-up: the check is now required
 
-Landing `ci.yml` makes the checks run; it does not yet make them
-*required*. The PR description notes a follow-up — adding a branch
-protection rule that requires the new `verify` check before merge — as not
-yet implemented. Until that rule exists, a PR can still merge on a red CI
-run.
+Landing `ci.yml` made the checks run; it did not by itself make them
+*required*, and the PR description flagged that gap. It was closed on
+2026-08-21 by extending the repository's existing `Secure` ruleset, which
+previously only blocked branch deletion and force-pushes on the default
+branch. It now also requires a pull request and the
+`lint · typecheck · test · build` status check before anything reaches
+`main`, with no admin bypass.
+
+Two choices in that rule are deliberate and worth recording:
+
+- **Zero required approving reviews.** GitHub forbids self-approval, so
+  requiring one on a single-maintainer repository would deadlock every
+  merge. The gate is "changes must go through a pull request," which the
+  ship and release flows already satisfy.
+- **Not "strict."** Requiring branches to be up to date before merging would
+  force a rebase and force-push after every sibling merge, and this
+  project's local hooks block force-pushes. The check must pass; the branch
+  need not be freshly rebased.
+
+Only `ci.yml`'s job is required. `docs-build-check.yml` is path-filtered to
+`docs/site-src/**`, so requiring it would leave every non-docs pull request
+waiting forever on a check that never runs.
