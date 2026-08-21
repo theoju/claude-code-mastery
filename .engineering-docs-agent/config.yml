@@ -29,6 +29,23 @@ voice:
 lint:
   tier1: default
 
+run:
+  # Held below the 2700s default so the run fits inside the GitHub App
+  # installation token's 3600s TTL, which is the real ceiling on a run — not
+  # the workflow's `timeout-minutes`. The arithmetic (orchestrator_runner.py,
+  # AUTHORING_TTL_SAFETY_SECONDS) is exact at this value:
+  #
+  #   2100 × 1.15 (authoring overrun) = 2415
+  #   2415 + 900 (merge.checks_timeout_seconds) + 285 (post-run tail) = 3600
+  #
+  # At the 2700s default the sum is 4004 > 3600, so the authoring hard cap is
+  # clamped flat to the budget and every run reports
+  # `authoring_hard_cap_squeezed`, losing the overrun that lets authoring
+  # finish the PR group it is in the middle of. A group cut mid-PR earns no
+  # baseline advance. Observed on both 2026-08-21 runs (32460602658,
+  # 32495019606). Raising this above 2100 reintroduces the squeeze.
+  time_budget_seconds: 2100
+
 publishing:
   # framework: mkdocs → publish-verifier checks the build_workflow ran
   # for the current HEAD on main and that base_url + each lens page is
