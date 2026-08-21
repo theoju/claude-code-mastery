@@ -1,11 +1,13 @@
 {
   "current_run": {
-    "started_at": "2026-08-20T07:52:17.745182+00:00",
-    "head_sha": "207a887dc522bb9187e7b653b641308ff71f3ce4",
-    "partial": false,
+    "started_at": "2026-08-21T07:53:10.316901+00:00",
+    "head_sha": "17f307579a2be94ff77373ae49154a21208d833a",
+    "partial": true,
     "partial_reasons": [
       "authoring_hard_cap_squeezed: run.time_budget_seconds (2700s) plus the merge poll (900s) plus the 285s post-run tail already fills the GitHub App token's 3600s TTL, so the authoring hard cap is held at the budget instead of 3104s. Page authoring can be cut mid-PR-group again and such a run earns no baseline advance. Lower run.time_budget_seconds or merge.checks_timeout_seconds.",
-      "prose_contamination_rescued: source-collector"
+      "lint_block: docs/site-src/2026-08-21-claude-md-audit-command-scoring.md internal_links: broken internal link(s): docs/runbook.md",
+      "lint_block: docs/site-src/2026-08-21-memory-execution-scorer-redesign-cce163.md citation_exists: cites nonexistent symbol 'memory' in 'scripts/score.mjs'",
+      "prose_contamination_rescued: fact-checker"
     ],
     "fact_check_warnings": [],
     "source_drift": [],

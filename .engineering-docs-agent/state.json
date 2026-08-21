@@ -1,8 +1,117 @@
 {
   "version": "1",
   "last_successful_run": {
-    "head_sha": "207a887dc522bb9187e7b653b641308ff71f3ce4",
-    "completed_at": "2026-08-20T07:52:17.745182+00:00"
+    "head_sha": "17f307579a2be94ff77373ae49154a21208d833a",
+    "completed_at": "2026-08-21T07:53:10.316901+00:00"
   },
-  "dismissed_gap_flags": {}
+  "dismissed_gap_flags": {},
+  "pr_summaries": {
+    "theoju/claude-code-self-assessment#197": {
+      "merge_sha": "017f671a3f30a7a3a5bc620172cbeb86f6f74240",
+      "fingerprint": "e6d7c2a0894b9d2f",
+      "last_seen_at": "2026-08-21T08:02:55.672830+00:00",
+      "summary": {
+        "pr_number": 197,
+        "what_changed": "Added a GitHub Actions CI workflow (`.github/workflows/ci.yml`) that runs on every pull request and push to `main`: install deps, lint, typecheck, unit tests, and build. Restored working lint by adding eslint 9 and eslint-config-next 16 as devDependencies with a flat `eslint.config.mjs` (Next 16 removed the old `next lint` subcommand, which had silently been broken with no fallback), repointed the `lint` script at `eslint .`, fixed the small number of real lint findings after excluding vendored/build directories from the ignore set, and fixed two pre-existing TypeScript errors that `next build` doesn't catch.",
+        "why": "The repo had no CI gating code changes \u2014 all existing workflows were path-gated to `docs/site-src/**`, so PRs touching `scripts/` or `app/` merged with zero automated verification (confirmed empirically: PR #196 reported no checks). Separately, lint had been dead since the Next 16 upgrade because nothing in CI ever ran it, letting the breakage go unnoticed.",
+        "breaking": false,
+        "doc_targets": [
+          {
+            "lens": "core",
+            "action": "create",
+            "page_hint": "2026-08-21-ci-lint-restoration.md",
+            "doc_kind": "decision",
+            "notes": "Records the gap (no code CI, dead lint since Next 16) and the fix (new ci.yml gating lint/typecheck/test/build, eslint 9 flat config). No architecture/ or operations/ section exists yet under core (available_sections only lists images), so this lands as a flat dated page at the lens root; consider migrating into an operations/ section if/when CI and workflow docs accumulate there."
+          }
+        ],
+        "notes": "PR also updated the repo's own CLAUDE.md and several test files as part of restoring a clean lint/typecheck baseline; these are implementation details already covered by the single summary page above and don't warrant separate doc targets. Follow-up mentioned in the PR body (branch-protection rule requiring the new check) is not yet implemented and isn't reflected as a separate doc target."
+      }
+    },
+    "theoju/claude-code-self-assessment#196": {
+      "merge_sha": "d69710b5e1d7427501d6623b4eb404676ea37ac3",
+      "fingerprint": "e6d7c2a0894b9d2f",
+      "last_seen_at": "2026-08-21T08:02:55.672830+00:00",
+      "summary": {
+        "pr_number": 196,
+        "what_changed": "Reworked the `commands` criterion in the CLAUDE.md health auditor (`scripts/claude-md-audit.mjs`). It previously scored 7 points per fenced code block containing a recognized tool keyword, which rewarded fragmenting commands into many small blocks and ignored commands documented in linked `.md` files. The new `countCommandLines()` counts actual executable command lines inside fences (stripping `$ ` prompts, skipping blanks/comments), and `extractDocRefs`/`resolveLinkedCommands` follow backticked-path, markdown-link, and `@import` references to linked docs (bounded to the target root, `.md` only, max 25 files, 256 KB each) and credit their command lines at half weight (capped at 10 of the 20 possible points). The recognized tool-token list was also broadened to cover Python-first tooling (`uv`, `pytest`, `ruff`, `mypy`, `alembic`, `prefect`) alongside existing tokens. `scoreFile()` gains an optional 4th `opts.linkedCommandLines` parameter (default 0); all existing 3-arg call sites are unaffected.",
+        "why": "A real CLAUDE.md audited at 7/20 on the commands criterion despite thoroughly documenting build/test/run commands, because it consolidated commands into one well-organized fenced block (penalizing consolidation) and referenced 23 linked `.md` docs containing the actual command lines, none of which the auditor read. The criterion was measuring a proxy (fence count) instead of the property it claims to score (does this file tell an agent how to build/test/run), and unrecognized Python tooling made the problem worse for non-JS repos. The fix realigns the metric with intent and was calibrated against the real file (83/B \u2192 96/A, commands 7/20 \u2192 20/20).",
+        "breaking": false,
+        "doc_targets": [
+          {
+            "lens": "core",
+            "action": "create",
+            "page_hint": "2026-08-21-claude-md-audit-command-scoring.md",
+            "doc_kind": "architecture",
+            "notes": "Documents the new countCommandLines/extractDocRefs/resolveLinkedCommands scoring mechanism and the `commands = min(20, ownLines*4 + min(10, linkedLines*2))` formula so the audit tool's behavior is discoverable outside the source diff and design spec. No existing architecture/operations section exists under the core lens yet (only images/), so this lands as a flat root page pending a future architecture/ directory."
+          }
+        ],
+        "notes": "No probe, predicate, or signalsSummary change per the PR's own 'Not in scope' note, so no changes needed to probe-tracker-adjacent docs. The PR's own design spec already lives in-repo at docs/superpowers/specs/2026-08-20-claude-md-commands-scorer-design.md; that is a source-tree planning doc, not a docs-site page, so it is not treated as an existing doc_target match."
+      }
+    },
+    "theoju/claude-code-self-assessment#198": {
+      "merge_sha": "6c32f0f9434db9ade6f04b055b79aba0416de8fd",
+      "fingerprint": "e6d7c2a0894b9d2f",
+      "last_seen_at": "2026-08-21T08:02:55.672830+00:00",
+      "summary": {
+        "pr_number": 198,
+        "what_changed": "Lands a design spec (CCE-163) proposing a redesign of the Memory & Context Management Execution scorer, plus the telemetry survey and probe-catalog/test updates that back it \u2014 no scorer numerator change ships in this PR. The spec documents three measurement defects in the same class as CCE-161's fenced-block-counting bug, surveys 2,019 transcripts over a 30-day window, and finds graphify (127 sessions) as a real but currently uncounted usage signal, while noting claude-mem is passive hook capture (Platform posture, not Execution behavior). It recommends unioning session-coverage across /clear, /compact, graphify invocations, and claude-mem tool_use, gated against interactiveOrUnknownSessionsAnalyzed. One open decision \u2014 whether auto-compact configuration should be evidence-only (A) or suppress the manual-command expectation (B) \u2014 blocks implementation; the spec recommends (A).",
+        "why": "Memory & Context Management currently scores Platform 100 / Execution 33, derived from a two-slash-command numerator (70 session-coverage hits / 353 sessions). CCE-79 established design-before-implement as the required pattern before touching a scorer numerator, given the risk of silently corrupting a ratio (as happened with the /btw cumulative-vs-windowed defect). This PR performs that design step for CCE-163: surveying real telemetry to identify undercounted signals before proposing a redesigned numerator, rather than editing score.mjs directly.",
+        "breaking": false,
+        "doc_targets": [
+          {
+            "lens": "core",
+            "action": "create",
+            "page_hint": "2026-08-21-memory-execution-scorer-redesign-cce163.md",
+            "doc_kind": "decision",
+            "notes": "Digest of the CCE-163 design spec: documents the three measurement defects found in the Memory Execution scorer, the transcript survey results (graphify as the real uncounted signal, claude-mem as posture-not-execution), the recommended union-based session-coverage redesign, and the open auto-compact evidence-vs-suppress decision that blocks implementation. Follow up with an architecture-page edit once the implementation PR lands and the scorer's actual formula changes."
+          }
+        ],
+        "notes": "This is a design-only PR (per its own description) \u2014 the scorer itself (scripts/score.mjs, scripts/_usage-data.mjs) is unchanged in behavior; the touched .mjs/test files support the telemetry survey and probe-catalog updates cited in the spec, not a shipped numerator change. No existing architecture/ or archive/ section exists yet under the core lens (only images/), so the digest target uses a flat root-level slug; once the section structure exists this should move under archive/ or be linked from an architecture/memory-scoring.md page when the follow-up implementation PR lands."
+      }
+    },
+    "theoju/claude-code-self-assessment#199": {
+      "merge_sha": "a23f96584972abbb61852b060f031f7cbb514725",
+      "fingerprint": "e6d7c2a0894b9d2f",
+      "last_seen_at": "2026-08-21T08:02:55.672830+00:00",
+      "summary": {
+        "pr_number": 199,
+        "what_changed": "Fixed the session-kind classifier (`classifySessionKind` in `scripts/_usage-data.mjs`) to fail closed on unrecognized transcript entrypoints. Previously it enumerated known SDK entrypoints and let anything else fall through to `unknown`, which is admitted by the `interactive_or_unknown` posture universe used by Memory & Terminal Execution scoring. An unhandled `sdk-py` entrypoint plus a 5-line scan bound (too shallow for transcripts that lead with `queue-operation`/`attachment` rows) caused 265 of 612 in-window sessions (43%) to misclassify as `unknown`, diluting the Memory Execution denominator to 353 against a true 93 (3.8x) and scoring a well-instrumented machine at 37/100. The fix inverts the classifier to an allow-list (`INTERACTIVE_ENTRYPOINTS = {cli, claude-desktop}`) so every other entrypoint resolves to `observer` or `sdk_orchestrated` instead of `unknown`, and raises the scan bound to `ENTRYPOINT_SCAN_BOUND = 200`.",
+        "why": "Root cause was a classifier that failed open instead of closed: unknown/unhandled entrypoints and an undersized scan window silently entered a posture-scoring denominator meant to represent only user-driven interactive sessions, producing a severely understated Memory Execution score. Fixing this restores denominator integrity (93 true interactive-or-unknown sessions vs. the inflated 353) and moved Memory Execution 37\u219a100 and overall Execution 60\u219a68 on the measured machine.",
+        "breaking": false,
+        "doc_targets": [
+          {
+            "lens": "core",
+            "action": "create",
+            "page_hint": "2026-08-21-session-classifier-fail-closed.md",
+            "doc_kind": "decision",
+            "notes": "Postmortem/decision record for CCE-164: documents the fail-open\u2192fail-closed classifier defect, the 3.8x denominator dilution it caused, and the allow-list + scan-bound fix. No architecture/ or archive/ section exists yet under core (only images/), so this lands as a flat dated page at the lens root per convention."
+          }
+        ],
+        "notes": "PR also updates CLAUDE.md (hard-rules entry already documents the incident and the allow-list contract) and two design docs under docs/superpowers/specs and plans; those are source-of-truth engineering docs already maintained by the repo's own conventions, not additional targets for the docs-agent lens."
+      }
+    },
+    "theoju/claude-code-self-assessment#200": {
+      "merge_sha": "17f307579a2be94ff77373ae49154a21208d833a",
+      "fingerprint": "e6d7c2a0894b9d2f",
+      "last_seen_at": "2026-08-21T08:02:55.672830+00:00",
+      "summary": {
+        "pr_number": 200,
+        "what_changed": "Version-bump-only release PR (0.9.19 \u2192 0.9.20) that ships no new code itself \u2014 it aggregates 20 already-merged commits (73 files, +13,856/-1,092) into a tagged release. Headline groups covered by earlier PRs: the session-classifier fix chain (CCE-161\u2013164) that corrected posture-denominator dilution from misclassified sessions; the Memory Execution numerator redesign (CCE-79, #128); the new mkdocs docs site + GitHub Pages publishing (CCE-81/#121, CCE-82/#125); and a dashboard graphite/electric-blue retheme (#177).",
+        "why": "Routine release cadence to cut a tagged version capturing the accumulated fixes and features since v0.9.19, per the project's release-branch-PR convention.",
+        "breaking": false,
+        "doc_targets": [
+          {
+            "lens": "core",
+            "action": "create",
+            "page_hint": "2026-08-21-release-0.9.20.md",
+            "doc_kind": "decision",
+            "notes": "Release digest only. The substantive underlying changes (session-classifier fixes CCE-161-164, memory scorer redesign CCE-79, mkdocs docs site CCE-81/82, dashboard retheme) are documented by their own respective PR summaries; this entry just anchors the v0.9.20 tag as a point-in-time release note and should link out to those rather than duplicate detail."
+          }
+        ],
+        "notes": "PR itself only touches package.json/package-lock.json (a pure version bump); no functional doc-target is needed beyond a release-note digest, since all real changes were already captured by prior PRs in this cycle.",
+        "error": null,
+        "partial": false
+      }
+    }
+  }
 }
