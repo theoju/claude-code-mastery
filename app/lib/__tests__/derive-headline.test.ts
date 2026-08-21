@@ -36,6 +36,7 @@ function assessment(overrides: Partial<Assessment> = {}): Assessment {
     user: "Test",
     dimensions: [],
     signalsSummary: {},
+    rankedNextActions: [],
     insights: null,
     claudeMd: null,
     ...overrides,

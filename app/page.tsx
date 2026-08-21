@@ -82,7 +82,7 @@ export default async function Page() {
           {headerName} Claude Code execution, scored.
         </h1>
         <p className="text-[color:var(--color-mute)] max-w-3xl leading-relaxed">
-          Compared against Boris Cherny's 87 workflow tips
+          Compared against Boris Cherny&apos;s 87 workflow tips
           (howborisusesclaudecode.com) and the Claude Code Self-Assessment
           rubric. Scoring is evidence-based — signals pulled from
           <span className="mono text-[color:var(--color-text)]">

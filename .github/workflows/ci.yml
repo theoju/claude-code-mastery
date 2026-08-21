@@ -1,0 +1,50 @@
+# Verifies code on every pull request and every push to main — CCE-162.
+#
+# Before this existed the repo had no CI for code at all: the three docs-agent
+# workflows are path-gated to docs/site-src/**, so a PR touching scripts/ or
+# app/ merged with zero automated verification.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint · typecheck · test · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      # postinstall runs scripts/snapshot-boris-tips.mjs, which is network-free:
+      # with no ~/.claude/skills/boris/SKILL.md present it writes an empty stub
+      # and exits 0, so a fresh CI clone installs cleanly.
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # Integration tests build their own temp HOME (scripts/__tests__/integration/_tmpHome.mjs),
+      # so the suite does not depend on a real ~/.claude.
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

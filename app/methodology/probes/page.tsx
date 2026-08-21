@@ -117,10 +117,19 @@ function extractPrimarySignal(predicate: string): string {
   return opMatch ? opMatch[1] : firstAtom;
 }
 
-function loadJson<T>(relPath: string): T {
-  return JSON.parse(
-    readFileSync(join(process.cwd(), "app", "data", relPath), "utf8"),
-  ) as T;
+// Committed data (rubric.json, probe-catalog.json) is required — a missing file
+// there is a real defect and should fail the build loudly. assessment.json is
+// gitignored and written only by "npm run assess", so it is read with a
+// fallback: a fresh clone and CI must still be able to build. CCE-162.
+function loadJson<T>(relPath: string, fallback?: T): T {
+  try {
+    return JSON.parse(
+      readFileSync(join(process.cwd(), "app", "data", relPath), "utf8"),
+    ) as T;
+  } catch (err) {
+    if (fallback !== undefined) return fallback;
+    throw err;
+  }
 }
 
 function formatValue(v: unknown): string {
@@ -150,7 +159,7 @@ export default function ProbesPage() {
       };
       interactiveSessionsAnalyzed?: number;
     } | null;
-  }>("assessment.json");
+  }>("assessment.json", { signalsSummary: {}, insights: null });
   const insights = assessment.insights ?? null;
   const catalogRaw =
     loadJson<Record<string, CatalogEntry | object>>("probe-catalog.json");
