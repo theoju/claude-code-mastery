@@ -1,12 +1,9 @@
 {
   "current_run": {
-    "started_at": "2026-08-21T16:36:28.628299+00:00",
-    "head_sha": "20b05d50a3f0c10bc6e1fd7ea39b06f04f8aa55a",
+    "started_at": "2026-08-22T07:39:56.303511+00:00",
+    "head_sha": "4f84f1d1476bd6e040fe4bb3864de23ccc16423a",
     "partial": false,
-    "partial_reasons": [
-      "prose_contamination_rescued: fact-checker",
-      "pr_summaries_reused: 5/6 PRs served from cache, 5 pr-summarizer dispatches skipped"
-    ],
+    "partial_reasons": [],
     "fact_check_warnings": [],
     "source_drift": [],
     "citation_drift": {
