@@ -1,10 +1,14 @@
 {
   "current_run": {
-    "started_at": "2026-08-24T08:02:14.670074+00:00",
-    "head_sha": "e91f6029093122c6fd0dd46b7e2b1b0bd5fb1f4a",
-    "partial": false,
+    "started_at": "2026-08-26T07:55:14.113643+00:00",
+    "head_sha": "bfcb21e2faa3457392e6fea9d7b7d3793b0a0519",
+    "partial": true,
     "partial_reasons": [
-      "prose_contamination_rescued: source-collector"
+      "source_collector_invalid: returned None"
+    ],
+    "blind": true,
+    "blind_reasons": [
+      "source_collector_invalid: returned None"
     ],
     "fact_check_warnings": [],
     "source_drift": [],
