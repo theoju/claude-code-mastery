@@ -1,8 +1,8 @@
 {
   "version": "1",
   "last_successful_run": {
-    "head_sha": "bfcb21e2faa3457392e6fea9d7b7d3793b0a0519",
-    "completed_at": "2026-08-27T18:15:21.959111+00:00"
+    "head_sha": "e5a0f6b18cc6258ff97863ce63e93068004665e0",
+    "completed_at": "2026-08-28T19:24:24.029344+00:00"
   },
   "dismissed_gap_flags": {},
   "pr_summaries": {
