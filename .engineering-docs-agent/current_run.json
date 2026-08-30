@@ -1,9 +1,11 @@
 {
   "current_run": {
-    "started_at": "2026-08-29T13:08:16.726320+00:00",
-    "head_sha": "3eb1adfd2571940a68f756a5dae65d4236aec617",
+    "started_at": "2026-08-30T12:48:57.512011+00:00",
+    "head_sha": "eb9ce8b00826e9a3a839d0f026b6b2cfd97bdcfe",
     "partial": false,
-    "partial_reasons": [],
+    "partial_reasons": [
+      "prose_contamination_rescued: source-collector"
+    ],
     "fact_check_warnings": [],
     "source_drift": [],
     "citation_drift": {
