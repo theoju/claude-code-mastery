@@ -1,7 +1,7 @@
 {
   "current_run": {
-    "started_at": "2026-08-30T12:48:57.512011+00:00",
-    "head_sha": "eb9ce8b00826e9a3a839d0f026b6b2cfd97bdcfe",
+    "started_at": "2026-08-31T15:02:12.287272+00:00",
+    "head_sha": "9fdfb05a603d498e09f935f3e9f18c404e593aa9",
     "partial": false,
     "partial_reasons": [
       "prose_contamination_rescued: source-collector"
